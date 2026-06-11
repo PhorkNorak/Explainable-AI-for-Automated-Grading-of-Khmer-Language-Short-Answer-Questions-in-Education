@@ -1,0 +1,50 @@
+\chapter{Limitations and Future Work}
+\label{ch:limitations}
+
+\section{Limitations}
+The thesis states its limits plainly, since doing so is part of an honest benchmark.
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Single grader, no inter-annotator agreement.} A second grader could not be obtained
+  within the scope of this work, so there is no measured human agreement ceiling. All results are
+  agreement \emph{with this teacher}, and may inherit that grader's biases. Bootstrap confidence
+  intervals partially mitigate, but do not remove, this limitation.
+  \item \textbf{Question leakage in the headline split.} Because only 41 distinct questions exist, the
+  random split shares questions between train and test. The leakage is now \emph{measured}
+  (\S\ref{sec:leakage}) rather than merely flagged, and both seen- and unseen-question numbers are
+  reported; but the seen-question headline numbers should be read with this in mind.
+  \item \textbf{Small corpus.} With roughly 895--1{,}184 answers and few questions, the
+  unseen-question test sets are tiny ($\sim$6 questions) and high-variance, and the corpus covers four
+  subjects from two schools rather than a national sample.
+  \item \textbf{Partial cross-pillar comparability.} The pillars were evaluated on different dataset
+  variants (895/909/1184) and only the classical and BiLSTM models share a test set, so cross-pillar
+  QWK differences should be read as indicative rather than head-to-head.
+  \item \textbf{Explainability scope.} The encoder and LLM LOO faithfulness rows require GPU hardware
+  and are \emph{HPC-pending}. The plausibility measure is an automatic reference-overlap proxy, not a
+  human-rationale study.
+  \item \textbf{No formal field study.} The live prototype demonstrates feasibility, but its
+  classroom value has not yet been evaluated with teachers in a controlled study.
+\end{itemize}
+
+\section{Future Work}
+Several directions follow naturally and would address the limitations above.
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{A second grader and a question-held-out benchmark.} Adding a second annotator would
+  give a true agreement ceiling, and re-running the \emph{full} grid (all four pillars and the LLM)
+  under the question-held-out split would turn the leakage analysis into the primary, honest
+  generalisation benchmark.
+  \item \textbf{Khmer-specific pretraining.} Continued pretraining of a multilingual encoder on Khmer
+  text, or a Khmer-native encoder, may close the gap left by the limited Khmer seen during generic
+  multilingual pretraining.
+  \item \textbf{Full-pillar LOO faithfulness.} Running the encoder and LLM LOO faithfulness rows on
+  GPU hardware would extend the verified faithful explanation to all four pillars.
+  \item \textbf{Cross-lingual transfer.} Transferring scoring ability from high-resource languages to
+  Khmer (for example, via multilingual representations or cross-lingual contrastive
+  learning~\citep{li2024crosslingual}) could help in the genuinely low-data, unseen-question regime.
+  \item \textbf{Feedback quality.} The prototype's written feedback should be evaluated for
+  pedagogical usefulness in classroom settings, building on rubric-aligned feedback
+  work~\citep{condor2024,nam2024grading}.
+  \item \textbf{A teacher field study.} A controlled study of how Cambodian teachers use, trust, and
+  benefit from the prototype would test the explainability contribution where it ultimately matters.
+\end{itemize}

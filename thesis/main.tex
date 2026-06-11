@@ -1,0 +1,95 @@
+% !TEX program = xelatex
+% ============================================================================
+%  Bachelor Thesis - Royal University of Phnom Penh
+%  "Explainable AI for Automated Grading of Khmer Language Short-Answer
+%   Questions in Education"
+%
+%  COMPILE WITH XeLaTeX (required for Khmer script).
+%  Sequence:  xelatex -> bibtex -> xelatex -> xelatex
+%  On Overleaf: Menu -> Compiler -> XeLaTeX. See README.md.
+% ============================================================================
+\documentclass[12pt,a4paper,oneside]{report}
+
+% ---- Page geometry (RUPP-style binding margin) ----
+\usepackage[a4paper,left=3.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm]{geometry}
+
+% ---- Fonts & languages (XeLaTeX) ----
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setdefaultlanguage{english}
+\setotherlanguage{khmer}
+% Latin body font (Times-like; bundled on Overleaf/TeX Live):
+\setmainfont{TeX Gyre Termes}
+% Khmer font - upload "Noto Sans Khmer" to the Overleaf project if not present.
+\newfontfamily\khmerfont[Script=Khmer]{Noto Sans Khmer}
+
+% ---- Core packages ----
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{setspace}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{fancyhdr}
+\usepackage[round,authoryear]{natbib}
+\usepackage[hidelinks]{hyperref}
+
+% ---- Citation style (author-year, RUPP/APA-like) ----
+\bibliographystyle{apalike}
+
+% ---- Layout niceties ----
+\onehalfspacing
+\setlength{\parskip}{4pt}
+\graphicspath{{figures/}}
+\renewcommand{\arraystretch}{1.15}
+
+% Running header
+\setlength{\headheight}{14.5pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\leftmark}
+\fancyhead[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Convenience macro for inline Khmer
+\newcommand{\km}[1]{\textkhmer{#1}}
+
+\begin{document}
+
+% ============================ FRONT MATTER ============================
+\pagenumbering{roman}
+\input{frontmatter/titlepage}
+\input{frontmatter/committee}
+\input{frontmatter/abstract_kh}
+\input{frontmatter/abstract_en}
+\input{frontmatter/statements}
+\input{frontmatter/acknowledgements}
+
+\tableofcontents
+\listoftables
+\listoffigures
+\clearpage
+
+% ============================ MAIN MATTER ============================
+\pagenumbering{arabic}
+\include{chapters/ch1_introduction}
+\include{chapters/ch2_literature}
+\include{chapters/ch3_methodology}
+\include{chapters/ch4_experiments}
+\include{chapters/ch5_results}
+\include{chapters/ch6_limitations_future}
+\include{chapters/ch7_conclusion}
+
+% ============================ BACK MATTER ============================
+\bibliography{refs}
+
+\appendix
+\include{appendices/appendix}
+
+\end{document}

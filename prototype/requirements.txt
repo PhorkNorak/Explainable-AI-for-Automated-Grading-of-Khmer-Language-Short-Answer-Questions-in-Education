@@ -1,0 +1,19 @@
+# Prototype (Gradio) — CPU deployment (e.g. a free Hugging Face Space).
+# The Classical + RNN pillars run on CPU; the Transformer/LLM pillars need a GPU Space
+# and the extra deps in the project requirements.txt (transformers / peft / unsloth).
+
+gradio>=4.0
+scikit-learn>=1.3.0
+scipy>=1.11.0
+numpy>=1.24.0
+pandas>=2.0.0
+khmer-nltk>=1.6
+torch>=2.0.0          # CPU build is fine; needed by the RNN (BiLSTM) pillar
+
+# Word attribution in the prototype uses occlusion (leave-one-out), which needs nothing extra.
+# `shap` is optional and only used by the offline method-robustness cross-check (experiments/exp13).
+# shap
+
+# AI feedback talks to an open-source LLM over an OpenAI-compatible HTTP endpoint
+# (Ollama / vLLM / llama.cpp / LM Studio / OpenRouter ...). Only `requests` is needed.
+requests>=2.31.0

@@ -1,0 +1,91 @@
+\chapter{Experiments and System Implementation}
+\label{ch:experiments}
+
+\section{Environment and Setup}
+The pipeline is implemented in Python. The classical and recurrent models run on a CPU; the
+Transformer encoders and the QLoRA-fine-tuned LLM require a CUDA GPU and were run on dedicated
+hardware. Khmer word segmentation uses \texttt{khmer-nltk}. Every run writes a self-contained
+directory holding its configuration, per-answer predictions for the train/validation/test splits,
+and a metrics file, so that all reported numbers can be recomputed from saved predictions without
+re-training. A fixed random seed (42) is used throughout, with multi-seed runs (five seeds) for the
+variance-sensitive leakage analysis.
+
+\section{The Experiment Grid}
+\label{sec:grid}
+The study is organised as a sequence of experiments, each isolating one design choice, plus the
+explainability and statistical-rigour studies (Table~\ref{tab:grid}). Each modelling experiment runs
+over the three dataset variants and the preprocessing/input-format axes, and writes its own
+leaderboard.
+
+\begin{table}[t]
+\centering
+\caption{The experiment grid. Each row isolates one design decision or analysis.}
+\label{tab:grid}
+\small
+\begin{tabular}{@{}llp{8.0cm}@{}}
+\toprule
+ID & Pillar / study & What it adds \\
+\midrule
+exp01  & Classical    & TF-IDF cosine and RBF-SVR baselines \\
+exp02  & Classical    & Post-hoc threshold calibration (validation-selected) \\
+exp03  & Classical    & Max-score as an SVR feature \\
+exp03b & Neural       & Max-score feature for neural heads \\
+exp04  & Classical    & Per-max-score ``bucket'' SVR \\
+exp05  & RNN          & Character BiLSTM + attention grid \\
+exp06  & Transformer  & Dual / cross encoders $\times$ mBERT / XLM-R / GTE \\
+exp07  & Ensemble     & Weighted top-3 cells by validation QWK \\
+exp08  & LLM          & Qwen QLoRA fine-tuning \\
+exp09  & Explainability & LOO faithfulness + plausibility across families \\
+exp10  & Statistics   & Champion point metrics + question-leakage comparison \\
+exp11  & Ablation     & Old vs.\ refined cleaning (classical champion) \\
+exp12  & Tuning       & Classical SVR $C$ and TF-IDF max-features sweep \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Training and Evaluation Protocol}
+For every cell, models are trained on the training split and selected on the \emph{validation} split;
+the chosen configuration is then reported \emph{once} on the held-out test split, with no test-set
+peeking. Neural and Transformer models use early stopping on validation QWK. All metrics are
+computed afterwards from the saved test predictions (\S\ref{sec:metrics}).
+
+\section{Hyperparameter Tuning}
+\label{sec:tuning}
+Hyperparameters are selected by validation QWK. For the classical champion, which trains fast enough
+to sweep exhaustively on a CPU, a grid over the SVR penalty $C\in\{0.1,1,10\}$ and the TF-IDF
+maximum features $\{5,15,30\}\times10^{3}$ was run; the validation-selected configuration changed the
+\emph{test} QWK by less than 0.002 relative to the defaults, indicating the classical result is not
+sensitive to these choices. For the neural, Transformer, and LLM pillars, the analogous
+learning-rate sweeps (BiLSTM $\in\{5\mathrm{e}{-}4,1\mathrm{e}{-}3,2\mathrm{e}{-}3\}$; Transformers
+$\in\{1\mathrm{e}{-}5,2\mathrm{e}{-}5,5\mathrm{e}{-}5\}$; LLM QLoRA
+$\in\{1\mathrm{e}{-}4,2\mathrm{e}{-}4,3\mathrm{e}{-}4\}$) use the same validation-selection rule and
+are run on GPU hardware.
+
+\section{System: the Live Teacher-Facing Prototype}
+\label{sec:prototype}
+The explainability contribution is realised as a working, hosted web application rather than only a
+benchmark. The interaction is simple and mirrors what a teacher already does:
+
+\begin{enumerate}[leftmargin=1.8em]
+  \item the teacher types (or pastes) the \textbf{question}, the \textbf{reference answer}, and the
+  \textbf{student's answer};
+  \item the teacher \textbf{chooses a model} from the four pillars (classical, RNN, Transformer, or
+  LLM) via a selector;
+  \item the system returns a \textbf{score}, a \textbf{word-attribution explanation} (a text-highlight
+  heatmap of the words that drove the grade), and \textbf{written feedback}.
+\end{enumerate}
+
+Two design points connect the tool back to the research. First, the explanation the teacher sees is
+the \emph{same} occlusion word attribution that the faithfulness study validates, so the XAI study is the
+feature, not an add-on. Second, the prototype is positioned as a \emph{teacher-assist} tool with the
+human in the loop, it supports a teacher's judgement rather than replacing it. The live application is
+hosted at \href{[demo URL]}{[demo URL to insert]}; example screenshots of the input form and a
+returned score with its Khmer word-attribution heatmap and feedback are shown in
+Appendix~\ref{app:prototype}.
+
+\section{Reproducibility}
+All code, the dataset and its three variants, the random seeds, the per-cell leaderboards, the
+champion prediction files, and the figures are released. Because every metric is computed
+from saved predictions, every result in Chapter~\ref{ch:results} can be reproduced without
+re-training the models. Large model weights (LLM adapters and encoder checkpoints) are not tracked in
+the repository but are regenerable from the released training scripts.

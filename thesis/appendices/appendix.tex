@@ -1,0 +1,66 @@
+\chapter{Appendices}
+\label{ch:appendix}
+\renewcommand{\thesection}{\Alph{section}}
+\setcounter{section}{0}
+
+\section{Hyperparameter Inventory}
+\label{app:hparams}
+Table~\ref{tab:hparams} lists the main hyperparameters. Classical and BiLSTM settings are the
+defaults used throughout; the Transformer and LLM settings follow standard fine-tuning practice with
+validation-selected learning rates (\S\ref{sec:tuning}).
+
+\begin{table}[h]
+\centering
+\caption{Key hyperparameters by pillar.}
+\label{tab:hparams}
+\small
+\begin{tabular}{@{}llp{7.5cm}@{}}
+\toprule
+Pillar & Setting & Value \\
+\midrule
+Classical   & TF-IDF analyzer / $n$-grams & \texttt{char\_wb}, $(2,4)$ \\
+            & max features / SVR $C$ / kernel & 15{,}000 / 1.0 / RBF \\
+RNN         & embed / hidden / layers & 128 / 128 / 2 (bidirectional) \\
+            & dropout / batch / max epochs & 0.3 / 64 / 20 (patience 4) \\
+            & learning rate & $1\mathrm{e}{-}3$ \\
+Transformer & backbones & mBERT, XLM-R, GTE-multilingual \\
+            & frozen layers / max length / batch & 6 / 256 / 16 \\
+            & learning rate / weight decay & $2\mathrm{e}{-}5$ / 0.01 \\
+LLM         & base / adaptation & Qwen / QLoRA (4-bit) \\
+            & learning rate (val-selected) & $\in\{1,2,3\}\times10^{-4}$ \\
+\midrule
+Common      & split / seed & 70/15/15 / 42 (multi-seed: 42, 1337, 2024, 7, 99) \\
+            & target / loss & $\hat{y}\in[0,1]$ / mean-squared error \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Compute Budget}
+\label{app:compute}
+The classical models train in seconds on a CPU. The full neural, Transformer, and LLM grid (hundreds
+of cells across three dataset variants) requires roughly 40 GPU-hours in total. All metrics are
+computed from saved per-answer predictions and need no GPU.
+
+\section{Additional Explanation Heatmaps}
+\label{app:prototype}
+Figure~\ref{fig:heatmap-bilstm} shows an additional Khmer word-attribution heatmap (BiLSTM, occlusion).
+Khmer complex script is rendered with browser text shaping, as standard plotting back-ends do not
+correctly stack subscript consonants or reorder vowels. \emph{[Insert here one or two screenshots of
+the live prototype: the input form (Question + Reference + Answer + model selector), and a returned
+score with its Khmer word-attribution heatmap and written feedback.]}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\textwidth]{heatmap_bilstm.png}
+\caption{Example Khmer word-attribution heatmap (BiLSTM, occlusion) on an original student answer.}
+\label{fig:heatmap-bilstm}
+\end{figure}
+
+\section{Ethics and Data Governance}
+\label{app:ethics}
+The corpus contains real, anonymised student answers from minors, used solely for research into a
+teacher-assist grading tool. Only pseudonymous identifiers are stored; no student names appear in the
+data. The system is intended to \emph{support}, not replace, a teacher's judgement (human-in-the-loop).
+Because a single teacher graded all answers, the models reflect that grader's decisions; results are
+reported as agreement with this grader, with reporting across three dataset variants as partial
+mitigation. \emph{[Insert the institution's IRB/consent details as applicable.]}

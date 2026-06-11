@@ -1,0 +1,33 @@
+% ---- Abstract in English ----
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract (English)}
+\markboth{ABSTRACT}{ABSTRACT}
+
+Automatic short-answer grading (ASAG) has advanced rapidly for high-resource languages, but
+Khmer, the official language of Cambodia, spoken by more than 17 million people, has, to our
+knowledge, no prior published ASAG benchmark. This thesis introduces the first reproducible Khmer
+ASAG benchmark: a corpus of 1{,}184 teacher-graded short answers across four secondary-school
+subjects, three curated cleaning variants, and a unified pipeline that compares four families of
+grading model: a classical model (TF-IDF features with a support-vector regressor), a
+character-level BiLSTM with attention, multilingual Transformer encoders (mBERT, XLM-R, and
+GTE-multilingual), and a large language model fine-tuned with QLoRA (Qwen 3.5 4B). Because the thesis
+foregrounds \emph{explainability}, it additionally conducts a cross-family explainability study that
+\emph{measures} explanation faithfulness (ERASER comprehensiveness and sufficiency, and the
+area-over-the-perturbation-curve, AOPC) and reference-answer plausibility, rather than merely
+displaying word-importance highlights.
+
+The study has three main findings. First, the four families are \emph{comparable} on Quadratic
+Weighted Kappa (QWK) (0.795, 0.845, 0.820, and 0.842, respectively, a narrow 0.05 band), while the
+fine-tuned LLM is the clear best on the deployment metrics that matter in a classroom (67\% exact
+integer-score match and 79\% agreement within one point). Second, \emph{Leave-One-Out (LOO) word-attribution} (text highlighting) explanations are
+\emph{reliably} faithful for every model family, as verified by ERASER comprehensiveness and
+sufficiency metrics, making LOO the unified, model-agnostic explanation method across all four pillars. Third, under a question-held-out evaluation the classical model's QWK collapses from
+0.76 to 0.35, showing that small-question-pool ASAG scores are heavily inflated by \emph{question
+leakage}. The explainability contribution is realized in a live, teacher-facing web prototype that
+returns a score, a faithful word-importance explanation, and written feedback. All code, data,
+random seeds, and figures are released for reproducibility.
+
+\vspace{0.4cm}
+\noindent\textbf{Keywords:} Automatic Short-Answer Grading; Explainable AI; Faithfulness; Khmer
+Language Processing; Low-Resource NLP; Transformers; Quadratic Weighted Kappa.
+\clearpage

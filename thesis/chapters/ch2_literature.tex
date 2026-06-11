@@ -1,0 +1,107 @@
+\chapter{Literature Review}
+\label{ch:literature}
+
+This chapter reviews the research that this thesis builds on. It moves from automatic short-answer
+grading in general (\S\ref{sec:lit-asag}), through the Transformer models that dominate modern NLP
+(\S\ref{sec:lit-transformers}), to explainable AI and the central idea of \emph{faithfulness}
+(\S\ref{sec:lit-xai}) and its use in scoring (\S\ref{sec:lit-xai-asag}). It then covers
+cross-lingual and low-resource scoring (\S\ref{sec:lit-crosslingual}) and Khmer language processing
+(\S\ref{sec:lit-khmer}), before stating the research gap (\S\ref{sec:lit-gap}).
+
+\section{Automatic Short-Answer Grading}
+\label{sec:lit-asag}
+Early ASAG systems graded answers by comparing them to a reference using \emph{semantic-similarity}
+and dependency-graph features~\citep{mohler2011}; this established reference-versus-answer comparison
+as the core idea of the field. The \emph{shared-task} era followed: SemEval-2013 Task~7 standardised
+datasets (such as SciEntsBank and Beetle) and the idea of evaluating on unseen domains, which
+energised research and made systems comparable~\citep{dzikovska2013}. A subsequent survey traces the
+shift from hand-crafted similarity features to word embeddings, then to sequential neural models, and
+finally to attention and Transformers, with data augmentation and transfer learning used to cope with
+limited data~\citep{sung2022survey,tan2025review}.
+
+Most recently, large language models (LLMs) are either fine-tuned or prompted for grading.
+Fine-tuned specialist models generally outperform prompted general-purpose
+models~\citep{chang2024gpt4,xu2025qwenscore}, and retrieval-augmented~\citep{graderag2025} and
+neuro-symbolic~\citep{neurosymbolic2024asag} variants, as well as dedicated benchmarks for LLM
+graders~\citep{sasbench2025}, have appeared. Throughout, \emph{Quadratic Weighted Kappa}
+(QWK)~\citep{cohen1968qwk} has remained the de-facto metric for ordinal scoring agreement, often
+reported alongside exact and adjacent agreement rates~\citep{williamson2012framework}.
+
+The closest comparable study to this thesis is an Arabic ASAG dataset graded on a three-point scale,
+whose best Transformer reaches 95.67\%/77.22\% train/test accuracy and reports an \emph{unweighted}
+Cohen's $\kappa$ of 0.60~\citep{alaoui2024}; this work serves as a methodological anchor for
+honestly reporting the train/test generalisation gap (Chapter~\ref{ch:results}).
+
+\section{Transformers and Pre-trained Encoders}
+\label{sec:lit-transformers}
+The Transformer architecture~\citep{vaswani2017attention} replaced recurrence with self-attention and
+became the backbone of modern NLP. Pre-trained encoders built on it (BERT and its multilingual
+variant mBERT~\citep{devlin2019bert}, the cross-lingual XLM-R~\citep{conneau2020xlmr}, and sentence
+encoders such as SBERT~\citep{reimers2019sbert}) learn general-purpose text representations that can
+be fine-tuned for downstream tasks with relatively little task data. Note that
+BERT, mBERT, XLM-R, GTE-multilingual, and the Qwen LLM used in this thesis are \emph{all}
+Transformers; they differ in size, pre-training objective, and how they are adapted, not in their
+core architecture. This thesis groups the multilingual encoders into a single ``Transformer
+(BERT-family)'' pillar and treats the fine-tuned LLM as a separate, larger pillar.
+
+\section{Explainable AI: Concepts, Techniques, and Faithfulness}
+\label{sec:lit-xai}
+Explainable AI (XAI) seeks to make model decisions transparent. \emph{Attribution} methods assign an
+importance score to each input feature (here, each word of the answer). They include
+perturbation-based methods such as LIME~\citep{ribeiro2016lime} and \emph{occlusion} (removing an
+input and observing the change in output), gradient-based saliency~\citep{simonyan2014saliency,
+li2016visualizing}, Integrated Gradients~\citep{sundararajan2017ig}, and the game-theoretic
+SHAP~\citep{lundberg2017shap}. Attention weights~\citep{bahdanau2015attention} are sometimes read as
+explanations, but whether they are reliable is contested: \citet{jain2019attention} argue
+``attention is not explanation,'' while \citet{wiegreffe2019attention} respond that it can be, under
+the right conditions.
+
+The resolution to this debate is to \emph{measure} explanation quality rather than assume it. A key
+distinction is between \emph{faithfulness}, does the explanation reflect what the model actually
+computed?, and \emph{plausibility}, does it look reasonable to a human?~\citep{jacovi2020faithfulness,
+lyu2024faithfulsurvey}. Faithfulness can be quantified with the ERASER protocol's
+\emph{comprehensiveness} and \emph{sufficiency}~\citep{deyoung2020eraser}, summarised across removal
+fractions by the area-over-the-perturbation-curve (AOPC)~\citep{samek2017aopc} and its normalised
+variant~\citep{naopc2024}. This thesis adopts exactly this measure-don't-assume stance.
+
+\section{Explainability in Automated Scoring}
+\label{sec:lit-xai-asag}
+Within grading specifically, XAI has been used both to explain scores and to generate feedback.
+\citet{kumar2020explainable} demonstrated XAI for automated essay scoring using interpretable
+linguistic indices. ExASAG combined SHAP and Integrated Gradients for short-answer grading and
+evaluated explanations against human-annotated justifications~\citep{exasag2023}, and
+\citet{pinto2025attribution} compared attribution methods (including LIME, Integrated Gradients, and
+leave-one-out) for ASAG. Rubric-aligned and reference-based feedback generation has also been
+studied~\citep{condor2024,nam2024grading}, including chain-of-thought reasoning as a form of
+explanation~\citep{wei2022cot}. Deployed, human-in-the-loop classroom systems with feedback have
+begun to emerge~\citep{engsaf2024,chillgrader2025}. None of this work, however, addresses Khmer.
+
+\section{Cross-Lingual and Low-Resource Scoring}
+\label{sec:lit-crosslingual}
+Because most labelled scoring data is in English, several lines of work transfer scoring ability to
+other languages. Multilingual pre-trained models support scoring in languages such as
+Arabic~\citep{alqurashi2025arabic} and Dutch open responses~\citep{lachana2025dutch}, and zero-shot
+cross-lingual essay scoring transfers knowledge from high-resource to low-resource
+languages~\citep{li2024crosslingual}. These approaches motivate the use of multilingual encoders for
+Khmer, while also highlighting that genuinely unseen low-resource settings remain hard, a theme this
+thesis confirms in its leakage analysis.
+
+\section{Khmer Language Processing and the Cambodian Context}
+\label{sec:lit-khmer}
+Khmer NLP research has concentrated on foundational tasks: word segmentation (the Khmer script lacks
+spaces between words), part-of-speech tagging, and pre-trained models and
+tools~\citep{buoy2022khmer,khmernltk2020}. This thesis uses the \texttt{khmer-nltk} segmenter as
+part of its preprocessing pipeline. More broadly, preparing Cambodian education for AI is an active
+policy concern~\citep{huot2025cambodia}. Yet educational assessment for Khmer, automatic grading of
+student answers, remains unaddressed.
+
+\section{Research Gap}
+\label{sec:lit-gap}
+Three gaps emerge from the literature. First, there is \emph{no published ASAG benchmark for Khmer},
+so the field lacks both data and baselines for this language. Second, much ASAG work \emph{displays}
+explanations (for example, attention or saliency maps) without \emph{measuring} whether they are
+faithful, despite evidence that attention can be unreliable. Third, ASAG benchmarks built on a small
+pool of distinct questions risk \emph{question leakage}, which can inflate reported scores, yet this
+effect is rarely quantified. This thesis addresses all three: it builds the first reproducible Khmer
+ASAG benchmark, measures explanation faithfulness across four model families, and quantifies the
+question-leakage effect with a question-held-out evaluation.
