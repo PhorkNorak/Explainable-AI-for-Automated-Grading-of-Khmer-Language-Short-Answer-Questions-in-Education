@@ -1,4 +1,4 @@
-"""KhmerXScore — live teacher-facing prototype (Gradio).
+"""Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education.
 
 A teacher pastes the Question + Reference answer + Student answer, picks a model
 pillar, and gets back:
@@ -281,9 +281,9 @@ def _example_row():
 
 # ───────────────────────── UI ─────────────────────────
 def build_demo():
-    with gr.Blocks(title="KhmerXScore — Explainable Khmer Short-Answer Grading") as demo:
+    with gr.Blocks(title="Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education") as demo:
         gr.Markdown(
-            "# KhmerXScore — Explainable Grading of Khmer Short Answers\n"
+            "# Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education\n"
             "Enter the **question**, the **reference answer**, and the **student answer**, "
             "choose a model pillar, then press **Grade**. You get a score, a Khmer "
             "**word-attribution** heatmap (the highlighted words that drove the grade), and "

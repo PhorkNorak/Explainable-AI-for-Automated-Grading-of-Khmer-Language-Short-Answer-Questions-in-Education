@@ -58,8 +58,17 @@ import torch
 
 
 LLM_BACKBONES = {
-    "gemma4_e4b":  "google/gemma-4-E4B",
-    "qwen35_4b":   "Qwen/Qwen3.5-4B",
+    "gemma4_e4b":       "google/gemma-4-E4B",
+    "qwen35_4b":        "Qwen/Qwen3.5-4B",
+    "sealion_v45_e2b":  "aisingapore/Gemma-SEA-LION-v4.5-E2B-IT",
+}
+
+# Released-model names for the KhmerGrader family (base lineage disclosed in
+# docs/model_cards.md). Maps the internal model_key -> the name we claim.
+KHMERGRADER_NAMES = {
+    "qwen35_4b":       "Qwen-KhmerGrader-4B",
+    "gemma4_e4b":      "Gemma-KhmerGrader-4B",
+    "sealion_v45_e2b": "SEA-LION-KhmerGrader-E2B",
 }
 
 
@@ -79,7 +88,48 @@ def format_prompt(row, include_score: bool) -> str:
     return prompt
 
 
-def try_load_unsloth(model_name: str, max_seq_length: int = 1024):
+def _chat_renderer(tokenizer):
+    """Return the object that can render a chat template, or None.
+
+    Instruction-tuned reasoning models (Gemma 4 E4B/E2B, SEA-LION v4.5, Qwen 3.5)
+    carry a chat_template; rendering the grading task as a proper user turn (with
+    thinking disabled) is what makes them emit a bare integer instead of a chain
+    of reasoning tokens. Falls back to None for a plain base LM.
+    """
+    text_tok = get_text_tokenizer(tokenizer)
+    for cand in (text_tok, tokenizer):
+        if getattr(cand, "chat_template", None) and hasattr(cand, "apply_chat_template"):
+            return cand
+    return None
+
+
+def render_prompt_text(tokenizer, row, with_answer: bool) -> str:
+    """Prompt string for training/inference.
+
+    Uses the model chat template with reasoning disabled when present, else the
+    plain prompt (original behaviour). With completion-only training the assistant
+    turn is just the integer score, so prompt vs full differ only by that integer.
+    """
+    user = format_prompt(row, include_score=False)
+    renderer = _chat_renderer(tokenizer)
+    if renderer is not None:
+        msgs = [{"role": "user", "content": user}]
+        try:
+            text = renderer.apply_chat_template(
+                msgs, tokenize=False, add_generation_prompt=True, enable_thinking=False)
+        except TypeError:  # template does not accept enable_thinking
+            text = renderer.apply_chat_template(
+                msgs, tokenize=False, add_generation_prompt=True)
+        return text + (str(int(row["Student Score"])) if with_answer else "")
+    return user + (f" {int(row['Student Score'])}" if with_answer else "")
+
+
+# Markers a reasoning model may emit before the final answer; keep only the tail.
+_ANSWER_MARKERS = ("</think>", "<|channel|>final", "final answer", "Final answer",
+                   "answer:", "Answer:", "score:", "Score:")
+
+
+def try_load_unsloth(model_name: str, max_seq_length: int = 1024, lora: bool = True):
     try:
         from unsloth import FastLanguageModel
         model, tok = FastLanguageModel.from_pretrained(
@@ -88,25 +138,28 @@ def try_load_unsloth(model_name: str, max_seq_length: int = 1024):
             max_seq_length=max_seq_length,
             dtype=None,
         )
-        model = FastLanguageModel.get_peft_model(
-            model,
-            r=16,
-            target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
-                            "gate_proj", "up_proj", "down_proj"],
-            lora_alpha=16,
-            lora_dropout=0,
-            bias="none",
-            use_gradient_checkpointing="unsloth",
-            random_state=42,
-        )
-        print(f"  [loader] Unsloth OK for {model_name}")
+        if lora:
+            model = FastLanguageModel.get_peft_model(
+                model,
+                r=16,
+                target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
+                                "gate_proj", "up_proj", "down_proj"],
+                lora_alpha=16,
+                lora_dropout=0,
+                bias="none",
+                use_gradient_checkpointing="unsloth",
+                random_state=42,
+            )
+        else:
+            FastLanguageModel.for_inference(model)  # untuned base, zero-shot
+        print(f"  [loader] Unsloth OK for {model_name} (lora={lora})")
         return model, tok, "unsloth"
     except Exception as e:
         print(f"  [loader] Unsloth failed for {model_name}: {type(e).__name__}: {str(e)[:120]}")
         return None, None, None
 
 
-def try_load_hf(model_name: str, max_seq_length: int = 1024):
+def try_load_hf(model_name: str, max_seq_length: int = 1024, lora: bool = True):
     from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
     from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 
@@ -125,25 +178,26 @@ def try_load_hf(model_name: str, max_seq_length: int = 1024):
         trust_remote_code=True,
         device_map="auto",
     )
-    model = prepare_model_for_kbit_training(model)
-    lora_config = LoraConfig(
-        r=16,
-        lora_alpha=16,
-        target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
-                        "gate_proj", "up_proj", "down_proj"],
-        lora_dropout=0,
-        bias="none",
-        task_type="CAUSAL_LM",
-    )
-    model = get_peft_model(model, lora_config)
-    print(f"  [loader] HF+PEFT OK for {model_name}")
+    if lora:
+        model = prepare_model_for_kbit_training(model)
+        lora_config = LoraConfig(
+            r=16,
+            lora_alpha=16,
+            target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
+                            "gate_proj", "up_proj", "down_proj"],
+            lora_dropout=0,
+            bias="none",
+            task_type="CAUSAL_LM",
+        )
+        model = get_peft_model(model, lora_config)
+    print(f"  [loader] HF+PEFT OK for {model_name} (lora={lora})")
     return model, tok, "hf"
 
 
-def load_model(model_name: str, max_seq_length: int):
-    model, tok, path = try_load_unsloth(model_name, max_seq_length)
+def load_model(model_name: str, max_seq_length: int, lora: bool = True):
+    model, tok, path = try_load_unsloth(model_name, max_seq_length, lora=lora)
     if model is None:
-        model, tok, path = try_load_hf(model_name, max_seq_length)
+        model, tok, path = try_load_hf(model_name, max_seq_length, lora=lora)
     return model, tok, path
 
 
@@ -173,8 +227,8 @@ def tokenize_for_sft(rows, tokenizer, max_seq_length: int):
     eos_token = getattr(text_tok, "eos_token", None) or getattr(tokenizer, "eos_token", "") or ""
     samples = []
     for r in rows:
-        prompt = format_prompt(r, include_score=False)
-        full = format_prompt(r, include_score=True) + eos_token
+        prompt = render_prompt_text(tokenizer, r, with_answer=False)
+        full = render_prompt_text(tokenizer, r, with_answer=True) + eos_token
         # encode() returns a flat list of ints (never nested batch dim)
         ids = text_tok.encode(full, add_special_tokens=False)
         prompt_ids = text_tok.encode(prompt, add_special_tokens=False)
@@ -206,10 +260,13 @@ def collate_pad(features, pad_id: int):
 
 
 def generate_score(model, tokenizer, prompt: str, max_score: int, device):
-    """Greedy-decode 5 tokens, regex-parse first integer, clip to [0, max_score].
+    """Greedy-decode, strip any reasoning preamble, parse the integer, clip.
 
-    Uses the underlying text tokenizer to encode and decode — this avoids
-    multimodal processor wrappers that wrap input_ids with extra batch dims.
+    Decodes enough tokens (32) for a short reply like "The score is 3"; reasoning
+    is disabled at the prompt level (render_prompt_text), but if the model still
+    emits a thinking preamble we keep only the tail after a known answer marker and
+    then take the first integer there. Uses the underlying text tokenizer to avoid
+    multimodal processor wrappers that add batch dims to input_ids.
     """
     text_tok = get_text_tokenizer(tokenizer)
     pad_id = (getattr(text_tok, "pad_token_id", None)
@@ -227,18 +284,68 @@ def generate_score(model, tokenizer, prompt: str, max_score: int, device):
         out = model.generate(
             input_ids=ids_t,
             attention_mask=attn,
-            max_new_tokens=5,
+            max_new_tokens=32,
             do_sample=False,
             pad_token_id=pad_id,
         )
     new_tokens = out[0, ids_t.shape[1]:].tolist()
     text = text_tok.decode(new_tokens, skip_special_tokens=True)
-    m = re.search(r"\d+", text)
+    parsed = text
+    for marker in _ANSWER_MARKERS:
+        if marker in parsed:
+            parsed = parsed.split(marker)[-1]
+    m = re.search(r"\d+", parsed)
     if m:
-        score = int(m.group())
-        score = max(0, min(score, int(max_score)))
+        score = max(0, min(int(m.group()), int(max_score)))
         return score, text.strip()
     return int(max_score) // 2, text.strip()
+
+
+def predict_split(model, tokenizer, df_proc):
+    """Score every row of a preprocessed dataframe. Shared by fine-tuning's
+    per-epoch curve, final inference, and the zero-shot baseline."""
+    device = next(model.parameters()).device
+    rows = df_proc.to_dict("records")
+    scores_norm, scores_raw, raw_text = [], [], []
+    for r in rows:
+        prompt = render_prompt_text(tokenizer, r, with_answer=False)
+        pred_raw, raw = generate_score(model, tokenizer, prompt, int(r["Max Score"]), device)
+        scores_norm.append(pred_raw / max(int(r["Max Score"]), 1))
+        scores_raw.append(pred_raw)
+        raw_text.append(raw)
+    out = df_proc.copy()
+    out["pred_score"] = scores_norm
+    out["pred_raw"]   = scores_raw
+    out["llm_raw_output"] = raw_text
+    return out
+
+
+def llm_metrics(df_p):
+    """Standard metrics from a scored dataframe (module-level so zero-shot reuses it)."""
+    return evaluate_metrics(
+        pred_scores=df_p["pred_score"].to_numpy(),
+        true_labels=df_p["score_label"].to_numpy(),
+        max_scores=df_p["Max Score"].to_numpy(),
+        true_raw=df_p["Student Score"].to_numpy(),
+    )
+
+
+def write_predictions(df_p, out_dir, name):
+    """Write a predictions_<name>.csv in the shared 24-column-compatible schema."""
+    dfp = df_p.copy()
+    dfp["idx"] = np.arange(len(dfp))
+    dfp.rename(columns={"score_label": "true_label",
+                        "normalized_score": "true_score",
+                        "Student Score": "true_raw"}, inplace=True)
+    keep = ["idx", "Question", "Reference", "Answer", "Max Score",
+            "true_raw", "true_label", "true_score", "pred_score",
+            "pred_raw", "llm_raw_output"]
+    dfp = dfp[[c for c in keep if c in dfp.columns]]
+    dfp["pred_label"] = np.round(dfp["pred_score"] * 4).clip(0, 4).astype(int)
+    dfp["abs_error"]     = (dfp["pred_label"] - dfp["true_label"]).abs()
+    dfp["raw_abs_error"] = (dfp["pred_raw"] - dfp["true_raw"]).abs()
+    dfp.to_csv(os.path.join(out_dir, f"predictions_{name}.csv"),
+               index=False, encoding="utf-8-sig")
 
 
 def train_one_llm(model_key, prep, inp, train_df, val_df, test_df,
@@ -278,30 +385,7 @@ def train_one_llm(model_key, prep, inp, train_df, val_df, test_df,
         return collate_pad(features, pad_id)
 
     # ── helpers used both per-epoch (for the train-vs-test curve) and finally ──
-    def predict_split(df_proc):
-        device = next(model.parameters()).device
-        rows = df_proc.to_dict("records")
-        scores_norm, scores_raw, raw_text = [], [], []
-        for r in rows:
-            prompt = format_prompt(r, include_score=False)
-            pred_raw, raw = generate_score(model, tokenizer, prompt,
-                                           int(r["Max Score"]), device)
-            scores_norm.append(pred_raw / max(int(r["Max Score"]), 1))
-            scores_raw.append(pred_raw)
-            raw_text.append(raw)
-        out = df_proc.copy()
-        out["pred_score"] = scores_norm
-        out["pred_raw"]   = scores_raw
-        out["llm_raw_output"] = raw_text
-        return out
-
-    def compute_metrics(df_p):
-        return evaluate_metrics(
-            pred_scores=df_p["pred_score"].to_numpy(),
-            true_labels=df_p["score_label"].to_numpy(),
-            max_scores=df_p["Max Score"].to_numpy(),
-            true_raw=df_p["Student Score"].to_numpy(),
-        )
+    compute_metrics = llm_metrics  # module-level; alias keeps the curve code readable
 
     def _pseudo_loss(df_p):  # MSE on the normalized score (the training target)
         d = (df_p["pred_score"].to_numpy() - df_p["normalized_score"].to_numpy())
@@ -311,26 +395,38 @@ def train_one_llm(model_key, prep, inp, train_df, val_df, test_df,
     _sub = min(200, len(train_p))
     train_eval_src = train_p.sample(n=_sub, random_state=42)
     history = []
+    # Track the best LoRA adapter by VALIDATION QWK so the saved/published model is
+    # the best epoch, not the last one. Adapter weights are tiny, so we snapshot them
+    # in memory each time validation improves.
+    from peft import get_peft_model_state_dict
+    best = {"qwk": -1e9, "epoch": epochs, "state": None}
 
     from transformers import TrainerCallback
 
     class _CurveCallback(TrainerCallback):
-        """Evaluate train-subset & test each epoch → Alaoui-style train/test curve."""
+        """Per epoch: train-subset + val + test QWK (Alaoui-style curve), and keep
+        the best-by-val adapter for selection/publishing."""
         def on_epoch_end(self, a, state, control, **kw):
             try:
                 model.train(False)
-                tr = predict_split(train_eval_src)
-                te = predict_split(test_p)
-                tm, em = compute_metrics(tr), compute_metrics(te)
+                tr = predict_split(model, tokenizer, train_eval_src)
+                va = predict_split(model, tokenizer, val_p)
+                te = predict_split(model, tokenizer, test_p)
+                tm, vm, em = compute_metrics(tr), compute_metrics(va), compute_metrics(te)
                 ep = int(round(state.epoch)) if state.epoch else len(history) + 1
                 history.append({
                     "epoch": ep,
                     "train_loss": _pseudo_loss(tr), "test_loss": _pseudo_loss(te),
+                    "val_qwk": vm["qwk"],
                     **{f"train_{k}": tr_v for k, tr_v in tm.items()},
                     **{f"test_{k}":  te_v for k, te_v in em.items()},
                 })
+                if vm["qwk"] > best["qwk"]:
+                    best["qwk"], best["epoch"] = vm["qwk"], ep
+                    best["state"] = {k: v.detach().cpu().clone()
+                                     for k, v in get_peft_model_state_dict(model).items()}
                 print(f"  [{run_id}] epoch {ep}: "
-                      f"qwk(tr/te)={tm['qwk']:.3f}/{em['qwk']:.3f}")
+                      f"qwk(tr/va/te)={tm['qwk']:.3f}/{vm['qwk']:.3f}/{em['qwk']:.3f}")
             except Exception as e:  # never let curve logging kill training
                 print(f"  [{run_id}] curve eval skipped this epoch: {e}")
             finally:
@@ -349,13 +445,20 @@ def train_one_llm(model_key, prep, inp, train_df, val_df, test_df,
     train_time = time.time() - t0
     print(f"  [{run_id}] trained in {train_time:.1f}s")
 
+    # Restore the best-by-validation-QWK adapter (the model we keep, evaluate, and publish).
+    if best["state"] is not None:
+        from peft import set_peft_model_state_dict
+        set_peft_model_state_dict(model, best["state"])
+        print(f"  [{run_id}] restored best epoch {best['epoch']} (val_qwk={best['qwk']:.4f})")
+    best_epoch = best["epoch"]
+
     # Inference mode (use train(False) instead of .eval to dodge hook regex)
     model.train(False)
 
     print(f"  [{run_id}] inferencing on val + test + train...")
-    test_p  = predict_split(test_p)
-    val_p   = predict_split(val_p)
-    train_p_eval = predict_split(train_p)
+    test_p  = predict_split(model, tokenizer, test_p)
+    val_p   = predict_split(model, tokenizer, val_p)
+    train_p_eval = predict_split(model, tokenizer, train_p)
 
     train_m = compute_metrics(train_p_eval)
     val_m   = compute_metrics(val_p)
@@ -387,7 +490,7 @@ def train_one_llm(model_key, prep, inp, train_df, val_df, test_df,
     metrics_path = os.path.join(out_dir, "metrics.json")
     with open(metrics_path, "w", encoding="utf-8") as f:
         json.dump({"train": train_m, "val": val_m, "test": test_m,
-                   "best_epoch": epochs, "train_seconds": train_time,
+                   "best_epoch": best_epoch, "train_seconds": train_time,
                    "history": history},
                   f, indent=2, ensure_ascii=False)
 
@@ -400,13 +503,55 @@ def train_one_llm(model_key, prep, inp, train_df, val_df, test_df,
     except Exception as e:
         print(f"  [{run_id}] curve plot skipped: {e}")
 
+    # Save the best adapter + tokenizer (self-contained for a HuggingFace upload).
+    adapter_dir = os.path.join(out_dir, "lora_adapter")
     try:
-        model.save_pretrained(os.path.join(out_dir, "lora_adapter"))
+        model.save_pretrained(adapter_dir)
+        try:
+            tokenizer.save_pretrained(adapter_dir)
+        except Exception:
+            pass
+        print(f"  [{run_id}] saved best adapter -> {adapter_dir} "
+              f"(epoch {best_epoch}; upload this dir to HuggingFace)")
     except Exception as e:
         print(f"  [{run_id}] adapter save failed: {e}")
 
     return {"train": train_m, "val": val_m, "test": test_m,
-            "best_epoch": epochs, "seconds": train_time}
+            "best_epoch": best_epoch, "seconds": train_time}
+
+
+def run_zeroshot(model_key, val_df, test_df, run_id, max_seq_length):
+    """Evaluate the UNTUNED base model zero-shot on the same splits.
+
+    Anchors the fine-tuning gain claim ("QLoRA lifts QWK from X to Y") by
+    measuring the base model with no adapter. No training, no adapter saved.
+    """
+    model_name = LLM_BACKBONES[model_key]
+    print(f"\n  [{run_id}] zero-shot loading base {model_name}...")
+    model, tokenizer, loader = load_model(model_name, max_seq_length, lora=False)
+    model.train(False)
+
+    prep, inp = "clean", "qar"
+    test_p = predict_split(model, tokenizer, data.apply_preprocess(test_df, prep))
+    val_p  = predict_split(model, tokenizer, data.apply_preprocess(val_df,  prep))
+    test_m, val_m = llm_metrics(test_p), llm_metrics(val_p)
+    train_m = {k: 0.0 for k in test_m}  # no training: train columns are not meaningful
+
+    out_dir = os.path.join(C.RUNS_DIR, run_id)
+    os.makedirs(out_dir, exist_ok=True)
+    write_predictions(test_p, out_dir, "test")
+    write_predictions(val_p, out_dir, "val")
+    with open(os.path.join(out_dir, "config.json"), "w", encoding="utf-8") as f:
+        json.dump({"run_id": run_id, "model": model_key + "_zeroshot",
+                   "family": "llm", "experiment": "v08z_llm_zeroshot",
+                   "backbone": model_name, "preprocess": prep, "input": inp,
+                   "loader_path": loader, "max_seq_length": max_seq_length,
+                   "mode": "zeroshot"}, f, indent=2, ensure_ascii=False)
+    with open(os.path.join(out_dir, "metrics.json"), "w", encoding="utf-8") as f:
+        json.dump({"train": train_m, "val": val_m, "test": test_m,
+                   "best_epoch": 0, "train_seconds": 0.0, "history": []},
+                  f, indent=2, ensure_ascii=False)
+    return {"train": train_m, "val": val_m, "test": test_m, "best_epoch": 0, "seconds": 0.0}
 
 
 def main():
@@ -420,6 +565,8 @@ def main():
     ap.add_argument("--max_seq_length", type=int, default=1024)
     ap.add_argument("--smoke", action="store_true",
                     help="1 cell, 1 epoch, 50 train samples")
+    ap.add_argument("--zeroshot", action="store_true",
+                    help="evaluate the UNTUNED base model (no training) for the baseline")
     add_datasets_flag(ap)
     add_resume_flag(ap)
     args = ap.parse_args()
@@ -433,13 +580,16 @@ def main():
         models_to_run = models_to_run[:1]
         print(f"[smoke] datasets={args.datasets} models={models_to_run} epochs=1")
 
+    zs = args.zeroshot
     for ds in select_datasets(args.datasets):
         for model_key in models_to_run:
-            suffix = f"v08_llm_{model_key}"
+            suffix = (f"v08z_llm_{model_key}_zeroshot" if zs
+                      else f"v08_llm_{model_key}")
             dst = patch_config(ds["run_name"], ds["drop_zero"],
                                exp_suffix=suffix, raw_csv=ds["raw_csv"])
             importlib.reload(data)
-            banner(f"exp08 LLM {model_key}  {ds['label']}  epochs={args.epochs}  "
+            mode = "zero-shot" if zs else f"epochs={args.epochs}"
+            banner(f"exp08 LLM {model_key}  {ds['label']}  {mode}  "
                    f"resume={args.resume}", dst)
 
             if not args.resume:
@@ -455,7 +605,8 @@ def main():
                   f"val={len(val_df)} test={len(test_df)}")
 
             prep, inp = "clean", "qar"
-            run_id = f"{prep}_{inp}_{model_key}"
+            run_id = (f"zeroshot_{inp}_{model_key}" if zs
+                      else f"{prep}_{inp}_{model_key}")
 
             if args.resume and cell_already_done(run_id):
                 print(f"  [{run_id}] SKIP (already done)")
@@ -463,12 +614,16 @@ def main():
 
             try:
                 t0 = time.time()
-                result = train_one_llm(
-                    model_key, prep, inp,
-                    train_df, val_df, test_df, run_id,
-                    epochs=args.epochs, batch_size=args.batch_size, lr=args.lr,
-                    max_seq_length=args.max_seq_length,
-                )
+                if zs:
+                    result = run_zeroshot(model_key, val_df, test_df, run_id,
+                                          max_seq_length=args.max_seq_length)
+                else:
+                    result = train_one_llm(
+                        model_key, prep, inp,
+                        train_df, val_df, test_df, run_id,
+                        epochs=args.epochs, batch_size=args.batch_size, lr=args.lr,
+                        max_seq_length=args.max_seq_length,
+                    )
                 dt = time.time() - t0
                 trm, vm, tm = result["train"], result["val"], result["test"]
                 print(f"  [{run_id}] train_qwk={trm.get('qwk', 0):.4f} -> "
@@ -476,9 +631,10 @@ def main():
                       f"raw_w1={tm.get('raw_within1', 0):.4f}  ({dt:.1f}s)")
                 row = row_from_metrics(
                     run_id=run_id, prep=prep, inp=inp,
-                    model_id=model_key, family="llm",
+                    model_id=(model_key + "_zeroshot" if zs else model_key),
+                    family="llm",
                     train_m=trm, val_m=vm, test_m=tm,
-                    best_epoch=args.epochs, seconds=dt,
+                    best_epoch=result.get("best_epoch", 0), seconds=dt,
                 )
                 append_row(row)
             except Exception as e:

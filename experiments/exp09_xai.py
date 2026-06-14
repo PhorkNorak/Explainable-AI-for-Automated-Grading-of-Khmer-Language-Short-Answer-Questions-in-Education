@@ -269,26 +269,262 @@ def _build_bilstm(train_df, val_df, test_df, cfg, out_root, max_epochs=12):
 
 
 # ────────────────────────────────────────────────────────────────────────────
+# Encoder champion (GPU): re-fit the GTE dual encoder in-memory, like the BiLSTM
+# ────────────────────────────────────────────────────────────────────────────
+
+
+def _build_encoder(train_df, val_df, test_df, cfg, out_root, max_epochs=8):
+    """Re-fit the GTE dual-encoder champion in-memory (GPU) and expose predict_fn.
+
+    The champion ships no weights, so (like the BiLSTM) we re-fit on the same
+    split. Faithfulness probes the model's own behaviour, so a representative
+    re-fit suffices. Champion cell is input=ra with no max-score feature, so the
+    encoder is a plain regressor returning a normalized score in [0, 1] and fits
+    the uniform predict_fn(answer, reference) contract directly.
+    """
+    import torch
+    from torch.utils.data import DataLoader
+    from torch.optim import AdamW
+    import torch.nn as nn
+    from transformers import AutoTokenizer
+    from models.dual import DualEncoderScorer
+
+    np.random.seed(C.SEED); torch.manual_seed(C.SEED)
+    mode, fmt = cfg["preprocess"], cfg["input"]
+    backbone = C.TRANSFORMER_BACKBONES[cfg["backbone"]]
+    tokenizer = AutoTokenizer.from_pretrained(backbone, trust_remote_code=True)
+
+    train_p = data.apply_preprocess(train_df, mode)
+    val_p = data.apply_preprocess(val_df, mode)
+    test_p = data.apply_preprocess(test_df, mode)
+
+    train_loader = DataLoader(data.PairDataset(train_p, tokenizer, fmt),
+                              batch_size=C.TXFMR_BATCH, shuffle=True)
+    val_loader = DataLoader(data.PairDataset(val_p, tokenizer, fmt),
+                            batch_size=C.TXFMR_BATCH, shuffle=False)
+
+    device = C.DEVICE
+    model = DualEncoderScorer(backbone, max_feat_dim=0).to(device)
+    opt = AdamW([p for p in model.parameters() if p.requires_grad], lr=C.TXFMR_LR)
+    loss_fn = nn.MSELoss()
+    fkeys = ["input_ids_a", "attention_mask_a", "input_ids_b", "attention_mask_b"]
+
+    def _val_qwk():
+        model.train(False); ps = []
+        with torch.no_grad():
+            for batch in val_loader:
+                batch = {k: (v.to(device) if torch.is_tensor(v) else v) for k, v in batch.items()}
+                ps.append(model(**{k: batch[k] for k in fkeys}).detach().cpu().numpy())
+        return metrics(np.concatenate(ps), val_p["score_label"].values,
+                       max_scores=val_p["Max Score"].values,
+                       true_raw=val_p["Student Score"].values)["qwk"]
+
+    best_qwk, best_state, no_improve = -1e9, None, 0
+    for ep in range(1, max_epochs + 1):
+        model.train(True)
+        for batch in train_loader:
+            batch = {k: (v.to(device) if torch.is_tensor(v) else v) for k, v in batch.items()}
+            opt.zero_grad(set_to_none=True)
+            out = model(**{k: batch[k] for k in fkeys})
+            loss = loss_fn(out, batch["score"])
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad], 1.0)
+            opt.step()
+        vq = _val_qwk()
+        print(f"    [encoder] epoch {ep:2d}  val_qwk={vq:.3f}")
+        if vq > best_qwk:
+            best_qwk, no_improve = vq, 0
+            best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+        else:
+            no_improve += 1
+            if no_improve >= C.TXFMR_PATIENCE:
+                break
+    if best_state is not None:
+        model.load_state_dict(best_state)
+    model.train(False)
+
+    max_len = C.TXFMR_MAX_LEN
+
+    def _enc(text):
+        e = tokenizer(text, max_length=max_len, padding="max_length",
+                      truncation=True, return_tensors="pt")
+        return e["input_ids"].to(device), e["attention_mask"].to(device)
+
+    def predict_fn(answer, reference):
+        ia, ma = _enc(answer); ib, mb = _enc(reference)
+        with torch.no_grad():
+            out = model(ia, ma, ib, mb)
+        return float(out.reshape(-1)[0].item())
+
+    def explain(answer, reference):
+        return occlusion_importance(predict_fn, answer, reference, mode)
+
+    return predict_fn, explain, test_p, "occlusion"
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# LLM champion (GPU): load base + fine-tuned LoRA adapter, occlude the answer
+# ────────────────────────────────────────────────────────────────────────────
+
+
+def _load_llm_finetuned(model_key, dataset, adapter_path=None, max_seq_length=1024):
+    """Load the base model + the fine-tuned KhmerGrader LoRA adapter for inference.
+
+    Auto-discovers the adapter from the exp08 run dir or a champion dir; falls back
+    to the base model (with a warning) if none is found.
+    """
+    import glob
+    import importlib
+    L = importlib.import_module("exp08_llm_finetune")
+    base = L.LLM_BACKBONES[model_key]
+    if adapter_path is None:
+        cands = [os.path.join(_ROOT, f"results_{dataset}_v08_llm_{model_key}",
+                              "runs", f"clean_qar_{model_key}", "lora_adapter")]
+        cands += glob.glob(os.path.join(_ROOT, "results", "champions",
+                                        f"llm_clean_qar_{model_key}_*", "lora_adapter"))
+        adapter_path = next((p for p in cands if os.path.isdir(p)), None)
+    model, tok, _ = L.load_model(base, max_seq_length=max_seq_length, lora=False)
+    if adapter_path and os.path.isdir(adapter_path):
+        from peft import PeftModel
+        model = PeftModel.from_pretrained(model, adapter_path)
+        print(f"  [llm] loaded fine-tuned adapter: {adapter_path}")
+    else:
+        print("  [llm] WARNING: no fine-tuned adapter found; faithfulness will be "
+              "measured on the BASE model (set --llm-adapter to point at lora_adapter/)")
+    model.train(False)
+    return L, model, tok
+
+
+def run_llm_family(family, dataset, test_df, cfg, sample_n, fraction, out_root,
+                   adapter_path=None):
+    """LOO faithfulness for the fine-tuned LLM.
+
+    The LLM grades from a structured prompt (Question / Reference / Answer / Max),
+    so unlike the regressor pillars its score depends on max_score. We therefore
+    occlude only the STUDENT ANSWER, hold the question/reference/max fixed, and
+    build a per-instance predict_fn (capturing that row's question + max_score)
+    that returns a normalized score in [0, 1]. Aggregation matches faithfulness.py
+    (ERASER comprehensiveness/sufficiency + AOPC vs a random-removal baseline).
+    """
+    from xai.faithfulness import (comprehensiveness, sufficiency,
+                                  comprehensiveness_random, DEFAULT_KGRID)
+    t0 = time.time()
+    model_key = cfg.get("model", "qwen35_4b")
+    mode = cfg["preprocess"]
+    try:
+        L, model, tok = _load_llm_finetuned(model_key, dataset, adapter_path)
+    except Exception as e:
+        print(f"[exp09] llm load failed: {type(e).__name__}: {e}")
+        return None
+    device = next(model.parameters()).device
+
+    test_p = data.apply_preprocess(test_df, mode)
+
+    def score_norm(qproc, refproc, ansproc, max_score):
+        row = {"Question_proc": qproc, "Reference_proc": refproc,
+               "Answer_proc": ansproc, "Max Score": int(max_score), "Student Score": 0}
+        prompt = L.render_prompt_text(tok, row, with_answer=False)
+        raw, _ = L.generate_score(model, tok, prompt, int(max_score), device)
+        return raw / max(int(max_score), 1)
+
+    # Whole-test QWK consistency check (structured prompt, per-row max_score).
+    preds = [score_norm(str(r["Question_proc"]), str(r["Reference_proc"]),
+                        str(r["Answer_proc"]), r["Max Score"])
+             for _, r in test_p.iterrows()]
+    m = metrics(np.asarray(preds), test_p["score_label"].values,
+                max_scores=test_p["Max Score"].values,
+                true_raw=test_p["Student Score"].values)
+    qwk, acc = m["qwk"], m["accuracy"]
+    print(f"[exp09] llm champion on {dataset}: test_qwk={qwk:.4f} acc={acc:.4f}")
+
+    idxs = _sample_test(test_p, sample_n)
+    comp, suff, comp_rand, aopc_c, aopc_s, plaus = [], [], [], [], [], []
+    heat_dir = os.path.join(out_root, "heatmaps", family)
+    gallery_items, rendered = [], 0
+
+    for idx in idxs:
+        row = test_p.loc[idx]
+        Q, R, M = str(row["Question_proc"]), str(row["Reference_proc"]), int(row["Max Score"])
+
+        def pf(answer_proc, reference_proc, _Q=Q, _M=M):  # occlude answer, hold Q/R/Max
+            return score_norm(_Q, reference_proc, answer_proc, _M)
+
+        words, imp = occlusion_importance(pf, str(row["Answer_proc"]), R, mode)
+        if len(words) == 0:
+            continue
+        comp.append(comprehensiveness(pf, words, imp, R, mode, fraction))
+        suff.append(sufficiency(pf, words, imp, R, mode, fraction))
+        comp_rand.append(comprehensiveness_random(pf, words, R, mode, fraction))
+        aopc_c.append(float(np.mean([comprehensiveness(pf, words, imp, R, mode, k) for k in DEFAULT_KGRID])))
+        aopc_s.append(float(np.mean([sufficiency(pf, words, imp, R, mode, k) for k in DEFAULT_KGRID])))
+        plaus.append(plausibility(words, imp, R, mode, fraction))
+
+        if rendered < 8:  # heatmap over the ORIGINAL Khmer answer (readable tokens)
+            qraw = str(row["Question"])
+
+            def raw_pf(ans_text, ref_text, _q=qraw, _M=M):
+                return score_norm(preprocess.preprocess(_q, mode),
+                                  preprocess.preprocess(ref_text, mode),
+                                  preprocess.preprocess(ans_text, mode), _M)
+
+            rw, ri = occlusion_importance(raw_pf, str(row["Answer"]), str(row["Reference"]), "raw")
+            if len(rw) > 0:
+                title = (f"{family} | true={int(row['score_label'])} "
+                         f"pred={int(round(pf(str(row['Answer_proc']), R) * 4))} "
+                         f"| word attribution on original answer")
+                render_word_heatmap(rw, ri, os.path.join(heat_dir, f"sample_{rendered:02d}.png"), title)
+                render_word_heatmap_html(rw, ri, os.path.join(heat_dir, f"sample_{rendered:02d}.html"), title)
+                gallery_items.append({"words": rw, "importance": ri, "caption": title})
+                rendered += 1
+
+    if gallery_items:
+        render_gallery_html(gallery_items, os.path.join(heat_dir, f"{family}_gallery.html"),
+                            f"{family} — Khmer word-importance (occlusion, browser-shaped)")
+    if not comp:
+        return None
+    comp_m, rand_m = float(np.mean(comp)), float(np.mean(comp_rand))
+    return [{
+        "family": family,
+        "champion": "_".join(str(v) for v in cfg.values()),
+        "dataset": dataset,
+        "test_qwk": round(qwk, 4),
+        "test_accuracy": round(acc, 4),
+        "explainer": "occlusion",
+        "n_explained": len(comp),
+        "fraction": fraction,
+        "comprehensiveness": round(comp_m, 4),
+        "sufficiency": round(float(np.mean(suff)), 4),
+        "comprehensiveness_random": round(rand_m, 4),
+        "faithfulness_gap": round(comp_m - rand_m, 4),
+        "aopc_comprehensiveness": round(float(np.mean(aopc_c)), 4),
+        "aopc_sufficiency": round(float(np.mean(aopc_s)), 4),
+        "plausibility": round(float(np.mean(plaus)) if plaus else 0.0, 4),
+        "seconds": round(time.time() - t0, 1),
+    }]
+
+
+# ────────────────────────────────────────────────────────────────────────────
 # Family runner
 # ────────────────────────────────────────────────────────────────────────────
 
 
-def run_family(family, dataset, sample_n, fraction, out_root):
+def run_family(family, dataset, sample_n, fraction, out_root, adapter_path=None):
     cfg = CHAMPIONS[family]
     fmt = cfg["input"]
     df = data.load_dataframe()
     train_df, val_df, test_df = data.split_dataframe(df)
     t0 = time.time()
 
+    if family == "llm":
+        return run_llm_family(family, dataset, test_df, cfg, sample_n, fraction,
+                              out_root, adapter_path=adapter_path)
+
     if family == "classical":
         predict_fn, explain, test_p, explainer = _build_classical(train_df, test_df, cfg)
     elif family == "bilstm":
         predict_fn, explain, test_p, explainer = _build_bilstm(train_df, val_df, test_df, cfg, out_root)
-    elif family in ("encoder", "llm"):
-        print(f"[exp09] family '{family}' requires GPU/HPC "
-              f"(transformers+GPU for encoder, unsloth+peft for llm). "
-              f"See README 'XAI on HPC'. Skipping on this machine.")
-        return None
+    elif family == "encoder":
+        predict_fn, explain, test_p, explainer = _build_encoder(train_df, val_df, test_df, cfg, out_root)
     else:
         raise ValueError(family)
 
@@ -382,6 +618,9 @@ def main():
                     help="number of test answers to explain (balanced by score)")
     ap.add_argument("--fraction", type=float, default=0.2,
                     help="top-k fraction of words for faithfulness/plausibility")
+    ap.add_argument("--llm-adapter", default=None,
+                    help="path to the fine-tuned LoRA adapter dir (lora_adapter/); "
+                         "auto-discovered from the exp08 run if omitted")
     args = ap.parse_args()
 
     _set_dataset(args.dataset)
@@ -390,7 +629,13 @@ def main():
 
     rows = []
     for fam in args.families:
-        r = run_family(fam, args.dataset, args.sample, args.fraction, out_root)
+        try:
+            r = run_family(fam, args.dataset, args.sample, args.fraction, out_root,
+                           adapter_path=args.llm_adapter)
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            print(f"[exp09] family '{fam}' FAILED: {type(e).__name__}: {e}")
+            r = None
         if r:
             rows.extend(r)
 

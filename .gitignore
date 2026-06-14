@@ -27,8 +27,13 @@ Thumbs.db
 # Large model artifacts — regenerable from training
 *.safetensors
 *.bin
+*.joblib
 **/lora_adapter/
 **/checkpoints/
+
+# Publishable model bundles (uploaded to HuggingFace, not tracked in git):
+# weights exceed GitHub's 100 MB limit and belong on the Hub, not here.
+publish/
 
 # Auto-generated unsloth build cache
 unsloth_compiled_cache/
