@@ -1,5 +1,5 @@
-family,n,qwk,cohen_kappa,accuracy,f1_macro,raw_within1
-classical,135,0.795,0.466,0.63,0.418,0.711
-rnn,135,0.845,0.624,0.748,0.529,0.77
-encoder,178,0.82,0.623,0.73,0.541,0.77
-llm,137,0.843,0.708,0.803,0.78,0.832
+family,n,qwk,cohen_kappa,accuracy,precision_macro,recall_macro,f1_macro,raw_within1
+classical,135,0.795,0.466,0.63,0.478,0.421,0.418,0.711
+rnn,135,0.845,0.624,0.748,0.54,0.523,0.529,0.77
+encoder,178,0.82,0.623,0.73,0.548,0.55,0.541,0.77
+llm,137,0.843,0.708,0.803,0.79,0.784,0.78,0.832

@@ -36,7 +36,8 @@ CHAMPS = {
     "encoder":   "results/champions/encoder_clean_qar_dual_gte_maxfeat_1184",
     "llm":       "results/champions/llm_clean_qar_qwen35_4b_909",
 }
-METRICS = ["qwk", "cohen_kappa", "accuracy", "f1_macro", "raw_within1"]
+METRICS = ["qwk", "cohen_kappa", "accuracy",
+           "precision_macro", "recall_macro", "f1_macro", "raw_within1"]
 
 
 def _load_predictions(path):
@@ -57,7 +58,8 @@ def champion_metrics(out_dir):
         row.update({met: round(float(m[met]), 3) for met in METRICS})
         rows.append(row)
         print(f"  {fam:9s} QWK={row['qwk']} acc={row['accuracy']} "
-              f"kappa={row['cohen_kappa']} F1={row['f1_macro']} within1={row['raw_within1']}")
+              f"kappa={row['cohen_kappa']} P={row['precision_macro']} R={row['recall_macro']} "
+              f"F1={row['f1_macro']} within1={row['raw_within1']}")
     fields = ["family", "n"] + METRICS
     with open(os.path.join(out_dir, "champion_metrics.csv"), "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=fields); w.writeheader(); w.writerows(rows)
