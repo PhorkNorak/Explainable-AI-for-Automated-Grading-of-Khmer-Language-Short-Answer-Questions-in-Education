@@ -1,0 +1,169 @@
+
+========== exp01 TF-IDF baseline  1184 (full)  resume=True  ->  /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_full ==========
+  rows=1184 train=828 val=178 test=178
+  labels: {0: 14, 1: 153, 2: 327, 3: 191, 4: 499}
+  [raw_ra_tfidf_cos              ] SKIP (already done)
+  [raw_ra_tfidf_svr              ] SKIP (already done)
+  [raw_qar_tfidf_cos             ] SKIP (already done)
+  [raw_qar_tfidf_svr             ] SKIP (already done)
+  [clean_ra_tfidf_cos            ] SKIP (already done)
+  [clean_ra_tfidf_svr            ] SKIP (already done)
+  [clean_qar_tfidf_cos           ] SKIP (already done)
+  [clean_qar_tfidf_svr           ] SKIP (already done)
+  [segment_ra_tfidf_cos          ] SKIP (already done)
+  [segment_ra_tfidf_svr          ] SKIP (already done)
+  [segment_qar_tfidf_cos         ] SKIP (already done)
+  [segment_qar_tfidf_svr         ] SKIP (already done)
+
+========== exp01 TF-IDF baseline  909 (no 10C biology)  resume=True  ->  /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c ==========
+  rows=909 train=636 val=136 test=137
+  labels: {0: 14, 1: 133, 2: 205, 3: 121, 4: 436}
+  [raw_ra_tfidf_cos              ] SKIP (already done)
+  [raw_ra_tfidf_svr              ] SKIP (already done)
+  [raw_qar_tfidf_cos             ] SKIP (already done)
+  [raw_qar_tfidf_svr             ] SKIP (already done)
+  [clean_ra_tfidf_cos            ] SKIP (already done)
+  [clean_ra_tfidf_svr            ] SKIP (already done)
+  [clean_qar_tfidf_cos           ] SKIP (already done)
+  [clean_qar_tfidf_svr           ] SKIP (already done)
+  [segment_ra_tfidf_cos          ] SKIP (already done)
+  [segment_ra_tfidf_svr          ] SKIP (already done)
+  [segment_qar_tfidf_cos         ] SKIP (already done)
+  [segment_qar_tfidf_svr         ] SKIP (already done)
+
+========== exp01 TF-IDF baseline  895 (no 10C, drop 0)  resume=True  ->  /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_no0 ==========
+  rows=895 train=626 val=134 test=135
+  labels: {1: 133, 2: 205, 3: 121, 4: 436}
+  [raw_ra_tfidf_cos              ] SKIP (already done)
+  [raw_ra_tfidf_svr              ] SKIP (already done)
+  [raw_qar_tfidf_cos             ] SKIP (already done)
+  [raw_qar_tfidf_svr             ] SKIP (already done)
+  [clean_ra_tfidf_cos            ] SKIP (already done)
+  [clean_ra_tfidf_svr            ] SKIP (already done)
+  [clean_qar_tfidf_cos           ] SKIP (already done)
+  [clean_qar_tfidf_svr           ] SKIP (already done)
+  [segment_ra_tfidf_cos          ] SKIP (already done)
+  [segment_ra_tfidf_svr          ] SKIP (already done)
+  [segment_qar_tfidf_cos         ] SKIP (already done)
+| 2026-06-11 09:43:38,907 | [1;32mINFO[0m | khmer-nltk | Loaded model from /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/khmernltk/word_tokenize/sklearn_crf_ner_10000.sav |
+  [segment_qar_tfidf_svr         ] train_qwk=0.9039 -> test_qwk=0.8026  acc5=0.6444  raw_w1=0.7185  (33.8s)
+
+[*] exp01 done
+
+========== exp03 maxfeat-SVR  1184 (full)  resume=True  ->  /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_full_v03_maxfeat ==========
+  rows=1184 train=828 val=178 test=178
+  [raw_ra_tfidf_svr_maxfeat           ] train_qwk=0.8358 -> test_qwk=0.7711  acc5=0.6798  raw_w1=0.7079  (59.4s)
+  [raw_qar_tfidf_svr_maxfeat          ] train_qwk=0.8336 -> test_qwk=0.7719  acc5=0.6798  raw_w1=0.7022  (59.1s)
+  [clean_ra_tfidf_svr_maxfeat         ] train_qwk=0.8376 -> test_qwk=0.7711  acc5=0.6798  raw_w1=0.7022  (57.4s)
+  [clean_qar_tfidf_svr_maxfeat        ] train_qwk=0.8329 -> test_qwk=0.7750  acc5=0.6854  raw_w1=0.7079  (57.9s)
+| 2026-06-11 09:48:11,202 | [1;32mINFO[0m | khmer-nltk | Loaded model from /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/khmernltk/word_tokenize/sklearn_crf_ner_10000.sav |
+  [segment_ra_tfidf_svr_maxfeat       ] train_qwk=0.8358 -> test_qwk=0.7646  acc5=0.6742  raw_w1=0.7191  (59.7s)
+  [segment_qar_tfidf_svr_maxfeat      ] train_qwk=0.8315 -> test_qwk=0.7677  acc5=0.6742  raw_w1=0.7247  (58.8s)
+
+========== exp03 maxfeat-SVR  909 (no 10C biology)  resume=True  ->  /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_v03_maxfeat ==========
+  rows=909 train=636 val=136 test=137
+  [raw_ra_tfidf_svr_maxfeat           ] train_qwk=0.9129 -> test_qwk=0.8154  acc5=0.6642  raw_w1=0.6715  (29.7s)
+  [raw_qar_tfidf_svr_maxfeat          ] train_qwk=0.9086 -> test_qwk=0.8054  acc5=0.6569  raw_w1=0.6861  (30.2s)
+  [clean_ra_tfidf_svr_maxfeat         ] train_qwk=0.9128 -> test_qwk=0.8270  acc5=0.6861  raw_w1=0.6569  (30.4s)
+  [clean_qar_tfidf_svr_maxfeat        ] train_qwk=0.9112 -> test_qwk=0.7874  acc5=0.6496  raw_w1=0.6934  (31.2s)
+  [segment_ra_tfidf_svr_maxfeat       ] train_qwk=0.9109 -> test_qwk=0.8033  acc5=0.6642  raw_w1=0.6861  (35.1s)
+  [segment_qar_tfidf_svr_maxfeat      ] train_qwk=0.9073 -> test_qwk=0.7877  acc5=0.6496  raw_w1=0.7226  (35.7s)
+
+========== exp03 maxfeat-SVR  895 (no 10C, drop 0)  resume=True  ->  /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_no0_v03_maxfeat ==========
+  rows=895 train=626 val=134 test=135
+  [raw_ra_tfidf_svr_maxfeat           ] train_qwk=0.9036 -> test_qwk=0.8038  acc5=0.6444  raw_w1=0.6963  (30.2s)
+  [raw_qar_tfidf_svr_maxfeat          ] train_qwk=0.9023 -> test_qwk=0.8011  acc5=0.6370  raw_w1=0.6889  (29.7s)
+  [clean_ra_tfidf_svr_maxfeat         ] train_qwk=0.9038 -> test_qwk=0.7998  acc5=0.6370  raw_w1=0.6815  (30.7s)
+  [clean_qar_tfidf_svr_maxfeat        ] train_qwk=0.9024 -> test_qwk=0.8062  acc5=0.6444  raw_w1=0.7037  (30.6s)
+  [segment_ra_tfidf_svr_maxfeat       ] train_qwk=0.9051 -> test_qwk=0.7946  acc5=0.6296  raw_w1=0.7111  (35.0s)
+  [segment_qar_tfidf_svr_maxfeat      ] train_qwk=0.9032 -> test_qwk=0.8026  acc5=0.6444  raw_w1=0.7185  (34.4s)
+
+[*] exp03 done
+
+========== exp04 bucket-SVR  1184 (full)  resume=True  ->  /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_full_v04_bucket ==========
+  rows=1184 train=828 val=178 test=178
+  [raw_ra_tfidf_svr_bucket            ] used_buckets=[5, 8, 10, 12, 15]  train_qwk=0.8299 -> test_qwk=0.7455  acc5=0.6404  raw_w1=0.6854  (39.8s)
+  [raw_qar_tfidf_svr_bucket           ] used_buckets=[5, 8, 10, 12, 15]  train_qwk=0.8336 -> test_qwk=0.7496  acc5=0.6517  raw_w1=0.6854  (40.0s)
+  [clean_ra_tfidf_svr_bucket          ] used_buckets=[5, 8, 10, 12, 15]  train_qwk=0.8352 -> test_qwk=0.7654  acc5=0.6854  raw_w1=0.6910  (40.5s)
+  [clean_qar_tfidf_svr_bucket         ] used_buckets=[5, 8, 10, 12, 15]  train_qwk=0.8282 -> test_qwk=0.7562  acc5=0.6629  raw_w1=0.6854  (40.2s)
+| 2026-06-11 09:59:18,149 | [1;32mINFO[0m | khmer-nltk | Loaded model from /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/khmernltk/word_tokenize/sklearn_crf_ner_10000.sav |
+  [segment_ra_tfidf_svr_bucket        ] used_buckets=[5, 8, 10, 12, 15]  train_qwk=0.8350 -> test_qwk=0.7729  acc5=0.6854  raw_w1=0.6966  (41.9s)
+  [segment_qar_tfidf_svr_bucket       ] used_buckets=[5, 8, 10, 12, 15]  train_qwk=0.8257 -> test_qwk=0.7558  acc5=0.6685  raw_w1=0.6966  (42.1s)
+
+========== exp04 bucket-SVR  909 (no 10C biology)  resume=True  ->  /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_v04_bucket ==========
+  rows=909 train=636 val=136 test=137
+  [raw_ra_tfidf_svr_bucket            ] used_buckets=[5, 10, 15]  train_qwk=0.9019 -> test_qwk=0.7886  acc5=0.6277  raw_w1=0.6642  (26.5s)
+  [raw_qar_tfidf_svr_bucket           ] used_buckets=[5, 10, 15]  train_qwk=0.9032 -> test_qwk=0.7833  acc5=0.6350  raw_w1=0.6861  (26.4s)
+  [clean_ra_tfidf_svr_bucket          ] used_buckets=[5, 10, 15]  train_qwk=0.9088 -> test_qwk=0.7920  acc5=0.6350  raw_w1=0.6496  (26.2s)
+  [clean_qar_tfidf_svr_bucket         ] used_buckets=[5, 10, 15]  train_qwk=0.9098 -> test_qwk=0.7820  acc5=0.6277  raw_w1=0.6788  (26.3s)
+  [segment_ra_tfidf_svr_bucket        ] used_buckets=[5, 10, 15]  train_qwk=0.9110 -> test_qwk=0.8114  acc5=0.6496  raw_w1=0.6861  (29.3s)
+  [segment_qar_tfidf_svr_bucket       ] used_buckets=[5, 10, 15]  train_qwk=0.9091 -> test_qwk=0.7877  acc5=0.6496  raw_w1=0.7080  (29.4s)
+
+========== exp04 bucket-SVR  895 (no 10C, drop 0)  resume=True  ->  /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_no0_v04_bucket ==========
+  rows=895 train=626 val=134 test=135
+  [raw_ra_tfidf_svr_bucket            ] used_buckets=[5, 10, 15]  train_qwk=0.8942 -> test_qwk=0.7825  acc5=0.5852  raw_w1=0.6519  (24.4s)
+  [raw_qar_tfidf_svr_bucket           ] used_buckets=[5, 10, 15]  train_qwk=0.8935 -> test_qwk=0.7759  acc5=0.5926  raw_w1=0.6815  (24.5s)
+  [clean_ra_tfidf_svr_bucket          ] used_buckets=[5, 10, 15]  train_qwk=0.8978 -> test_qwk=0.7944  acc5=0.6074  raw_w1=0.6370  (24.9s)
+  [clean_qar_tfidf_svr_bucket         ] used_buckets=[5, 10, 15]  train_qwk=0.8957 -> test_qwk=0.7733  acc5=0.5852  raw_w1=0.6296  (24.7s)
+  [segment_ra_tfidf_svr_bucket        ] used_buckets=[5, 10, 15]  train_qwk=0.9046 -> test_qwk=0.8063  acc5=0.6296  raw_w1=0.6963  (28.4s)
+  [segment_qar_tfidf_svr_bucket       ] used_buckets=[5, 10, 15]  train_qwk=0.8979 -> test_qwk=0.7893  acc5=0.6148  raw_w1=0.6963  (28.5s)
+
+[*] exp04 done
+
+========== exp02 calibrate  source=v01  1184 (full)  ->  /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_full_v02_calibrated ==========
+  [clean_qar_tfidf_cos           ] cuts=[0.01, 0.21, 0.58, 0.8]  test_qwk=0.4973  acc5=0.4213
+  [clean_qar_tfidf_svr           ] cuts=[0.33, 0.47, 0.625, 0.79]  test_qwk=0.7697  acc5=0.6573
+  [clean_ra_tfidf_cos            ] cuts=[0.01, 0.27, 0.53, 0.78]  test_qwk=0.5201  acc5=0.4213
+  [clean_ra_tfidf_svr            ] cuts=[0.4, 0.43, 0.72, 0.81]  test_qwk=0.7783  acc5=0.6236
+  [raw_qar_tfidf_cos             ] cuts=[0.01, 0.03, 0.54, 0.79]  test_qwk=0.4691  acc5=0.4157
+  [raw_qar_tfidf_svr             ] cuts=[0.34, 0.47, 0.625, 0.78]  test_qwk=0.7739  acc5=0.6404
+  [raw_ra_tfidf_cos              ] cuts=[0.01, 0.02, 0.52, 0.79]  test_qwk=0.4626  acc5=0.4382
+  [raw_ra_tfidf_svr              ] cuts=[0.4, 0.43, 0.7, 0.78]  test_qwk=0.7861  acc5=0.6404
+  [segment_qar_tfidf_cos         ] cuts=[0.01, 0.26, 0.66, 0.85]  test_qwk=0.4661  acc5=0.4101
+  [segment_qar_tfidf_svr         ] cuts=[0.35, 0.46, 0.65, 0.78]  test_qwk=0.7845  acc5=0.6854
+  [segment_ra_tfidf_cos          ] cuts=[0.01, 0.4, 0.82, 0.83]  test_qwk=0.4665  acc5=0.5000
+  [segment_ra_tfidf_svr          ] cuts=[0.39, 0.43, 0.69, 0.81]  test_qwk=0.7904  acc5=0.6517
+
+========== exp02 calibrate  source=v01  909 (no 10C biology)  ->  /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_v02_calibrated ==========
+  [clean_qar_tfidf_cos           ] cuts=[0.01, 0.3, 0.5, 0.75]  test_qwk=0.5330  acc5=0.4380
+  [clean_qar_tfidf_svr           ] cuts=[0.125, 0.48, 0.72, 0.73]  test_qwk=0.8413  acc5=0.7883
+  [clean_ra_tfidf_cos            ] cuts=[0.01, 0.3, 0.44, 0.76]  test_qwk=0.5327  acc5=0.4453
+  [clean_ra_tfidf_svr            ] cuts=[0.125, 0.49, 0.69, 0.72]  test_qwk=0.8201  acc5=0.7737
+  [raw_qar_tfidf_cos             ] cuts=[0.01, 0.28, 0.48, 0.76]  test_qwk=0.5301  acc5=0.4234
+  [raw_qar_tfidf_svr             ] cuts=[0.125, 0.47, 0.61, 0.81]  test_qwk=0.8327  acc5=0.7372
+  [raw_ra_tfidf_cos              ] cuts=[0.01, 0.29, 0.43, 0.76]  test_qwk=0.5475  acc5=0.4453
+  [raw_ra_tfidf_svr              ] cuts=[0.125, 0.48, 0.7, 0.81]  test_qwk=0.8074  acc5=0.7445
+  [segment_qar_tfidf_cos         ] cuts=[0.01, 0.38, 0.6, 0.84]  test_qwk=0.4901  acc5=0.4307
+  [segment_qar_tfidf_svr         ] cuts=[0.125, 0.46, 0.68, 0.71]  test_qwk=0.8238  acc5=0.7883
+  [segment_ra_tfidf_cos          ] cuts=[0.01, 0.35, 0.48, 0.86]  test_qwk=0.5148  acc5=0.4453
+  [segment_ra_tfidf_svr          ] cuts=[0.125, 0.48, 0.625, 0.7]  test_qwk=0.8349  acc5=0.7664
+
+========== exp02 calibrate  source=v01  895 (no 10C, drop 0)  ->  /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_no0_v02_calibrated ==========
+  [clean_qar_tfidf_cos           ] cuts=[0.01, 0.28, 0.57, 0.74]  test_qwk=0.5375  acc5=0.4889
+  [clean_qar_tfidf_svr           ] cuts=[0.01, 0.47, 0.67, 0.82]  test_qwk=0.8402  acc5=0.7185
+  [clean_ra_tfidf_cos            ] cuts=[0.01, 0.29, 0.59, 0.76]  test_qwk=0.5543  acc5=0.5037
+  [clean_ra_tfidf_svr            ] cuts=[0.01, 0.47, 0.63, 0.81]  test_qwk=0.8376  acc5=0.7407
+  [raw_qar_tfidf_cos             ] cuts=[0.01, 0.27, 0.56, 0.72]  test_qwk=0.5331  acc5=0.4815
+  [raw_qar_tfidf_svr             ] cuts=[0.01, 0.46, 0.67, 0.82]  test_qwk=0.8427  acc5=0.7259
+  [raw_ra_tfidf_cos              ] cuts=[0.01, 0.29, 0.38, 0.75]  test_qwk=0.5394  acc5=0.4444
+  [raw_ra_tfidf_svr              ] cuts=[0.01, 0.47, 0.625, 0.81]  test_qwk=0.8461  acc5=0.7407
+  [segment_qar_tfidf_cos         ] cuts=[0.01, 0.33, 0.68, 0.81]  test_qwk=0.5340  acc5=0.5259
+  [segment_qar_tfidf_svr         ] cuts=[0.01, 0.5, 0.68, 0.78]  test_qwk=0.8284  acc5=0.7111
+  [segment_ra_tfidf_cos          ] cuts=[0.01, 0.34, 0.49, 0.84]  test_qwk=0.5349  acc5=0.4593
+  [segment_ra_tfidf_svr          ] cuts=[0.01, 0.49, 0.67, 0.79]  test_qwk=0.8470  acc5=0.7481
+
+[*] exp02 done
+=== champion point metrics (random-split predictions) ===
+  classical QWK=0.795 acc=0.63 kappa=0.466 F1=0.418 within1=0.711
+  rnn       QWK=0.845 acc=0.748 kappa=0.624 F1=0.529 within1=0.77
+  encoder   QWK=0.82 acc=0.73 kappa=0.623 F1=0.541 within1=0.77
+  llm       QWK=0.842 acc=0.839 kappa=0.766 F1=0.837 within1=0.788
+
+=== random vs unseen-question split (classical champion, multi-seed) ===
+| 2026-06-11 10:06:33,439 | [1;32mINFO[0m | khmer-nltk | Loaded model from /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/khmernltk/word_tokenize/sklearn_crf_ner_10000.sav |
+  classical [random  ] QWK mean=0.759 +/- 0.041
+  classical [question] QWK mean=0.354 +/- 0.106
+  >>> leakage gap (random - unseen-question) = +0.405 QWK
+
+[exp10] wrote results_stats/ -> champion_metrics.csv, split_compare.csv
+  full       old QWK=0.7711  new QWK=0.7741  delta=+0.0031

@@ -1,0 +1,2 @@
+run_id,preprocess,input,model,family,train_qwk,train_accuracy,train_adjacent_accuracy,train_mae,train_raw_exact,train_raw_within1,train_raw_mae,train_pct_mae,test_qwk,test_accuracy,test_adjacent_accuracy,test_mae,test_raw_exact,test_raw_within1,test_raw_mae,test_pct_mae,val_qwk,best_epoch,seconds
+ensemble_top3,mixed,mixed,ensemble_top3,ensemble_v07,0.9293,0.8302,0.9890,0.1808,0.5456,0.8648,0.6682,5.4588,0.8256,0.7445,0.9562,0.3212,0.5328,0.7664,1.1460,8.5462,0.9126,,0.6

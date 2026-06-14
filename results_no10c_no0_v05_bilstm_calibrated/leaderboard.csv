@@ -1,0 +1,7 @@
+run_id,preprocess,input,model,family,train_qwk,train_accuracy,train_adjacent_accuracy,train_mae,train_raw_exact,train_raw_within1,train_raw_mae,train_pct_mae,test_qwk,test_accuracy,test_adjacent_accuracy,test_mae,test_raw_exact,test_raw_within1,test_raw_mae,test_pct_mae,val_qwk,best_epoch,seconds
+clean_qar_bilstm,clean,qar,bilstm,bilstm,0.8644,0.7109,0.9712,0.3211,0.4553,0.7684,0.9968,8.0861,0.8178,0.6889,0.9259,0.3852,0.3926,0.7037,1.3259,10.2346,0.7441,,0.6
+clean_ra_bilstm,clean,ra,bilstm,bilstm,0.7732,0.5958,0.9409,0.4728,0.4042,0.6645,1.3466,10.9109,0.7635,0.6148,0.9111,0.4741,0.4148,0.6444,1.4148,10.9259,0.7619,,0.6
+raw_qar_bilstm,raw,qar,bilstm,bilstm,0.8557,0.7364,0.9681,0.2987,0.4217,0.7300,1.1118,9.2003,0.7834,0.6741,0.9259,0.4074,0.4667,0.7111,1.3333,10.5556,0.7315,,0.6
+raw_ra_bilstm,raw,ra,bilstm,bilstm,0.8717,0.7476,0.9728,0.2827,0.5208,0.8083,0.8291,6.7749,0.7953,0.6963,0.9333,0.3778,0.5111,0.7185,1.1852,9.0494,0.7931,,0.4
+segment_qar_bilstm,segment,qar,bilstm,bilstm,0.8163,0.6422,0.9489,0.4185,0.5000,0.7556,1.1310,9.0379,0.7125,0.6519,0.8667,0.5037,0.5185,0.7037,1.4222,10.8272,0.7284,,0.6
+segment_ra_bilstm,segment,ra,bilstm,bilstm,0.8815,0.7668,0.9792,0.2572,0.5000,0.7604,0.9569,7.7387,0.7896,0.7111,0.9259,0.3704,0.4593,0.7037,1.3037,10.2346,0.7951,,0.7

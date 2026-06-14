@@ -44,3 +44,10 @@ unsloth_compiled_cache/
 # are not tracked (they were ~250 MB across the grid).
 **/predictions_train.csv
 **/predictions_val.csv
+.hfcache/
+publish/
+*.joblib
+*.safetensors
+*.bin
+*.pt
+**/lora_adapter/

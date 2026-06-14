@@ -1,0 +1,7 @@
+run_id,preprocess,input,model,family,train_qwk,train_accuracy,train_adjacent_accuracy,train_mae,train_raw_exact,train_raw_within1,train_raw_mae,train_pct_mae,test_qwk,test_accuracy,test_adjacent_accuracy,test_mae,test_raw_exact,test_raw_within1,test_raw_mae,test_pct_mae,val_qwk,best_epoch,seconds
+raw_ra_tfidf_svr_bucket,raw,ra,tfidf_svr_bucket,classical_v04,0.9019,0.7626,0.9953,0.2421,0.1698,0.8475,1.0094,9.9195,0.7886,0.6277,0.9562,0.4161,0.1533,0.6642,1.5693,13.8113,0.8110,,26.5
+raw_qar_tfidf_svr_bucket,raw,qar,tfidf_svr_bucket,classical_v04,0.9032,0.7736,0.9921,0.2343,0.2296,0.8412,0.9638,8.9761,0.7833,0.6350,0.9489,0.4161,0.1752,0.6861,1.5182,13.4645,0.8291,,26.4
+clean_ra_tfidf_svr_bucket,clean,ra,tfidf_svr_bucket,classical_v04,0.9088,0.7830,0.9937,0.2233,0.2421,0.8412,0.9450,8.6839,0.7920,0.6350,0.9562,0.4088,0.2117,0.6496,1.5182,12.8867,0.8286,,26.2
+clean_qar_tfidf_svr_bucket,clean,qar,tfidf_svr_bucket,classical_v04,0.9098,0.7893,0.9921,0.2186,0.2075,0.8412,0.9921,9.4006,0.7820,0.6277,0.9489,0.4234,0.1606,0.6788,1.5620,13.9451,0.8442,,26.3
+segment_ra_tfidf_svr_bucket,segment,ra,tfidf_svr_bucket,classical_v04,0.9110,0.7909,0.9921,0.2170,0.2469,0.8443,0.9465,8.7586,0.8114,0.6496,0.9635,0.3869,0.2044,0.6861,1.4891,12.8319,0.8373,,29.3
+segment_qar_tfidf_svr_bucket,segment,qar,tfidf_svr_bucket,classical_v04,0.9091,0.7909,0.9906,0.2186,0.2720,0.8396,0.9403,8.5527,0.7877,0.6496,0.9562,0.4015,0.2628,0.7080,1.4015,11.8135,0.8557,,29.4

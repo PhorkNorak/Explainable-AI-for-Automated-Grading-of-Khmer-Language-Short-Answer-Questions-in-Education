@@ -1,0 +1,16 @@
+{
+  "run_id": "clean_qar_bilstm",
+  "model": "bilstm",
+  "family": "bilstm",
+  "preprocess": "clean",
+  "input": "qar",
+  "vocab_size": 96,
+  "max_feat": false,
+  "experiment": "v02_threshold_calibration",
+  "calibrated_cuts": [
+    0.47000000000000003,
+    0.49,
+    0.59,
+    0.77
+  ]
+}

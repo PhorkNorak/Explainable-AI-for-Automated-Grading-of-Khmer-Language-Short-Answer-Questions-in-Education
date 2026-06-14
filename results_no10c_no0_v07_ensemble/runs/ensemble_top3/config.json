@@ -1,0 +1,40 @@
+{
+  "run_id": "ensemble_top3",
+  "model": "ensemble",
+  "family": "ensemble_v07",
+  "preprocess": "mixed",
+  "input": "mixed",
+  "experiment": "v07_ensemble",
+  "top_k": 3,
+  "weights": [
+    0.36750251047818466,
+    0.3352009322779012,
+    0.2972965572439142
+  ],
+  "calibrated_cuts": [
+    0.125,
+    0.375,
+    0.68,
+    0.8400000000000001
+  ],
+  "chosen": [
+    {
+      "experiment": "v06_transformer",
+      "run_id": "segment_ra_dual_gte",
+      "val_qwk": 0.8463,
+      "test_qwk": 0.8369
+    },
+    {
+      "experiment": "v06_transformer",
+      "run_id": "segment_ra_cross_gte",
+      "val_qwk": 0.8417,
+      "test_qwk": 0.8345
+    },
+    {
+      "experiment": "v03b_maxfeat_neural",
+      "run_id": "segment_ra_dual_xlmr_maxfeat",
+      "val_qwk": 0.8357,
+      "test_qwk": 0.8336
+    }
+  ]
+}

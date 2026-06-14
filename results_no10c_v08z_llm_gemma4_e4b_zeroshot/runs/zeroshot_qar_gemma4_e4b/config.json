@@ -1,0 +1,12 @@
+{
+  "run_id": "zeroshot_qar_gemma4_e4b",
+  "model": "gemma4_e4b_zeroshot",
+  "family": "llm",
+  "experiment": "v08z_llm_zeroshot",
+  "backbone": "google/gemma-4-E4B",
+  "preprocess": "clean",
+  "input": "qar",
+  "loader_path": "unsloth",
+  "max_seq_length": 1024,
+  "mode": "zeroshot"
+}

@@ -1,0 +1,16 @@
+{
+  "run_id": "raw_ra_dual_gte",
+  "model": "dual_gte",
+  "family": "dual",
+  "backbone": "Alibaba-NLP/gte-multilingual-base",
+  "preprocess": "raw",
+  "input": "ra",
+  "max_feat": false,
+  "experiment": "v02_threshold_calibration",
+  "calibrated_cuts": [
+    0.05,
+    0.37,
+    0.68,
+    0.875
+  ]
+}

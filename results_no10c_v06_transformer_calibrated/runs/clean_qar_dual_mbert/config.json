@@ -1,0 +1,16 @@
+{
+  "run_id": "clean_qar_dual_mbert",
+  "model": "dual_mbert",
+  "family": "dual",
+  "backbone": "bert-base-multilingual-cased",
+  "preprocess": "clean",
+  "input": "qar",
+  "max_feat": false,
+  "experiment": "v02_threshold_calibration",
+  "calibrated_cuts": [
+    0.17,
+    0.41000000000000003,
+    0.63,
+    0.67
+  ]
+}

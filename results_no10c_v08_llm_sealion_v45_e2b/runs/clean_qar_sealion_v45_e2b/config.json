@@ -1,0 +1,14 @@
+{
+  "run_id": "clean_qar_sealion_v45_e2b",
+  "model": "sealion_v45_e2b",
+  "family": "llm",
+  "experiment": "v08_llm",
+  "backbone": "aisingapore/Gemma-SEA-LION-v4.5-E2B-IT",
+  "preprocess": "clean",
+  "input": "qar",
+  "epochs": 7,
+  "batch_size": 4,
+  "lr": 0.0002,
+  "loader_path": "unsloth",
+  "max_seq_length": 1024
+}

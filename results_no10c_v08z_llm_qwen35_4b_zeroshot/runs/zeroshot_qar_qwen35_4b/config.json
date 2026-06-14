@@ -1,0 +1,12 @@
+{
+  "run_id": "zeroshot_qar_qwen35_4b",
+  "model": "qwen35_4b_zeroshot",
+  "family": "llm",
+  "experiment": "v08z_llm_zeroshot",
+  "backbone": "Qwen/Qwen3.5-4B",
+  "preprocess": "clean",
+  "input": "qar",
+  "loader_path": "unsloth",
+  "max_seq_length": 1024,
+  "mode": "zeroshot"
+}

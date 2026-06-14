@@ -1,0 +1,16 @@
+{
+  "run_id": "clean_ra_dual_mbert_maxfeat",
+  "model": "dual_mbert_maxfeat",
+  "family": "dual_maxfeat",
+  "backbone": "bert-base-multilingual-cased",
+  "preprocess": "clean",
+  "input": "ra",
+  "max_feat": true,
+  "experiment": "v02_threshold_calibration",
+  "calibrated_cuts": [
+    0.19,
+    0.52,
+    0.68,
+    0.75
+  ]
+}

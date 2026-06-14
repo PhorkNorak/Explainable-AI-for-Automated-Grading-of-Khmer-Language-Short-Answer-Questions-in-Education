@@ -1,0 +1,16 @@
+{
+  "run_id": "raw_qar_cross_xlmr",
+  "model": "cross_xlmr",
+  "family": "cross",
+  "backbone": "xlm-roberta-base",
+  "preprocess": "raw",
+  "input": "qar",
+  "max_feat": false,
+  "experiment": "v02_threshold_calibration",
+  "calibrated_cuts": [
+    0.16,
+    0.41000000000000003,
+    0.6,
+    0.86
+  ]
+}

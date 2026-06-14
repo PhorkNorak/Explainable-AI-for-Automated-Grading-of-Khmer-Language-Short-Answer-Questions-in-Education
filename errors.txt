@@ -1,0 +1,287 @@
+5301-  [clean_qar_cross_xlmr_maxfeat  ] cuts=[0.125, 0.45, 0.64, 0.875]  test_qwk=0.7418  acc5=0.6861
+5302-  [clean_qar_dual_gte_maxfeat    ] cuts=[0.125, 0.375, 0.625, 0.87]  test_qwk=0.8374  acc5=0.7591
+5303:  [clean_qar_dual_mbert_maxfeat  ] FAILED: [Errno 2] No such file or directory: '/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_v03b_maxfeat_neural/runs/clean_qar_dual_mbert_maxfeat/predictions_val.csv'
+5304:  [clean_qar_dual_xlmr_maxfeat   ] FAILED: [Errno 2] No such file or directory: '/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_v03b_maxfeat_neural/runs/clean_qar_dual_xlmr_maxfeat/predictions_val.csv'
+5305-  [clean_ra_bilstm_maxfeat       ] cuts=[0.07, 0.38, 0.77, 0.875]  test_qwk=0.6849  acc5=0.6496
+5306:  [clean_ra_cross_gte_maxfeat    ] FAILED: [Errno 2] No such file or directory: '/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_v03b_maxfeat_neural/runs/clean_ra_cross_gte_maxfeat/predictions_val.csv'
+5307:  [clean_ra_cross_mbert_maxfeat  ] FAILED: [Errno 2] No such file or directory: '/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_v03b_maxfeat_neural/runs/clean_ra_cross_mbert_maxfeat/predictions_val.csv'
+5308:  [clean_ra_cross_xlmr_maxfeat   ] FAILED: [Errno 2] No such file or directory: '/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_v03b_maxfeat_neural/runs/clean_ra_cross_xlmr_maxfeat/predictions_val.csv'
+5309:  [clean_ra_dual_gte_maxfeat     ] FAILED: [Errno 2] No such file or directory: '/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_v03b_maxfeat_neural/runs/clean_ra_dual_gte_maxfeat/predictions_val.csv'
+5310:  [clean_ra_dual_mbert_maxfeat   ] FAILED: [Errno 2] No such file or directory: '/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_v03b_maxfeat_neural/runs/clean_ra_dual_mbert_maxfeat/predictions_val.csv'
+5311:  [clean_ra_dual_xlmr_maxfeat    ] FAILED: [Errno 2] No such file or directory: '/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_v03b_maxfeat_neural/runs/clean_ra_dual_xlmr_maxfeat/predictions_val.csv'
+5312-  [raw_qar_bilstm_maxfeat        ] cuts=[0.125, 0.49, 0.67, 0.79]  test_qwk=0.7364  acc5=0.6715
+5313:  [raw_qar_cross_gte_maxfeat     ] FAILED: [Errno 2] No such file or directory: '/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_v03b_maxfeat_neural/runs/raw_qar_cross_gte_maxfeat/predictions_val.csv'
+5314:  [raw_qar_cross_mbert_maxfeat   ] FAILED: [Errno 2] No such file or directory: '/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_v03b_maxfeat_neural/runs/raw_qar_cross_mbert_maxfeat/predictions_val.csv'
+5315:  [raw_qar_cross_xlmr_maxfeat    ] FAILED: [Errno 2] No such file or directory: '/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_v03b_maxfeat_neural/runs/raw_qar_cross_xlmr_maxfeat/predictions_val.csv'
+5316:  [raw_qar_dual_gte_maxfeat      ] FAILED: [Errno 2] No such file or directory: '/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_v03b_maxfeat_neural/runs/raw_qar_dual_gte_maxfeat/predictions_val.csv'
+5317-  [raw_qar_dual_mbert_maxfeat    ] cuts=[0.19, 0.37, 0.76, 0.88]  test_qwk=0.6624  acc5=0.6350
+5318:  [raw_qar_dual_xlmr_maxfeat     ] FAILED: [Errno 2] No such file or directory: '/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_v03b_maxfeat_neural/runs/raw_qar_dual_xlmr_maxfeat/predictions_val.csv'
+5319-  [raw_ra_bilstm_maxfeat         ] cuts=[0.06, 0.4, 0.65, 0.875]  test_qwk=0.7588  acc5=0.7080
+5320-  [raw_ra_cross_gte_maxfeat      ] cuts=[0.21, 0.375, 0.625, 0.89]  test_qwk=0.7612  acc5=0.7007
+5321-  [raw_ra_cross_mbert_maxfeat    ] cuts=[0.18, 0.44, 0.65, 0.82]  test_qwk=0.6653  acc5=0.6642
+5322-  [raw_ra_cross_xlmr_maxfeat     ] cuts=[0.125, 0.28, 0.625, 0.83]  test_qwk=0.7799  acc5=0.7445
+5323-  [raw_ra_dual_gte_maxfeat       ] cuts=[0.05, 0.43, 0.66, 0.88]  test_qwk=0.8225  acc5=0.7518
+5324-  [raw_ra_dual_mbert_maxfeat     ] cuts=[0.25, 0.4, 0.65, 0.83]  test_qwk=0.6772  acc5=0.5912
+5325-  [raw_ra_dual_xlmr_maxfeat      ] cuts=[0.125, 0.42, 0.61, 0.94]  test_qwk=0.7925  acc5=0.6496
+5326-  [segment_qar_bilstm_maxfeat    ] cuts=[0.1, 0.46, 0.67, 0.81]  test_qwk=0.6511  acc5=0.6277
+5327-  [segment_qar_cross_gte_maxfeat ] cuts=[0.15, 0.32, 0.58, 0.79]  test_qwk=0.7631  acc5=0.6715
+5328-  [segment_qar_cross_mbert_maxfeat] cuts=[0.25, 0.52, 0.65, 0.87]  test_qwk=0.5669  acc5=0.4672
+5329-  [segment_qar_cross_xlmr_maxfeat] cuts=[0.125, 0.375, 0.625, 0.87]  test_qwk=0.7134  acc5=0.7080
+5330-  [segment_qar_dual_gte_maxfeat  ] cuts=[0.125, 0.29, 0.66, 0.9]  test_qwk=0.8141  acc5=0.7445
+5331-  [segment_qar_dual_mbert_maxfeat] cuts=[0.18, 0.55, 0.66, 0.79]  test_qwk=0.6310  acc5=0.4526
+5332-  [segment_qar_dual_xlmr_maxfeat ] cuts=[0.125, 0.32, 0.69, 0.9]  test_qwk=0.7490  acc5=0.6642
+5333-  [segment_ra_bilstm_maxfeat     ] cuts=[0.125, 0.45, 0.72, 0.89]  test_qwk=0.7500  acc5=0.7299
+5334-  [segment_ra_cross_gte_maxfeat  ] cuts=[0.125, 0.375, 0.59, 0.78]  test_qwk=0.8013  acc5=0.7372
+5335-  [segment_ra_cross_mbert_maxfeat] cuts=[0.125, 0.53, 0.625, 0.8]  test_qwk=0.5953  acc5=0.5620
+5336-  [segment_ra_cross_xlmr_maxfeat ] cuts=[0.125, 0.375, 0.63, 0.875]  test_qwk=0.8282  acc5=0.7664
+5337-  [segment_ra_dual_gte_maxfeat   ] cuts=[0.05, 0.375, 0.64, 0.875]  test_qwk=0.8160  acc5=0.7591
+5338-  [segment_ra_dual_mbert_maxfeat ] cuts=[0.1, 0.61, 0.64, 0.9]  test_qwk=0.7056  acc5=0.4964
+5339-  [segment_ra_dual_xlmr_maxfeat  ] cuts=[0.08, 0.38, 0.625, 0.88]  test_qwk=0.7807  acc5=0.7153
+5340-
+5341-========== exp02 calibrate  source=v03b_maxfeat_neural  895 (no 10C, drop 0)  ->  /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_no0_v03b_maxfeat_neural_calibrated ==========
+5342-  [clean_qar_bilstm_maxfeat      ] cuts=[0.43, 0.45, 0.625, 0.875]  test_qwk=0.7157  acc5=0.5556
+5343-  [clean_qar_cross_gte_maxfeat   ] cuts=[0.28, 0.4, 0.71, 0.81]  test_qwk=0.7584  acc5=0.6815
+5344-  [clean_qar_cross_mbert_maxfeat ] cuts=[0.27, 0.375, 0.69, 0.72]  test_qwk=0.4728  acc5=0.5111
+5345-  [clean_qar_cross_xlmr_maxfeat  ] cuts=[0.27, 0.44, 0.6, 0.84]  test_qwk=0.7383  acc5=0.6741
+5346-  [clean_qar_dual_gte_maxfeat    ] cuts=[0.125, 0.44, 0.65, 0.85]  test_qwk=0.8228  acc5=0.7481
+5347-  [clean_qar_dual_mbert_maxfeat  ] cuts=[0.37, 0.6, 0.73, 0.875]  test_qwk=0.6384  acc5=0.4519
+5348-  [clean_qar_dual_xlmr_maxfeat   ] cuts=[0.01, 0.35, 0.77, 0.91]  test_qwk=0.8028  acc5=0.6741
+5349-  [clean_ra_bilstm_maxfeat       ] cuts=[0.01, 0.53, 0.64, 0.72]  test_qwk=0.7316  acc5=0.6519
+5350-  [clean_ra_cross_gte_maxfeat    ] cuts=[0.125, 0.38, 0.63, 0.875]  test_qwk=0.7949  acc5=0.7333
+5351-  [clean_ra_cross_mbert_maxfeat  ] cuts=[0.34, 0.375, 0.625, 0.75]  test_qwk=0.6639  acc5=0.6296
+5352-  [clean_ra_cross_xlmr_maxfeat   ] cuts=[0.01, 0.4, 0.87, 0.89]  test_qwk=0.7783  acc5=0.7333
+5353-  [clean_ra_dual_gte_maxfeat     ] cuts=[0.125, 0.37, 0.63, 0.87]  test_qwk=0.8683  acc5=0.7852
+5354-  [clean_ra_dual_mbert_maxfeat   ] cuts=[0.31, 0.38, 0.66, 0.86]  test_qwk=0.6752  acc5=0.5185
+5355-  [clean_ra_dual_xlmr_maxfeat    ] cuts=[0.26, 0.42, 0.69, 0.875]  test_qwk=0.7845  acc5=0.6889
+5356-  [raw_qar_bilstm_maxfeat        ] cuts=[0.13, 0.36, 0.75, 0.76]  test_qwk=0.7475  acc5=0.6889
+5357-  [raw_qar_cross_gte_maxfeat     ] cuts=[0.01, 0.39, 0.69, 0.875]  test_qwk=0.7961  acc5=0.7556
+5358-  [raw_qar_cross_mbert_maxfeat   ] cuts=[0.2, 0.35, 0.74, 0.91]  test_qwk=0.7221  acc5=0.6963
+--
+5397-
+5398-========== exp07 ensemble top-3  909 (no 10C biology)  ->  /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_v07_ensemble ==========
+5399:Traceback (most recent call last):
+5400-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/experiments/exp07_ensemble.py", line 254, in <module>
+5401-    main()
+5402-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/experiments/exp07_ensemble.py", line 201, in main
+5403-    cells_df = collect_cells(ds["run_name"])
+5404-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5405-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/experiments/exp07_ensemble.py", line 74, in collect_cells
+5406-    df = pd.read_csv(leaderboard)
+5407-         ^^^^^^^^^^^^^^^^^^^^^^^^
+5408-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/pandas/io/parsers/readers.py", line 873, in read_csv
+5409-    return _read(filepath_or_buffer, kwds)
+5410-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5411-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/pandas/io/parsers/readers.py", line 306, in _read
+5412-    return parser.read(nrows)
+5413-           ^^^^^^^^^^^^^^^^^^
+5414-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/pandas/io/parsers/readers.py", line 1947, in read
+5415-    ) = self._engine.read(  # type: ignore[attr-defined]
+5416-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5417-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/pandas/io/parsers/c_parser_wrapper.py", line 215, in read
+5418-    chunks = self._reader.read_low_memory(nrows)
+5419-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5420-  File "pandas/_libs/parsers.pyx", line 832, in pandas._libs.parsers.TextReader.read_low_memory
+5421-  File "pandas/_libs/parsers.pyx", line 897, in pandas._libs.parsers.TextReader._read_rows
+5422-  File "pandas/_libs/parsers.pyx", line 868, in pandas._libs.parsers.TextReader._tokenize_rows
+5423-  File "pandas/_libs/parsers.pyx", line 885, in pandas._libs.parsers.TextReader._check_tokenize_status
+5424-  File "pandas/_libs/parsers.pyx", line 2084, in pandas._libs.parsers.raise_parser_error
+5425:pandas.errors.ParserError: Error tokenizing data. C error: Expected 24 fields in line 28, saw 26
+5426-
+5427:[FAIL rc=1] Sun Jun 14 02:07:07 AM UTC 2026
+5428-
+5429-======== exp10 significance ======== Sun Jun 14 02:07:07 AM UTC 2026
+5430-=== champion point metrics (random-split predictions) ===
+5431-  classical QWK=0.795 acc=0.63 kappa=0.466 F1=0.418 within1=0.711
+5432-  rnn       QWK=0.845 acc=0.748 kappa=0.624 F1=0.529 within1=0.77
+5433-  encoder   QWK=0.82 acc=0.73 kappa=0.623 F1=0.541 within1=0.77
+5434-  llm       QWK=0.842 acc=0.839 kappa=0.766 F1=0.837 within1=0.788
+5435-
+5436-=== random vs unseen-question split (classical champion, multi-seed) ===
+5437-| 2026-06-14 02:07:11,734 | [1;32mINFO[0m | khmer-nltk | Loaded model from /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/khmernltk/word_tokenize/sklearn_crf_ner_10000.sav |
+5438-  classical [random  ] QWK mean=0.759 +/- 0.041
+5439-  classical [question] QWK mean=0.354 +/- 0.106
+5440-  >>> leakage gap (random - unseen-question) = +0.405 QWK
+5441-
+5442-[exp10] wrote results_stats/ -> champion_metrics.csv, split_compare.csv
+5443-[OK] Sun Jun 14 02:10:13 AM UTC 2026
+5444-
+5445-======== exp11 cleaning ======== Sun Jun 14 02:10:13 AM UTC 2026
+5446-  full       old QWK=0.7711  new QWK=0.7741  delta=+0.0031
+5447-  no10c      old QWK=0.8155  new QWK=0.8165  delta=+0.0009
+5448-  no10c_no0  old QWK=0.7799  new QWK=0.7839  delta=+0.0040
+5449-
+5450-[exp11] wrote /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_stats/cleaning_ablation.csv
+5451-[OK] Sun Jun 14 02:11:56 AM UTC 2026
+5452-
+5453-======== exp12 hparam ======== Sun Jun 14 02:11:56 AM UTC 2026
+5454-| 2026-06-14 02:12:00,165 | [1;32mINFO[0m | khmer-nltk | Loaded model from /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/khmernltk/word_tokenize/sklearn_crf_ner_10000.sav |
+5455-  no10c_no0  best C=10.0 max_feat=15000 val=0.7706 tuned_test=0.7933 default_test=0.7946 (Δ-0.0012)
+5456-  no10c      best C=1.0 max_feat=15000 val=0.8452 tuned_test=0.7815 default_test=0.7815 (Δ+0.0000)
+5457-  full       best C=10.0 max_feat=5000 val=0.7002 tuned_test=0.7735 default_test=0.7729 (Δ+0.0005)
+5458-
+5459-[exp12] wrote /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_stats/hparam_tuning.csv
+5460-[OK] Sun Jun 14 02:18:43 AM UTC 2026
+5461-
+5462-======== compare_all ======== Sun Jun 14 02:18:43 AM UTC 2026
+5463-
+5464-=== 1184 (full) ===
+5465-Total cells across all experiments: 121
+5466-
+5467-Top 15 cells by test_qwk:
+--
+5505-v03_maxfeat          0.7702  0.7750      6
+5506-v04_bucket           0.7576  0.7729      6
+5507:Traceback (most recent call last):
+5508-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/experiments/compare_all.py", line 106, in <module>
+5509-    main()
+5510-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/experiments/compare_all.py", line 101, in main
+5511-    df = load_all(ds["run_name"])
+5512-         ^^^^^^^^^^^^^^^^^^^^^^^^
+5513-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/experiments/compare_all.py", line 53, in load_all
+5514-    df = pd.read_csv(path)
+5515-         ^^^^^^^^^^^^^^^^^
+5516-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/pandas/io/parsers/readers.py", line 873, in read_csv
+5517-    return _read(filepath_or_buffer, kwds)
+5518-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5519-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/pandas/io/parsers/readers.py", line 306, in _read
+5520-    return parser.read(nrows)
+5521-           ^^^^^^^^^^^^^^^^^^
+5522-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/pandas/io/parsers/readers.py", line 1947, in read
+5523-    ) = self._engine.read(  # type: ignore[attr-defined]
+5524-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5525-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/pandas/io/parsers/c_parser_wrapper.py", line 215, in read
+5526-    chunks = self._reader.read_low_memory(nrows)
+5527-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5528-  File "pandas/_libs/parsers.pyx", line 832, in pandas._libs.parsers.TextReader.read_low_memory
+5529-  File "pandas/_libs/parsers.pyx", line 897, in pandas._libs.parsers.TextReader._read_rows
+5530-  File "pandas/_libs/parsers.pyx", line 868, in pandas._libs.parsers.TextReader._tokenize_rows
+5531-  File "pandas/_libs/parsers.pyx", line 885, in pandas._libs.parsers.TextReader._check_tokenize_status
+5532-  File "pandas/_libs/parsers.pyx", line 2084, in pandas._libs.parsers.raise_parser_error
+5533:pandas.errors.ParserError: Error tokenizing data. C error: Expected 24 fields in line 28, saw 26
+5534-
+5535:[FAIL rc=1] Sun Jun 14 02:18:46 AM UTC 2026
+5536-
+5537-======== cleanup per-cell weights ======== Sun Jun 14 02:18:46 AM UTC 2026
+5538-Filesystem                         Size  Used Avail Use% Mounted on
+5539-/dev/mapper/ubuntu--vg-ubuntu--lv  489G  238G  231G  51% /
+5540-
+5541-======== llm ft qwen no10c ======== Sun Jun 14 02:18:54 AM UTC 2026
+5542-
+5543-========== exp08 LLM qwen35_4b  909 (no 10C biology)  epochs=7  resume=True  ->  /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_v08_llm_qwen35_4b ==========
+5544-  rows=909 train=636 val=136 test=137
+5545-Skipping import of cpp extensions due to incompatible torch version. Please upgrade to torch >= 2.11.0 (found 2.10.0+cu128).
+5546-
+5547-  [clean_qar_qwen35_4b] loading Qwen/Qwen3.5-4B...
+5548-/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/unsloth/__init__.py:153: UserWarning: WARNING: Unsloth should be imported before [transformers, peft] to ensure all optimizations are applied. Your code may run slower or encounter memory issues without these optimizations.
+5549-
+5550-Please restructure your imports with 'import unsloth' at the top of your file.
+5551-  from ._gpu_init import *
+5552-🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+5553-Unsloth: Your Flash Attention 2 installation seems to be broken. Using Xformers instead. No performance changes will be seen.
+5554-🦥 Unsloth Zoo will now patch everything to make training faster!
+5555-==((====))==  Unsloth 2026.6.2: Fast Qwen3_5 patching. Transformers: 5.5.0.
+5556-   \\   /|    NVIDIA A40. Num GPUs = 1. Max memory: 44.422 GB. Platform: Linux.
+5557-O^O/ \_/ \    Torch: 2.10.0+cu128. CUDA: 8.6. CUDA Toolkit: 12.8. Triton: 3.6.0
+5558-\        /    Bfloat16 = TRUE. FA [Xformers = 0.0.35. FA2 = False]
+5559- "-____-"     Free license: http://github.com/unslothai/unsloth
+5560-Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
+5561-Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]Fetching 2 files:  50%|█████     | 1/2 [00:30<00:30, 30.86s/it]Fetching 2 files: 100%|██████████| 2/2 [00:30<00:00, 15.43s/it]
+5562-The fast path is not available because one of the required library is not installed. Falling back to torch implementation. To install follow https://github.com/fla-org/flash-linear-attention#installation and https://github.com/Dao-AILab/causal-conv1d
+5563-Loading weights:   0%|          | 0/723 [00:00<?, ?it/s]Loading weights:   0%|          | 1/723 [00:00<04:51,  2.47it/s]Loading weights:   1%|          | 8/723 [00:00<00:36, 19.66it/s]Loading weights:   4%|▎         | 26/723 [00:00<00:11, 60.86it/s]Loading weights:   6%|▌         | 42/723 [00:00<00:07, 85.21it/s]Loading weights:   9%|▊         | 62/723 [00:00<00:05, 115.86it/s]Loading weights:  11%|█         | 79/723 [00:00<00:04, 129.98it/s]Loading weights:  13%|█▎        | 95/723 [00:01<00:04, 134.50it/s]Loading weights:  16%|█▌        | 117/723 [00:01<00:03, 155.69it/s]Loading weights:  19%|█▊        | 134/723 [00:01<00:03, 149.43it/s]Loading weights:  21%|██        | 152/723 [00:01<00:03, 154.28it/s]Loading weights:  24%|██▍       | 172/723 [00:01<00:03, 164.58it/s]Loading weights:  27%|██▋       | 195/723 [00:01<00:02, 178.35it/s]Loading weights:  30%|██▉       | 214/723 [00:01<00:03, 165.80it/s]Loading weights:  33%|███▎      | 235/723 [00:01<00:02, 177.38it/s]Loading weights:  35%|███▌      | 254/723 [00:01<00:02, 166.33it/s]Loading weights:  38%|███▊      | 276/723 [00:02<00:02, 177.39it/s]Loading weights:  41%|████      | 295/723 [00:02<00:02, 166.48it/s]Loading weights:  43%|████▎     | 313/723 [00:02<00:02, 156.82it/s]Loading weights:  46%|████▌     | 332/723 [00:02<00:02, 161.27it/s]Loading weights:  49%|████▉     | 355/723 [00:02<00:02, 177.00it/s]Loading weights:  52%|█████▏    | 374/723 [00:02<00:02, 165.86it/s]Loading weights:  54%|█████▍    | 394/723 [00:02<00:01, 172.02it/s]Loading weights:  57%|█████▋    | 412/723 [00:02<00:01, 164.44it/s]Loading weights:  60%|██████    | 434/723 [00:03<00:01, 177.97it/s]Loading weights:  73%|███████▎  | 530/723 [00:03<00:00, 390.85it/s]Loading weights:  87%|████████▋ | 626/723 [00:03<00:00, 547.03it/s]Loading weights:  99%|█████████▉| 716/723 [00:03<00:00, 646.12it/s]Loading weights: 100%|██████████| 723/723 [00:03<00:00, 216.83it/s]
+5564-  [loader] Unsloth OK for Qwen/Qwen3.5-4B (lora=True)
+5565-warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+5566-  [clean_qar_qwen35_4b] training 636 samples x 7 epochs...
+5567-==((====))==  Unsloth - 2x faster free finetuning | Num GPUs used = 1
+5568-   \\   /|    Num examples = 636 | Num Epochs = 7 | Total steps = 280
+5569-O^O/ \_/ \    Batch size per device = 4 | Gradient accumulation steps = 4
+5570-\        /    Data Parallel GPUs = 1 | Total batch size (4 x 4 x 1) = 16
+5571- "-____-"     Trainable parameters = 21,233,664 of 4,560,499,200 (0.47% trained)
+5572-  0%|          | 0/280 [00:00<?, ?it/s]Unsloth: Will smartly offload gradients to save VRAM!
+5573-Unsloth: Double buffering enabled (parallel H2D + compute) for backward pass.
+5574-  0%|          | 1/280 [01:16<5:55:16, 76.40s/it]  1%|          | 2/280 [01:36<3:20:47, 43.33s/it]  1%|          | 3/280 [01:57<2:33:28, 33.24s/it]  1%|▏         | 4/280 [02:14<2:03:10, 26.78s/it]  2%|▏         | 5/280 [02:35<1:53:01, 24.66s/it]  2%|▏         | 6/280 [02:56<1:47:14, 23.48s/it]  2%|▎         | 7/280 [03:13<1:36:28, 21.20s/it]  3%|▎         | 8/280 [03:30<1:29:52, 19.83s/it]  3%|▎         | 9/280 [03:49<1:29:11, 19.75s/it]  4%|▎         | 10/280 [04:10<1:30:07, 20.03s/it]  4%|▍         | 11/280 [04:28<1:26:53, 19.38s/it]  4%|▍         | 12/280 [04:46<1:24:31, 18.92s/it]  5%|▍         | 13/280 [05:04<1:22:47, 18.60s/it]  5%|▌         | 14/280 [05:25<1:25:55, 19.38s/it]  5%|▌         | 15/280 [05:46<1:28:12, 19.97s/it]  6%|▌         | 16/280 [06:06<1:27:11, 19.81s/it]  6%|▌         | 17/280 [06:27<1:28:44, 20.24s/it]  6%|▋         | 18/280 [06:44<1:24:04, 19.26s/it]  7%|▋         | 19/280 [07:05<1:26:29, 19.88s/it]  7%|▋         | 20/280 [07:26<1:27:52, 20.28s/it]                                                  {'loss': '0.9206', 'grad_norm': '3.727', 'learning_rate': '0.0001962', 'epoch': '0.5031'}
+5575-  7%|▋         | 20/280 [07:26<1:27:52, 20.28s/it]  8%|▊         | 21/280 [07:43<1:23:31, 19.35s/it]  8%|▊         | 22/280 [08:03<1:23:06, 19.33s/it]  8%|▊         | 23/280 [08:24<1:25:26, 19.95s/it]  9%|▊         | 24/280 [08:45<1:26:10, 20.20s/it]  9%|▉         | 25/280 [09:06<1:27:15, 20.53s/it]  9%|▉         | 26/280 [09:28<1:27:52, 20.76s/it] 10%|▉         | 27/280 [09:49<1:28:15, 20.93s/it] 10%|█         | 28/280 [10:10<1:28:18, 21.03s/it] 10%|█         | 29/280 [10:31<1:28:18, 21.11s/it] 11%|█         | 30/280 [10:53<1:28:12, 21.17s/it] 11%|█         | 31/280 [11:11<1:24:50, 20.44s/it] 11%|█▏        | 32/280 [11:31<1:23:51, 20.29s/it] 12%|█▏        | 33/280 [11:53<1:24:52, 20.62s/it] 12%|█▏        | 34/280 [12:12<1:22:48, 20.20s/it] 12%|█▎        | 35/280 [12:30<1:19:47, 19.54s/it] 13%|█▎        | 36/280 [12:48<1:17:51, 19.15s/it] 13%|█▎        | 37/280 [13:08<1:17:57, 19.25s/it] 14%|█▎        | 38/280 [13:26<1:16:43, 19.02s/it] 14%|█▍        | 39/280 [13:47<1:19:06, 19.69s/it] 14%|█▍        | 40/280 [14:01<1:11:59, 18.00s/it]                                                  {'loss': '0.6102', 'grad_norm': '1.341', 'learning_rate': '0.0001812', 'epoch': '1'}
+5576- 14%|█▍        | 40/280 [14:01<1:11:59, 18.00s/it]  [clean_qar_qwen35_4b] epoch 1: qwk(tr/va/te)=0.653/0.565/0.579
+5577:Traceback (most recent call last):
+5578-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/experiments/exp08_llm_finetune.py", line 621, in main
+5579-    result = train_one_llm(
+5580-             ^^^^^^^^^^^^^^
+5581-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/experiments/exp08_llm_finetune.py", line 444, in train_one_llm
+5582-    trainer.train()
+5583-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/transformers/trainer.py", line 1424, in train
+5584-    return inner_training_loop(
+5585-           ^^^^^^^^^^^^^^^^^^^^
+5586-  File "<string>", line 81, in _fast_inner_training_loop
+5587-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/transformers/trainer.py", line 1734, in _run_epoch
+5588-    tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
+5589-                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5590-  File "<string>", line 40, in _unsloth_training_step
+5591-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/unsloth/models/_utils.py", line 2267, in _unsloth_pre_compute_loss
+5592-    outputs = self._old_compute_loss(model, inputs, *args, **kwargs)
+5593-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5594-  File "<string>", line 41, in compute_loss
+5595-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+5596-    return self._call_impl(*args, **kwargs)
+5597-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5598-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+5599-    return forward_call(*args, **kwargs)
+5600-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5601-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/accelerate/utils/operations.py", line 823, in forward
+5602-    return model_forward(*args, **kwargs)
+5603-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5604-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/accelerate/utils/operations.py", line 811, in __call__
+5605-    return convert_to_fp32(self.model_forward(*args, **kwargs))
+5606-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5607-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/accelerate/utils/operations.py", line 790, in convert_to_fp32
+5608-    return recursively_apply(_convert_to_fp32, tensor, test_type=_is_fp16_bf16_tensor)
+5609-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5610-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/accelerate/utils/operations.py", line 120, in recursively_apply
+5611-    k: recursively_apply(
+5612-       ^^^^^^^^^^^^^^^^^^
+5613-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/accelerate/utils/operations.py", line 127, in recursively_apply
+5614-    return func(data, *args, **kwargs)
+5615-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5616-  File "/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/accelerate/utils/operations.py", line 782, in _convert_to_fp32
+5617-    return tensor.float()
+5618-           ^^^^^^^^^^^^^^
+5619:torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 2.23 GiB. GPU 0 has a total capacity of 44.42 GiB of which 235.81 MiB is free. Including non-PyTorch memory, this process has 44.18 GiB memory in use. Of the allocated memory 43.21 GiB is allocated by PyTorch, and 637.17 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+5620:  [clean_qar_qwen35_4b] FAILED: OutOfMemoryError: CUDA out of memory. Tried to allocate 2.23 GiB. GPU 0 has a total capacity of 44.42 GiB of which 235.81 MiB is free. Including non-PyTorch memory, this process has 44.18 GiB memory in use. Of the allocated memory 43.21 GiB is allocated by PyTorch, and 637.17 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+5621- 14%|█▍        | 40/280 [24:05<2:24:35, 36.15s/it]
+5622-
+5623-[*] exp08 done
+5624-[OK] Sun Jun 14 02:44:44 AM UTC 2026
+5625-
+5626-======== llm ft gemma no10c ======== Sun Jun 14 02:44:44 AM UTC 2026
+5627-
+5628-========== exp08 LLM gemma4_e4b  909 (no 10C biology)  epochs=7  resume=True  ->  /home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/results_no10c_v08_llm_gemma4_e4b ==========
+5629-  rows=909 train=636 val=136 test=137
+5630-Skipping import of cpp extensions due to incompatible torch version. Please upgrade to torch >= 2.11.0 (found 2.10.0+cu128).
+5631-
+5632-  [clean_qar_gemma4_e4b] loading google/gemma-4-E4B...
+5633-/home/norak/R&I/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/.venv/lib/python3.12/site-packages/unsloth/__init__.py:153: UserWarning: WARNING: Unsloth should be imported before [transformers, peft] to ensure all optimizations are applied. Your code may run slower or encounter memory issues without these optimizations.
+5634-
+5635-Please restructure your imports with 'import unsloth' at the top of your file.
+5636-  from ._gpu_init import *
+5637-🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+5638-Unsloth: Your Flash Attention 2 installation seems to be broken. Using Xformers instead. No performance changes will be seen.
+5639-🦥 Unsloth Zoo will now patch everything to make training faster!
+5640-==((====))==  Unsloth 2026.6.2: Fast Gemma4 patching. Transformers: 5.5.0.
+5641-   \\   /|    NVIDIA A40. Num GPUs = 1. Max memory: 44.422 GB. Platform: Linux.
+5642-O^O/ \_/ \    Torch: 2.10.0+cu128. CUDA: 8.6. CUDA Toolkit: 12.8. Triton: 3.6.0
+5643-\        /    Bfloat16 = TRUE. FA [Xformers = 0.0.35. FA2 = False]
+5644- "-____-"     Free license: http://github.com/unslothai/unsloth
+5645-Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
+5646-Fetching 3 files:   0%|          | 0/3 [00:00<?, ?it/s]Fetching 3 files:  33%|███▎      | 1/3 [00:39<01:19, 39.63s/it]Fetching 3 files: 100%|██████████| 3/3 [00:39<00:00, 13.21s/it]
+5647-Loading weights:   0%|          | 0/2130 [00:00<?, ?it/s]Loading weights:  12%|█▏        | 250/2130 [00:00<00:00, 2425.56it/s]Loading weights:  23%|██▎       | 493/2130 [00:00<00:00, 2058.93it/s]Loading weights:  33%|███▎      | 703/2130 [00:00<00:00, 1935.70it/s]Loading weights:  42%|████▏     | 899/2130 [00:02<00:06, 196.87it/s] Loading weights:  48%|████▊     | 1021/2130 [00:03<00:04, 226.68it/s]Loading weights:  52%|█████▏    | 1115/2130 [00:03<00:03, 257.78it/s]Loading weights:  56%|█████▌    | 1195/2130 [00:03<00:03, 283.78it/s]Loading weights:  59%|█████▉    | 1264/2130 [00:03<00:02, 314.63it/s]Loading weights:  62%|██████▏   | 1329/2130 [00:03<00:02, 347.14it/s]Loading weights:  65%|██████▌   | 1392/2130 [00:03<00:01, 375.46it/s]Loading weights:  68%|██████▊   | 1451/2130 [00:04<00:01, 388.71it/s]Loading weights:  71%|███████   | 1506/2130 [00:04<00:01, 411.93it/s]Loading weights:  81%|████████  | 1724/2130 [00:04<00:00, 768.19it/s]Loading weights:  91%|█████████▏| 1946/2130 [00:04<00:00, 1091.91it/s]Loading weights: 100%|██████████| 2130/2130 [00:04<00:00, 475.95it/s] 
+5648-[unsloth_zoo.log|WARNING]Unsloth: Failed to register input-embedding hook for `model.base_model.model.model.audio_tower`: `get_input_embeddings` not auto‑handled for Gemma4AudioModel; please override in the subclass.. Falling back to pre-forward hook.
+5649-  [loader] Unsloth OK for google/gemma-4-E4B (lora=True)
+5650-warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+5651-  [clean_qar_gemma4_e4b] training 636 samples x 7 epochs...
+5652-==((====))==  Unsloth - 2x faster free finetuning | Num GPUs used = 1
+5653-   \\   /|    Num examples = 636 | Num Epochs = 7 | Total steps = 280
+5654-O^O/ \_/ \    Batch size per device = 4 | Gradient accumulation steps = 4
+5655-\        /    Data Parallel GPUs = 1 | Total batch size (4 x 4 x 1) = 16
+5656- "-____-"     Trainable parameters = 42,401,792 of 8,038,558,240 (0.53% trained)
+5657-  0%|          | 0/280 [00:00<?, ?it/s]Caching is incompatible with gradient checkpointing in Gemma4TextDecoderLayer. Setting `past_key_values=None`.
+5658-Unsloth: Will smartly offload gradients to save VRAM!
+5659-Unsloth: Double buffering enabled (parallel H2D + compute) for backward pass.
+5660-  0%|          | 1/280 [00:55<4:16:43, 55.21s/it]  1%|          | 2/280 [01:00<1:59:32, 25.80s/it]  1%|          | 3/280 [01:07<1:19:39, 17.25s/it]  1%|▏         | 4/280 [01:12<56:20, 12.25s/it]    2%|▏         | 5/280 [01:16<43:41,  9.53s/it]  2%|▏         | 6/280 [01:22<37:04,  8.12s/it]  2%|▎         | 7/280 [01:26<31:45,  6.98s/it]  3%|▎         | 8/280 [01:31<28:40,  6.33s/it]  3%|▎         | 9/280 [01:37<28:26,  6.30s/it]  4%|▎         | 10/280 [01:43<27:14,  6.05s/it]  4%|▍         | 11/280 [01:48<26:07,  5.83s/it]  4%|▍         | 12/280 [01:53<24:27,  5.47s/it]  5%|▍         | 13/280 [01:58<24:07,  5.42s/it]  5%|▌         | 14/280 [02:04<24:42,  5.57s/it]  5%|▌         | 15/280 [02:10<24:31,  5.55s/it]  6%|▌         | 16/280 [02:14<23:04,  5.24s/it]  6%|▌         | 17/280 [02:20<23:21,  5.33s/it]  6%|▋         | 18/280 [02:25<22:35,  5.17s/it]  7%|▋         | 19/280 [02:31<24:28,  5.63s/it]  7%|▋         | 20/280 [02:37<25:07,  5.80s/it]                                                {'loss': '0.4787', 'grad_norm': '0.703', 'learning_rate': '0.0001962', 'epoch': '0.5031'}

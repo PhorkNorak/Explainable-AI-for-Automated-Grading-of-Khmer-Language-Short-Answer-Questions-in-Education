@@ -1,0 +1,12 @@
+{
+  "run_id": "zeroshot_qar_sealion_v45_e2b",
+  "model": "sealion_v45_e2b_zeroshot",
+  "family": "llm",
+  "experiment": "v08z_llm_zeroshot",
+  "backbone": "aisingapore/Gemma-SEA-LION-v4.5-E2B-IT",
+  "preprocess": "clean",
+  "input": "qar",
+  "loader_path": "unsloth",
+  "max_seq_length": 1024,
+  "mode": "zeroshot"
+}

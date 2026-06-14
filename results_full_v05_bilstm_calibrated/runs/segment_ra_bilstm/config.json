@@ -1,0 +1,16 @@
+{
+  "run_id": "segment_ra_bilstm",
+  "model": "bilstm",
+  "family": "bilstm",
+  "preprocess": "segment",
+  "input": "ra",
+  "vocab_size": 96,
+  "max_feat": false,
+  "experiment": "v02_threshold_calibration",
+  "calibrated_cuts": [
+    0.25,
+    0.375,
+    0.62,
+    0.7000000000000001
+  ]
+}

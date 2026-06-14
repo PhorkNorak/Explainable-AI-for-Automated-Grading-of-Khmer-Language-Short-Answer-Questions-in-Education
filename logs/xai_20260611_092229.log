@@ -1,0 +1,2 @@
+[exp09] family 'encoder' requires GPU/HPC (transformers+GPU for encoder, unsloth+peft for llm). See README 'XAI on HPC'. Skipping on this machine.
+[exp09] family 'llm' requires GPU/HPC (transformers+GPU for encoder, unsloth+peft for llm). See README 'XAI on HPC'. Skipping on this machine.
