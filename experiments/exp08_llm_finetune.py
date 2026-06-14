@@ -30,6 +30,10 @@ import time
 import numpy as np
 import pandas as pd
 
+# Reduce CUDA fragmentation OOM during the per-epoch generation + training. Must be
+# set before torch/cuda initialise (config import below triggers torch).
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.dirname(_HERE)
 for p in (_ROOT, _HERE):
@@ -367,82 +371,69 @@ def train_one_llm(model_key, prep, inp, train_df, val_df, test_df,
     out_dir = os.path.join(C.RUNS_DIR, run_id)
     os.makedirs(out_dir, exist_ok=True)
 
-    args = TrainingArguments(
-        output_dir=out_dir,
-        per_device_train_batch_size=batch_size,
-        gradient_accumulation_steps=4,
-        num_train_epochs=epochs,
-        learning_rate=lr,
-        warmup_ratio=0.05,
-        logging_steps=20,
-        save_strategy="no",
-        report_to="none",
-        bf16=torch.cuda.is_available(),
-        seed=42,
-    )
-
     def collator(features):
         return collate_pad(features, pad_id)
 
-    # ── helpers used both per-epoch (for the train-vs-test curve) and finally ──
-    compute_metrics = llm_metrics  # module-level; alias keeps the curve code readable
+    compute_metrics = llm_metrics  # module-level alias
 
-    def _pseudo_loss(df_p):  # MSE on the normalized score (the training target)
-        d = (df_p["pred_score"].to_numpy() - df_p["normalized_score"].to_numpy())
-        return float(np.mean(d * d))
-
-    # Per-epoch curve sources: full test + a train subset (for speed).
-    _sub = min(200, len(train_p))
-    train_eval_src = train_p.sample(n=_sub, random_state=42)
-    history = []
-    # Track the best LoRA adapter by VALIDATION QWK so the saved/published model is
-    # the best epoch, not the last one. Adapter weights are tiny, so we snapshot them
-    # in memory each time validation improves.
+    # Per-epoch eval is VALIDATION-ONLY (for best-model selection). Generating over
+    # train+test every epoch cost ~10 min/epoch with no selection benefit; train/test
+    # are computed once at the end. We snapshot the best-by-val adapter (tiny) in memory.
+    import gc
     from peft import get_peft_model_state_dict
+    history = []
     best = {"qwk": -1e9, "epoch": epochs, "state": None}
 
     from transformers import TrainerCallback
 
     class _CurveCallback(TrainerCallback):
-        """Per epoch: train-subset + val + test QWK (Alaoui-style curve), and keep
-        the best-by-val adapter for selection/publishing."""
+        """Per epoch: validation QWK only -> best-by-val adapter + a val curve."""
         def on_epoch_end(self, a, state, control, **kw):
             try:
                 model.train(False)
-                tr = predict_split(model, tokenizer, train_eval_src)
-                va = predict_split(model, tokenizer, val_p)
-                te = predict_split(model, tokenizer, test_p)
-                tm, vm, em = compute_metrics(tr), compute_metrics(va), compute_metrics(te)
+                vm = compute_metrics(predict_split(model, tokenizer, val_p))
                 ep = int(round(state.epoch)) if state.epoch else len(history) + 1
-                history.append({
-                    "epoch": ep,
-                    "train_loss": _pseudo_loss(tr), "test_loss": _pseudo_loss(te),
-                    "val_qwk": vm["qwk"],
-                    **{f"train_{k}": tr_v for k, tr_v in tm.items()},
-                    **{f"test_{k}":  te_v for k, te_v in em.items()},
-                })
+                history.append({"epoch": ep, "val_qwk": vm["qwk"],
+                                **{f"val_{k}": v for k, v in vm.items()}})
                 if vm["qwk"] > best["qwk"]:
                     best["qwk"], best["epoch"] = vm["qwk"], ep
                     best["state"] = {k: v.detach().cpu().clone()
                                      for k, v in get_peft_model_state_dict(model).items()}
-                print(f"  [{run_id}] epoch {ep}: "
-                      f"qwk(tr/va/te)={tm['qwk']:.3f}/{vm['qwk']:.3f}/{em['qwk']:.3f}")
-            except Exception as e:  # never let curve logging kill training
-                print(f"  [{run_id}] curve eval skipped this epoch: {e}")
+                print(f"  [{run_id}] epoch {ep}: val_qwk={vm['qwk']:.3f}")
+            except Exception as e:  # never let eval kill training
+                print(f"  [{run_id}] val eval skipped this epoch: {e}")
             finally:
                 model.train(True)
+                gc.collect(); torch.cuda.empty_cache()
 
-    trainer = Trainer(
-        model=model,
-        args=args,
-        train_dataset=train_ds,
-        data_collator=collator,
-        callbacks=[_CurveCallback()],
-    )
-    t0 = time.time()
-    print(f"  [{run_id}] training {len(train_ds)} samples x {epochs} epochs...")
-    trainer.train()
-    train_time = time.time() - t0
+    # OOM-safe training on the A40: try the requested batch size, auto-halve to 2 then
+    # 1 on CUDA OOM, holding the effective batch ~16 via gradient accumulation.
+    t0, train_time = time.time(), None
+    for bs in [b for b in (batch_size, 2, 1) if b <= batch_size]:
+        accum = max(1, 16 // bs)
+        args = TrainingArguments(
+            output_dir=out_dir, per_device_train_batch_size=bs,
+            gradient_accumulation_steps=accum, num_train_epochs=epochs,
+            learning_rate=lr, warmup_ratio=0.05, logging_steps=20,
+            save_strategy="no", report_to="none",
+            bf16=torch.cuda.is_available(), seed=42,
+        )
+        trainer = Trainer(model=model, args=args, train_dataset=train_ds,
+                          data_collator=collator, callbacks=[_CurveCallback()])
+        try:
+            print(f"  [{run_id}] training {len(train_ds)} samples x {epochs} epochs "
+                  f"(batch={bs} x accum={accum})...")
+            trainer.train()
+            train_time = time.time() - t0
+            break
+        except torch.cuda.OutOfMemoryError:
+            print(f"  [{run_id}] OOM at batch={bs}; clearing and retrying smaller...")
+            del trainer
+            best["state"] = None; history.clear()
+            gc.collect(); torch.cuda.empty_cache()
+            t0 = time.time()
+    if train_time is None:
+        raise RuntimeError(f"{run_id}: training OOM even at batch_size=1")
     print(f"  [{run_id}] trained in {train_time:.1f}s")
 
     # Restore the best-by-validation-QWK adapter (the model we keep, evaluate, and publish).
@@ -455,6 +446,7 @@ def train_one_llm(model_key, prep, inp, train_df, val_df, test_df,
     # Inference mode (use train(False) instead of .eval to dodge hook regex)
     model.train(False)
 
+    import gc; gc.collect(); torch.cuda.empty_cache()
     print(f"  [{run_id}] inferencing on val + test + train...")
     test_p  = predict_split(model, tokenizer, test_p)
     val_p   = predict_split(model, tokenizer, val_p)
