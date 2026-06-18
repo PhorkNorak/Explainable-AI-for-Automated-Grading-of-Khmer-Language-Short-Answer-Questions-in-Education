@@ -19,8 +19,9 @@ across four model families ("pillars"), evaluated on three axes that must be jud
 3. **explainability** (faithful word-attribution highlighting).
 
 The central message: *no single pillar dominates all three axes.* The four pillars are **comparable
-on QWK**, a fine-tuned LLM wins the deployment metrics, word-attribution explanations are faithful
-while attention is not automatically faithful, and scores collapse on unseen questions (leakage).
+on QWK**, a fine-tuned LLM (the KhmerGrader family) wins the deployment metrics, LOO word-attribution
+explanations are faithful for every pillar (strongest for the BiLSTM, weakest for the LLM), and
+scores collapse on unseen questions (leakage).
 
 This is a finished/auditing-stage project: the code is run, the thesis/paper/slides are drafted, and a
 live prototype is built. Most tasks now are **consistency, verification, and writing**, not new ML.
@@ -42,9 +43,9 @@ live prototype is built. Most tasks now are **consistency, verification, and wri
 | Pillar | Model | Notes |
 |---|---|---|
 | **Classical** | TF-IDF (char_wb 2–4 gram) + **RBF-SVR** | CPU, ~30 s, strong baseline |
-| **RNN** | char **BiLSTM + additive attention** | CPU; attention is a native explanation |
+| **RNN** | char **BiLSTM + additive attention** | CPU; attention is architecture only, NOT used as explanation (LOO is) |
 | **Transformer** | mBERT / XLM-R / **GTE** dual & cross encoders | GPU/HPC |
-| **LLM** | **Qwen 3.5 4B** QLoRA (unsloth), id `Qwen/Qwen3.5-4B` | GPU/HPC; best deployment metrics |
+| **LLM** | **KhmerGrader family** (QLoRA/unsloth): Qwen 3.5 4B (champion, id `Qwen/Qwen3.5-4B`), Gemma 4 E4B, SEA-LION v4.5 E2B | GPU/HPC; best deployment metrics; each compared vs its zero-shot base |
 
 ## Dataset
 
@@ -61,11 +62,18 @@ live prototype is built. Most tasks now are **consistency, verification, and wri
 
 ## Canonical numbers (the consistency spine — must match across thesis ↔ paper ↔ slides ↔ code)
 
-- **Headline QWK (uncalibrated):** Classical **0.795**, RNN **0.845**, encoder **0.820**, LLM **0.842**
+- **Headline QWK (uncalibrated):** Classical **0.795**, RNN **0.845**, encoder **0.820**, LLM **0.843**
   (a narrow ~0.05 band → "comparable", no significant QWK winner).
-- **LLM deployment:** exact **0.672 (67%)**, within ±1 **0.788 (79%)**, MAE ≈ 0.98 pt (909 split).
+- **Per-pillar P / R / macro-F1** (uncalibrated, from `champion_metrics.csv`): Classical 0.478 / 0.421 / 0.418,
+  RNN 0.540 / 0.523 / 0.529, encoder 0.548 / 0.550 / 0.541, LLM 0.790 / 0.784 / 0.780.
+- **LLM deployment (Qwen-KhmerGrader-4B, 909 split):** exact **0.657 (66%)**, within ±1 **0.832 (83%)**,
+  MAE ≈ 0.93 pt. Still wins every deployment metric vs the other three pillars.
+- **KhmerGrader family (fine-tuned, published):** Qwen-KhmerGrader-4B QWK **0.843** (champion),
+  SEA-LION-KhmerGrader-E2B **0.802** (best exact **0.693**, at 2.3B), Gemma-KhmerGrader-4B **0.763**.
+  Base **zero-shot** QWK 0.500 / 0.541 / −0.082 → QLoRA lift **+0.34 / +0.26 / +0.85**. Licences
+  Apache-2.0 / MIT; lineage in `docs/model_cards.md`.
 - **Calibration** is a *fragile, model-dependent ablation* (not in the headline).
-- **Cohen κ:** 0.47 / 0.62 / 0.62 / 0.77 vs Alaoui 0.48 (BERT) / 0.60 (transformer).
+- **Cohen κ:** 0.47 / 0.62 / 0.62 / **0.71** vs Alaoui 0.48 (BERT) / 0.60 (transformer).
 - **Leakage:** random split QWK **0.759** → question-held-out **0.354** (≈ −0.40, 5 seeds).
 - **Explainability / faithfulness (n=135, seed 42):** see next section.
 
@@ -84,9 +92,13 @@ across all four model families — no attention, saliency, rationale, SHAP, or L
   works for *every* pillar including the non-differentiable classical SVR.
 - **Faithfulness numbers** (ERASER comprehensiveness/sufficiency + AOPC vs a random-removal baseline;
   plausibility = reference-overlap proxy):
+  All four pillars are anchored on the same `no10c_no0` split (n=135); LOO is faithful (gap>0) for
+  every one, strongest for the BiLSTM, weakest (but still positive) for the LLM:
   - Classical · occlusion: **AOPC-comp +0.150**, gap +0.096, plaus 0.75 → **faithful**.
-  - BiLSTM · occlusion: **AOPC-comp +0.317**, gap +0.274, plaus 0.68 → **faithful**.
-  - Encoder / LLM: HPC-pending.
+  - BiLSTM · occlusion: **AOPC-comp +0.289**, gap +0.257, plaus 0.69 → **faithful (strongest)**.
+  - Encoder · occlusion: **AOPC-comp +0.193**, gap +0.135, plaus 0.68 → **faithful**.
+  - LLM · occlusion: **AOPC-comp +0.126**, gap +0.047, plaus 0.63 → **faithful (weakest; sufficiency
+    0.42 is high — the generative LLM's attributions are the least sharp)**.
 - **Do not introduce SHAP, LIME, attention, saliency, or rationale as XAI methods** in any
   deliverable. They were evaluated and demoted: SHAP is not reliably faithful for char-BiLSTM
   (gap −0.003); attention is configuration-dependent; LIME/IG were cross-check only (exp13,

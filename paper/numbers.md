@@ -11,14 +11,14 @@ Cross-check before submission. All values are from the released result files; no
 | Champion accuracy CIs | 0.63/0.75/0.73/0.84 with CIs | `results_stats/champion_cis.csv` |
 | Paired classical−BiLSTM | Δ=−0.05, p=0.17 | `results_stats/paired_tests.txt` |
 | Calibrated classical QWK headline (refined cleaning) | 0.847 (segment_ra; was 0.864 on prior cleaning — fragile) | `results/leaderboards/no10c_no0_v02_calibrated.csv` |
-| LLM deployment (909): exact / ±1 / MAE | 0.672 / 0.788 / 0.978 | `results/leaderboards/no10c_v08_llm_qwen35_4b.csv` |
+| LLM deployment (909, Qwen-KhmerGrader): exact / ±1 / MAE | 0.657 / 0.832 / 0.93 | `results/champions/llm_clean_qar_qwen35_4b_909/predictions_test.csv` |
 | LLM within ±1 (895) | 0.807 | `results/leaderboards/no10c_no0_v08_llm_qwen35_4b.csv` |
 | Encoder raw-exact (1184) | 0.573 | `results/leaderboards/full_v03b_maxfeat_neural.csv` |
 | Dataset-cleaning trio (dual_gte_maxfeat) | 0.820 / 0.842 / 0.847 | `results/leaderboards/{full,no10c,no10c_no0}_v03b_maxfeat_neural.csv` |
 | Leakage: classical random vs unseen-question | 0.759±0.041 → 0.354±0.106 | `results_stats/split_compare.csv` |
-| Faithfulness (classical occ / bilstm attn / bilstm occ) | see Table II | `results_xai/no10c_no0/faithfulness_leaderboard.csv` |
+| Faithfulness gap (classical / bilstm / encoder / llm, all occlusion) | +0.096 / +0.257 / +0.135 / +0.047 | `results_xai/no10c_no0/faithfulness_leaderboard.csv` |
 | Alaoui transformer train/test acc; unweighted κ | 95.67/77.22; 0.5996 | `docs/reference_papers/...IJECE...pdf` (verified from PDF) |
-| Generalization gaps (ours) | classical +10pp, GTE-mf +1.4pp, Qwen +2.4pp | champion `metrics.json` train vs test |
+| Generalization gaps (ours) | classical +15.6pp, GTE-mf +1.4pp, Qwen +3.0pp (83.3/80.3) | champion `metrics.json` train vs test |
 | Cleaning ablation (old vs new) Δ QWK | +0.003 / +0.001 / +0.004 (full/909/895) | `results_stats/cleaning_ablation.csv` |
 | Residual noise removed by refinement | 561 zero-width spaces + bullets (digits kept) | corpus scan (`preprocess.strip_invisibles`) |
 

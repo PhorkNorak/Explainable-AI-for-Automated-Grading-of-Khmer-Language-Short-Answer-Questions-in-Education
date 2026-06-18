@@ -41,16 +41,17 @@ family is meant to answer, not an assumption.
 Each model is compared against its **own untuned base evaluated zero-shot** on the same test set,
 so the reported lift isolates the effect of fine-tuning (the standard, honest baseline).
 
-| Model | Base zero-shot QWK | Fine-tuned QWK | Lift |
-|---|---|---|---|
-| Qwen-KhmerGrader-4B | [pending] | [pending: re-sourced after the chat-template re-run] | [pending] |
-| Gemma-KhmerGrader-4B | [pending] | [pending] | [pending] |
-| SEA-LION-KhmerGrader-E2B | [pending] | [pending] | [pending] |
+| Model | Base zero-shot QWK | Fine-tuned QWK | Lift | Exact |
+|---|---|---|---|---|
+| Qwen-KhmerGrader-4B | 0.500 | **0.843** | +0.34 | 0.657 |
+| Gemma-KhmerGrader-4B | -0.082 | 0.763 | +0.85 | 0.657 |
+| SEA-LION-KhmerGrader-E2B | 0.541 | 0.802 | +0.26 | **0.693** |
 
-Numbers are filled from `results/leaderboards/<dataset>_v08z_llm_<model>_zeroshot.csv` (baseline) and
-`<dataset>_v08_llm_<model>.csv` (fine-tuned) once `exp08` and `exp08 --zeroshot` have run. The
+All values are the `no10c` (909) test set. Sourced from
+`results_no10c_v08z_llm_<model>_zeroshot/leaderboard.csv` (zero-shot baseline) and
+`results_no10c_v08_llm_<model>/leaderboard.csv` (fine-tuned); `Exact` is `test_raw_exact`. The
 figure `paper/figures/fig_llm_finetune_gain.png` visualizes this table. Do not hand-edit these
-numbers; they must trace to the result files.
+numbers; they trace to the result files above.
 
 ## Intended use and limitations
 

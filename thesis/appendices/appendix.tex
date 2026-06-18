@@ -5,13 +5,13 @@
 
 \section{Hyperparameter Inventory}
 \label{app:hparams}
-Table~\ref{tab:hparams} lists the main hyperparameters. Classical and BiLSTM settings are the
-defaults used throughout; the Transformer and LLM settings follow standard fine-tuning practice with
-validation-selected learning rates (\S\ref{sec:tuning}).
+Table~\ref{tab:hparams} lists the main hyperparameters. Classical and BiLSTM settings are the defaults
+used throughout; the Transformer and LLM settings follow standard fine-tuning practice with
+validation-selected learning rates (\S\ref{sec:training}).
 
 \begin{table}[h]
 \centering
-\caption{Key hyperparameters by pillar.}
+\caption{Show the key hyperparameters of each model.}
 \label{tab:hparams}
 \small
 \begin{tabular}{@{}llp{7.5cm}@{}}
@@ -26,7 +26,9 @@ RNN         & embed / hidden / layers & 128 / 128 / 2 (bidirectional) \\
 Transformer & backbones & mBERT, XLM-R, GTE-multilingual \\
             & frozen layers / max length / batch & 6 / 256 / 16 \\
             & learning rate / weight decay & $2\mathrm{e}{-}5$ / 0.01 \\
-LLM         & base / adaptation & Qwen / QLoRA (4-bit) \\
+LLM         & base / adaptation & Qwen 3.5 4B / QLoRA (4-bit) \\
+            & LoRA rank / alpha / dropout & 16 / 16 / 0 \\
+            & target modules & q, k, v, o, gate, up, down \\
             & learning rate (val-selected) & $\in\{1,2,3\}\times10^{-4}$ \\
 \midrule
 Common      & split / seed & 70/15/15 / 42 (multi-seed: 42, 1337, 2024, 7, 99) \\
@@ -42,25 +44,51 @@ of cells across three dataset variants) requires roughly 40 GPU-hours in total. 
 computed from saved per-answer predictions and need no GPU.
 
 \section{Additional Explanation Heatmaps}
-\label{app:prototype}
-Figure~\ref{fig:heatmap-bilstm} shows an additional Khmer word-attribution heatmap (BiLSTM, occlusion).
-Khmer complex script is rendered with browser text shaping, as standard plotting back-ends do not
-correctly stack subscript consonants or reorder vowels. \emph{[Insert here one or two screenshots of
-the live prototype: the input form (Question + Reference + Answer + model selector), and a returned
-score with its Khmer word-attribution heatmap and written feedback.]}
+\label{app:heatmaps}
+Chapter~\ref{ch:results} shows the classical occlusion heatmap (Figure~\ref{fig:heatmap}). For
+completeness, Figures~\ref{fig:heatmap-bilstm}, \ref{fig:heatmap-encoder}, and \ref{fig:heatmap-llm}
+show LOO occlusion heatmaps for the remaining three pillars on real Khmer answers, so all four
+families are illustrated. Khmer complex script is rendered with browser text shaping, as standard
+plotting back-ends do not correctly stack subscript consonants or reorder vowels, and the readable
+display tokens are used (no KCC reorder).
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.95\textwidth]{heatmap_bilstm.png}
-\caption{Example Khmer word-attribution heatmap (BiLSTM, occlusion) on an original student answer.}
+\includegraphics[width=0.92\textwidth]{heatmap_bilstm.png}
+\caption{Sample of a Khmer word-attribution heatmap (BiLSTM model, LOO).}
 \label{fig:heatmap-bilstm}
 \end{figure}
 
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.92\textwidth]{heatmap_encoder.png}
+\caption{Sample of a Khmer word-attribution heatmap (Transformer model, LOO).}
+\label{fig:heatmap-encoder}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.92\textwidth]{heatmap_llm.png}
+\caption{Sample of a Khmer word-attribution heatmap (LLM model, LOO).}
+\label{fig:heatmap-llm}
+\end{figure}
+
+\section{Live Prototype Screenshots}
+\label{app:prototype}
+\emph{[Insert here one or two screenshots of the live prototype: the input form (Question + Reference +
+Answer + model selector), and a returned score with its Khmer word-attribution heatmap and written
+feedback.]}
+
 \section{Ethics and Data Governance}
 \label{app:ethics}
-The corpus contains real, anonymised student answers from minors, used solely for research into a
-teacher-assist grading tool. Only pseudonymous identifiers are stored; no student names appear in the
-data. The system is intended to \emph{support}, not replace, a teacher's judgement (human-in-the-loop).
-Because a single teacher graded all answers, the models reflect that grader's decisions; results are
-reported as agreement with this grader, with reporting across three dataset variants as partial
-mitigation. \emph{[Insert the institution's IRB/consent details as applicable.]}
+The corpus contains real, anonymised student answers from minors, collected from two Cambodian high
+schools and used solely for research into a teacher-assist grading tool. Access to the examination
+scripts was granted by approaching each school and obtaining permission \emph{directly from the school
+Director}; no formal institutional review board (IRB) process applies at this level in this setting.
+Only pseudonymous identifiers are stored; no student names appear in the data. The system is intended
+to \emph{support}, not replace, a teacher's judgement (human-in-the-loop). Because a single teacher
+graded all answers, the models reflect that grader's decisions; results are reported as agreement with
+this grader, with reporting across three dataset variants as partial mitigation. The grader
+inconsistency documented in \S\ref{sec:noisy} (class 10C Biology) is disclosed rather than hidden.
+\emph{[If the institution later requires formal consent/IRB documentation, insert the reference
+here.]}

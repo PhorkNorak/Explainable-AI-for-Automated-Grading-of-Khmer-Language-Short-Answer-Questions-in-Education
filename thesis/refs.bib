@@ -1,3 +1,18 @@
+% ============================================================================
+%  Bibliography - Khmer ASAG bachelor thesis (RUPP)
+%  Every entry was web-verified (title / authors / venue / year / DOI-or-arXiv)
+%  during the reference audit; see docs/references.md for the download links.
+%  Style-agnostic BibTeX data: the thesis renders these with IEEEtran (numbered
+%  [1] citations, references in citation order). Kept identical to paper/refs.bib.
+%
+%  NOTE: the THESIS deliberately cites a ~22-paper core, so its bibliography
+%  prints ~22 entries (BibTeX lists only \cite-d entries). The extra entries
+%  below stay in this file because the companion paper (paper/main.tex) cites
+%  them and they are verified, available references; they do NOT appear in the
+%  thesis bibliography unless cited. Do not \nocite{*}.
+% ============================================================================
+
+% ---------------------------------------------------------------- ASAG: foundations
 @inproceedings{mohler2011,
   title={Learning to grade short answer questions using semantic similarity measures and dependency graph alignments},
   author={Mohler, Michael and Bunescu, Razvan and Mihalcea, Rada},
@@ -7,112 +22,68 @@
 
 @inproceedings{dzikovska2013,
   title={{SemEval-2013} Task 7: The joint student response analysis and 8th recognizing textual entailment challenge},
-  author={Dzikovska, Myroslava O. and Nielsen, Rodney D. and Brew, Chris and others},
+  author={Dzikovska, Myroslava O. and Nielsen, Rodney D. and Brew, Chris and Leacock, Claudia and Giampiccolo, Danilo and Bentivogli, Luisa and Clark, Peter and Dagan, Ido and Dang, Hoa T.},
   booktitle={Proc. 2nd Joint Conf. on Lexical and Computational Semantics ({*SEM})},
-  year={2013}
+  pages={263--274}, year={2013}
 }
 
 @article{sung2022survey,
   title={A survey on automated short answer grading with deep learning: from word embeddings to transformers},
-  author={Sung, Chul and others},
+  author={Sung, Chul and Dhamecha, Tejas Indulal and Mukhi, Nirmal},
   journal={arXiv preprint arXiv:2204.03503}, year={2022}
 }
 
+@article{tan2025review,
+  title={A comprehensive review on automated grading systems in {STEM} using {AI} techniques},
+  author={Tan, Le Ying and Hu, Shiyu and Yeo, Darren J. and Cheong, Kang Hao},
+  journal={Mathematics}, volume={13}, number={17}, pages={2828}, year={2025},
+  publisher={MDPI}, doi={10.3390/math13172828}
+}
+
+% ---------------------------------------------------------------- ASAG: LLM era
 @article{chang2024gpt4,
   title={Performance of the pre-trained large language model {GPT-4} on automated short answer grading},
   author={Chang, Li-Hsin and Ginter, Filip},
   journal={arXiv preprint arXiv:2309.09338}, year={2024}
 }
 
+@article{sasbench2025,
+  title={{SAS-Bench}: A fine-grained benchmark for evaluating short answer scoring with large language models},
+  author={Lai, Peichao and Zhang, Kexuan and Lin, Yi and Zhang, Linyihan and Ye, Feiyang and Yan, Jinhao and Xu, Yanwei and He, Conghui and Wang, Yilei and Zhang, Wentao and Cui, Bin},
+  journal={arXiv preprint arXiv:2505.07247}, year={2025}
+}
+
+@article{graderag2025,
+  title={Enhancing {LLM}-based short answer grading with retrieval-augmented generation},
+  author={Chu, Yucheng and He, Peng and Li, Hang and Han, Haoyu and Yang, Kaiqi and Xue, Yu and Li, Tingting and Krajcik, Joseph and Tang, Jiliang},
+  journal={arXiv preprint arXiv:2504.05276}, year={2025}
+}
+
+@article{neurosymbolic2024asag,
+  title={Enhancing multi-domain automatic short answer grading through an explainable neuro-symbolic pipeline},
+  author={K{\"u}nnecke, Felix and Filighera, Anna and Leong, Colin and Steuer, Tim},
+  journal={arXiv preprint arXiv:2403.01811}, year={2024}
+}
+
+% ---------------------------------------------------------------- Arabic ASAG anchor
 @article{alaoui2024,
   title={Deep learning based {Arabic} short answer grading in serious games},
   author={Soulimani, Younes Alaoui and El Achaak, Lotfi and Bouhorma, Mohammed},
   journal={International Journal of Electrical and Computer Engineering (IJECE)},
-  volume={14}, number={1}, year={2024}
+  volume={14}, number={1}, pages={770--779}, year={2024}
 }
 
-@article{buoy2022khmer,
-  title={Pretrained models and evaluation data for the {Khmer} language},
-  author={Buoy, Rina and others},
-  journal={Tsinghua Science and Technology}, year={2022},
-  doi={10.26599/TST.2021.9010060}
+@article{alqurashi2025arabic,
+  title={An automatic grading system for {A}rabic language short-answer questions using deep learning},
+  author={Alqurashi, Afnan and Alharbi, Basma and Sabbeh, Sahar},
+  journal={Engineering, Technology \& Applied Science Research (ETASR)},
+  volume={15}, number={5}, pages={26665--26675}, year={2025}
 }
 
-@misc{khmernltk2020,
-  title={khmer-nltk: {Khmer} natural language processing toolkit},
-  author={Hoang, Vichet}, year={2020},
-  howpublished={\url{https://github.com/VietHoang1512/khmer-nltk}}
-}
-
-@inproceedings{deyoung2020eraser,
-  title={{ERASER}: A benchmark to evaluate rationalized {NLP} models},
-  author={DeYoung, Jay and Jain, Sarthak and Rajani, Nazneen Fatema and others},
-  booktitle={Proc. 58th Annual Meeting of the Association for Computational Linguistics (ACL)},
-  pages={4443--4458}, year={2020}
-}
-
-@inproceedings{jain2019attention,
-  title={Attention is not Explanation},
-  author={Jain, Sarthak and Wallace, Byron C.},
-  booktitle={Proc. NAACL-HLT}, pages={3543--3556}, year={2019}
-}
-
-@inproceedings{wiegreffe2019attention,
-  title={Attention is not not Explanation},
-  author={Wiegreffe, Sarah and Pinter, Yuval},
-  booktitle={Proc. EMNLP-IJCNLP}, pages={11--20}, year={2019}
-}
-
-@inproceedings{ribeiro2016lime,
-  title={``{Why} should {I} trust you?'': Explaining the predictions of any classifier},
-  author={Ribeiro, Marco Tulio and Singh, Sameer and Guestrin, Carlos},
-  booktitle={Proc. 22nd ACM SIGKDD}, pages={1135--1144}, year={2016}
-}
-
-@inproceedings{lundberg2017shap,
-  title={A unified approach to interpreting model predictions},
-  author={Lundberg, Scott M. and Lee, Su-In},
-  booktitle={Advances in Neural Information Processing Systems (NeurIPS)}, year={2017}
-}
-
-@article{simonyan2014saliency,
-  title={Deep inside convolutional networks: Visualising image classification models and saliency maps},
-  author={Simonyan, Karen and Vedaldi, Andrea and Zisserman, Andrew},
-  journal={arXiv preprint arXiv:1312.6034}, year={2014}
-}
-
-@inproceedings{li2016visualizing,
-  title={Visualizing and understanding neural models in {NLP}},
-  author={Li, Jiwei and Chen, Xinlei and Hovy, Eduard and Jurafsky, Dan},
-  booktitle={Proc. NAACL-HLT}, pages={681--691}, year={2016}
-}
-
-@inproceedings{bergkirkpatrick2012,
-  title={An empirical investigation of statistical significance in {NLP}},
-  author={Berg-Kirkpatrick, Taylor and Burkett, David and Klein, Dan},
-  booktitle={Proc. EMNLP-CoNLL}, pages={995--1005}, year={2012}
-}
-
-@inproceedings{cohen1968qwk,
-  title={Weighted kappa: Nominal scale agreement provision for scaled disagreement or partial credit},
-  author={Cohen, Jacob},
-  journal={Psychological Bulletin}, volume={70}, pages={213--220}, year={1968}
-}
-
-@misc{unsloth,
-  title={Unsloth: 2x faster {LLM} fine-tuning}, author={{Unsloth AI}}, year={2024},
-  howpublished={\url{https://github.com/unslothai/unsloth}}
-}
-
-@misc{gte2024,
-  title={{GTE}-multilingual-base}, author={{Alibaba-NLP}}, year={2024},
-  howpublished={\url{https://huggingface.co/Alibaba-NLP/gte-multilingual-base}}
-}
-
-% ---- Foundational architecture / metric citations (added for grounding) ----
+% ---------------------------------------------------------------- Transformers / encoders
 @inproceedings{vaswani2017attention,
   title={Attention is all you need},
-  author={Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and others},
+  author={Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N. and Kaiser, Lukasz and Polosukhin, Illia},
   booktitle={Advances in Neural Information Processing Systems (NeurIPS)}, year={2017}}
 
 @inproceedings{devlin2019bert,
@@ -122,91 +93,69 @@
 
 @inproceedings{conneau2020xlmr,
   title={Unsupervised cross-lingual representation learning at scale},
-  author={Conneau, Alexis and Khandelwal, Kartikay and Goyal, Naman and others},
-  booktitle={Proc. 58th Annual Meeting of the Association for Computational Linguistics (ACL)}, year={2020}}
+  author={Conneau, Alexis and Khandelwal, Kartikay and Goyal, Naman and Chaudhary, Vishrav and Wenzek, Guillaume and Guzm{\'a}n, Francisco and Grave, Edouard and Ott, Myle and Zettlemoyer, Luke and Stoyanov, Veselin},
+  booktitle={Proc. 58th Annual Meeting of the Association for Computational Linguistics (ACL)}, pages={8440--8451}, year={2020}}
 
 @inproceedings{reimers2019sbert,
   title={Sentence-{BERT}: Sentence embeddings using {S}iamese {BERT}-networks},
   author={Reimers, Nils and Gurevych, Iryna},
-  booktitle={Proc. EMNLP-IJCNLP}, year={2019}}
+  booktitle={Proc. EMNLP-IJCNLP}, pages={3982--3992}, year={2019}}
 
-@article{williamson2012framework,
-  title={A framework for evaluation and use of automated scoring},
-  author={Williamson, David M. and Xi, Xiaoming and Breyer, F. Jay},
-  journal={Educational Measurement: Issues and Practice}, volume={31}, number={1}, pages={2--13}, year={2012}}
+@inproceedings{bahdanau2015attention,
+  title={Neural machine translation by jointly learning to align and translate},
+  author={Bahdanau, Dzmitry and Cho, Kyunghyun and Bengio, Yoshua},
+  booktitle={International Conference on Learning Representations (ICLR)}, year={2015}}
 
-% ---- Related work (from docs/reference_papers/ + web; VERIFY author lists/venues before submission) ----
-@article{tan2025review,
-  title={A comprehensive review on automated grading systems in {STEM} using {AI} techniques},
-  author={Tan, Le Ying and Hu, Shiyu and Yeo, Darren J. and Cheong, Kang Hao},
-  journal={Mathematics}, volume={13}, number={17}, pages={2828}, year={2025}, publisher={MDPI}}
+% ---------------------------------------------------------------- LLM adaptation (QLoRA / LoRA)
+@inproceedings{dettmers2023qlora,
+  title={{QLoRA}: Efficient finetuning of quantized {LLMs}},
+  author={Dettmers, Tim and Pagnoni, Artidoro and Holtzman, Ari and Zettlemoyer, Luke},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS)}, year={2023},
+  note={arXiv:2305.14314}}
 
-@article{alqurashi2025arabic,
-  title={An automatic grading system for {A}rabic language short-answer questions using deep learning},
-  author={Alqurashi, Afnan and Alharbi, Basma and Sabbeh, Sahar},
-  journal={Engineering, Technology \& Applied Science Research (ETASR)}, volume={15}, number={5}, year={2025}}
+@inproceedings{hu2022lora,
+  title={{LoRA}: Low-rank adaptation of large language models},
+  author={Hu, Edward J. and Shen, Yelong and Wallis, Phillip and Allen-Zhu, Zeyuan and Li, Yuanzhi and Wang, Shean and Wang, Lu and Chen, Weizhu},
+  booktitle={International Conference on Learning Representations (ICLR)}, year={2022},
+  note={arXiv:2106.09685}}
 
-@mastersthesis{lachana2025dutch,
-  title={Automated scoring systems for open-ended questions in {D}utch education},
-  author={Lachana, Nafsika}, school={Utrecht University (in cooperation with CITO)}, year={2025}}
+% ---------------------------------------------------------------- Explainable AI: methods
+@inproceedings{ribeiro2016lime,
+  title={``{Why} should {I} trust you?'': Explaining the predictions of any classifier},
+  author={Ribeiro, Marco Tulio and Singh, Sameer and Guestrin, Carlos},
+  booktitle={Proc. 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining},
+  pages={1135--1144}, year={2016}}
 
-@phdthesis{condor2024,
-  title={Automatic grading and feedback for students' short written responses},
-  author={Condor, Aubrey}, school={University of California, Berkeley}, year={2024}}
+@inproceedings{lundberg2017shap,
+  title={A unified approach to interpreting model predictions},
+  author={Lundberg, Scott M. and Lee, Su-In},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS)}, pages={4765--4774}, year={2017}}
 
-@article{kumar2020explainable,
-  title={Explainable automated essay scoring: Deep learning really has pedagogical value},
-  author={Kumar, Vivekanandan and Boulanger, David},
-  journal={Frontiers in Education}, volume={5}, pages={572367}, year={2020}}
+@article{simonyan2014saliency,
+  title={Deep inside convolutional networks: Visualising image classification models and saliency maps},
+  author={Simonyan, Karen and Vedaldi, Andrea and Zisserman, Andrew},
+  journal={arXiv preprint arXiv:1312.6034}, year={2014}}
 
-@inproceedings{li2024crosslingual,
-  title={Zero-shot cross-lingual automated essay scoring},
-  author={Li, Xia and He, Junyi},
-  booktitle={Proc. LREC-COLING}, pages={17819--17832}, year={2024}}
+@inproceedings{li2016visualizing,
+  title={Visualizing and understanding neural models in {NLP}},
+  author={Li, Jiwei and Chen, Xinlei and Hovy, Eduard and Jurafsky, Dan},
+  booktitle={Proc. NAACL-HLT}, pages={681--691}, year={2016}}
 
-@article{xu2025qwenscore,
-  title={Explainable {AI} for education: Enhancing essay scoring via rubric-aligned chain-of-thought prompting},
-  author={Xu, Wenbo and Kassim, M. S. S. and Hoo, Wai Lam and Yang, Wudao and Xu, Tianrong},
-  journal={(preprint)}, year={2025}}
+@inproceedings{sundararajan2017ig,
+  title={Axiomatic attribution for deep networks},
+  author={Sundararajan, Mukund and Taly, Ankur and Yan, Qiqi},
+  booktitle={Proc. 34th International Conference on Machine Learning (ICML)}, pages={3319--3328}, year={2017}}
 
-@misc{engsaf2024, key={EngSAF},
-  title={``{I} understand why {I} got this grade'': Automatic short answer grading with feedback (EngSAF)},
-  howpublished={arXiv:2407.12818}, year={2024}, note={verify author list before submission}}
+% ---------------------------------------------------------------- XAI: attention debate + faithfulness
+@inproceedings{jain2019attention,
+  title={Attention is not Explanation},
+  author={Jain, Sarthak and Wallace, Byron C.},
+  booktitle={Proc. NAACL-HLT}, pages={3543--3556}, year={2019}}
 
-@misc{neurosymbolic2024asag, key={Neuro-Symbolic ASAG},
-  title={Enhancing multi-domain automatic short answer grading through an explainable neuro-symbolic pipeline},
-  howpublished={arXiv:2403.01811}, year={2024}, note={verify author list before submission}}
-
-@misc{sasbench2025, key={SAS-Bench},
-  title={{SAS-Bench}: A fine-grained benchmark for evaluating short answer scoring with large language models},
-  howpublished={arXiv:2505.07247}, year={2025}, note={PKU-DAIR; verify author list}}
-
-@misc{graderag2025, key={GradeRAG},
-  title={Enhancing {LLM}-based short answer grading with retrieval-augmented generation ({GradeRAG})},
-  howpublished={arXiv:2504.05276}, year={2025}, note={verify author list}}
-
-@article{huot2025cambodia,
-  title={Educating in the age of {AI}: Preparing {C}ambodian teachers and students for an {AI}-augmented learning future},
-  author={Huot, Sovanna and Loch, Sovanna},
-  journal={Journal of Educational Technology and E-Learning Innovations (JETELI)}, volume={1}, number={2}, year={2025}}
-
-@misc{chillgrader2025, key={CHiLLGrader},
-  title={{CHiL(L)Grader}: Calibrated human-in-the-loop short-answer grading},
-  howpublished={arXiv:2603.11957}, year={2025}, note={verify author list}}
-
-% ---- XAI-in-ASAG + attribution/faithfulness foundations (verify author lists) ----
-@inproceedings{exasag2023,
-  author={T{\"o}rnqvist and others},
-  title={{ExASAG}: Explainable framework for automatic short answer grading},
-  booktitle={Proc. 18th Workshop on Innovative Use of NLP for Building Educational Applications (BEA)},
-  year={2023}, note={ACL 2023.bea-1.29; verify authors}}
-
-@article{pinto2025attribution,
-  title={Evaluating the consistency and reliability of attribution methods in automated short
-         answer grading ({ASAG}) systems: Toward an explainable scoring system},
-  author={Pinto and others},
-  journal={Journal of Educational Measurement}, year={2025}, doi={10.1111/jedm.12438},
-  note={verify author list}}
+@inproceedings{wiegreffe2019attention,
+  title={Attention is not not Explanation},
+  author={Wiegreffe, Sarah and Pinter, Yuval},
+  booktitle={Proc. EMNLP-IJCNLP}, pages={11--20}, year={2019}}
 
 @inproceedings{jacovi2020faithfulness,
   title={Towards faithfully interpretable {NLP} systems: How should we define and evaluate faithfulness?},
@@ -214,35 +163,121 @@
   booktitle={Proc. 58th Annual Meeting of the Association for Computational Linguistics (ACL)},
   pages={4198--4205}, year={2020}}
 
-@article{samek2017aopc,
-  title={Evaluating the visualization of what a deep neural network has learned},
-  author={Samek, Wojciech and Binder, Alexander and Montavon, Gr{\'e}goire and Lapuschkin, Sebastian and M{\"u}ller, Klaus-Robert},
-  journal={IEEE Transactions on Neural Networks and Learning Systems}, volume={28}, number={11}, pages={2660--2673}, year={2017}}
-
-@inproceedings{sundararajan2017ig,
-  title={Axiomatic attribution for deep networks},
-  author={Sundararajan, Mukund and Taly, Ankur and Yan, Qiqi},
-  booktitle={Proc. 34th International Conference on Machine Learning (ICML)}, year={2017}}
-
-@inproceedings{bahdanau2015attention,
-  title={Neural machine translation by jointly learning to align and translate},
-  author={Bahdanau, Dzmitry and Cho, Kyunghyun and Bengio, Yoshua},
-  booktitle={International Conference on Learning Representations (ICLR)}, year={2015}}
-
-@inproceedings{wei2022cot,
-  title={Chain-of-thought prompting elicits reasoning in large language models},
-  author={Wei, Jason and Wang, Xuezhi and Schuurmans, Dale and others},
-  booktitle={Advances in Neural Information Processing Systems (NeurIPS)}, year={2022}}
-
 @article{lyu2024faithfulsurvey,
   title={Towards faithful model explanation in {NLP}: A survey},
   author={Lyu, Qing and Apidianaki, Marianna and Callison-Burch, Chris},
   journal={Computational Linguistics}, volume={50}, number={2}, pages={657--723}, year={2024}}
 
-@misc{nam2024grading, key={Neural Additive Grading},
-  title={Explainable automatic grading with neural additive models},
-  howpublished={arXiv:2405.00489}, year={2024}, note={verify authors}}
+@inproceedings{deyoung2020eraser,
+  title={{ERASER}: A benchmark to evaluate rationalized {NLP} models},
+  author={DeYoung, Jay and Jain, Sarthak and Rajani, Nazneen Fatema and Lehman, Eric and Xiong, Caiming and Socher, Richard and Wallace, Byron C.},
+  booktitle={Proc. 58th Annual Meeting of the Association for Computational Linguistics (ACL)},
+  pages={4443--4458}, year={2020}}
 
-@misc{naopc2024, key={Normalized AOPC},
+@article{samek2017aopc,
+  title={Evaluating the visualization of what a deep neural network has learned},
+  author={Samek, Wojciech and Binder, Alexander and Montavon, Gr{\'e}goire and Lapuschkin, Sebastian and M{\"u}ller, Klaus-Robert},
+  journal={IEEE Transactions on Neural Networks and Learning Systems}, volume={28}, number={11}, pages={2660--2673}, year={2017}}
+
+@article{naopc2024,
   title={Normalized {AOPC}: Fixing misleading faithfulness metrics for feature attribution explainability},
-  howpublished={arXiv:2408.08137}, year={2024}, note={verify authors}}
+  author={Edin, Joakim and Motzfeldt, Andreas Geert and Christensen, Casper L. and Ruotsalo, Tuukka and Maal{\o}e, Lars and Maistro, Maria},
+  journal={arXiv preprint arXiv:2408.08137}, year={2024}}
+
+% ---------------------------------------------------------------- XAI in scoring / feedback
+@article{kumar2020explainable,
+  title={Explainable automated essay scoring: Deep learning really has pedagogical value},
+  author={Kumar, Vivekanandan and Boulanger, David},
+  journal={Frontiers in Education}, volume={5}, pages={572367}, year={2020}}
+
+@inproceedings{exasag2023,
+  title={{ExASAG}: Explainable framework for automatic short answer grading},
+  author={T{\"o}rnqvist, Maximilian and Mahamud, Mosleh and Mendez Guzman, Erick and Farazouli, Alexandra},
+  booktitle={Proc. 18th Workshop on Innovative Use of NLP for Building Educational Applications (BEA)},
+  pages={361--371}, year={2023}}
+
+@article{pinto2025attribution,
+  title={Evaluating the consistency and reliability of attribution methods in automated short answer grading ({ASAG}) systems: Toward an explainable scoring system},
+  author={Pinto, Wilson N., Jr. and Shin, Jinnie},
+  journal={Journal of Educational Measurement}, volume={62}, number={2}, pages={248--281},
+  year={2025}, doi={10.1111/jedm.12438}}
+
+% Neural-additive-model grading (Condor \& Pardos); key kept for stable citations.
+@article{nam2024grading,
+  title={Explainable automatic grading with neural additive models},
+  author={Condor, Aubrey and Pardos, Zachary},
+  journal={arXiv preprint arXiv:2405.00489}, year={2024}}
+
+@article{xu2025qwenscore,
+  title={Explainable {AI} for education: Enhancing essay scoring via rubric-aligned chain-of-thought prompting},
+  author={Xu, Wenbo and Kassim, M. S. S. and Hoo, Wai Lam and Yang, Wudao and Xu, Tianrong},
+  journal={Preprints.org}, year={2025}, doi={10.20944/preprints202504.2338.v1}}
+
+@inproceedings{wei2022cot,
+  title={Chain-of-thought prompting elicits reasoning in large language models},
+  author={Wei, Jason and Wang, Xuezhi and Schuurmans, Dale and Bosma, Maarten and Ichter, Brian and Xia, Fei and Chi, Ed and Le, Quoc and Zhou, Denny},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS)}, year={2022}}
+
+% ---------------------------------------------------------------- Deployed / human-in-the-loop ASAG
+@article{condor2024,
+  title={Automatic grading and feedback for students' short written responses},
+  author={Condor, Aubrey},
+  journal={Ph.D. dissertation, University of California, Berkeley}, year={2024}}
+
+@article{engsaf2024,
+  title={``{I} understand why {I} got this grade'': Automatic short answer grading with feedback},
+  author={Aggarwal, Dishank and Sil, Pritam and Raman, Bhaskaran and Bhattacharyya, Pushpak},
+  journal={arXiv preprint arXiv:2407.12818}, year={2024}}
+
+@article{chillgrader2025,
+  title={{CHiL(L)Grader}: Calibrated human-in-the-loop short-answer grading},
+  author={Raikote, Pranav and Randl, Korbinian and Miliou, Ioanna and Lakes, Athanasios and Papapetrou, Panagiotis},
+  journal={arXiv preprint arXiv:2603.11957}, year={2026}}
+
+% ---------------------------------------------------------------- Cross-lingual / low-resource scoring
+@inproceedings{li2024crosslingual,
+  title={Zero-shot cross-lingual automated essay scoring},
+  author={Li, Xia and He, Junyi},
+  booktitle={Proc. LREC-COLING}, pages={17819--17832}, year={2024}}
+
+@mastersthesis{lachana2025dutch,
+  title={Automated scoring systems for open-ended questions in {D}utch education},
+  author={Lachana, Nafsika}, school={Utrecht University (in cooperation with CITO)}, year={2025}}
+
+% ---------------------------------------------------------------- Khmer NLP / Cambodia
+@article{buoy2022khmer,
+  title={Pretrained models and evaluation data for the {Khmer} language},
+  author={Buoy, Rina and Taing, Nguonly and Kor, Sokchea},
+  journal={Tsinghua Science and Technology}, year={2022},
+  doi={10.26599/TST.2021.9010060}}
+
+@misc{khmernltk2020,
+  title={khmer-nltk: {Khmer} natural language processing toolkit},
+  author={Hoang, Vichet}, year={2020},
+  howpublished={\url{https://github.com/VietHoang1512/khmer-nltk}}}
+
+@article{huot2025cambodia,
+  title={Educating in the age of {AI}: Preparing {C}ambodian teachers and students for an {AI}-augmented learning future},
+  author={Huot, Sovanna and others},
+  journal={Journal of Educational Technology and E-Learning Innovations (JETELI)},
+  volume={1}, number={2}, year={2025}}
+
+% ---------------------------------------------------------------- Metrics / evaluation
+@article{cohen1968qwk,
+  title={Weighted kappa: Nominal scale agreement provision for scaled disagreement or partial credit},
+  author={Cohen, Jacob},
+  journal={Psychological Bulletin}, volume={70}, number={4}, pages={213--220}, year={1968}}
+
+@article{williamson2012framework,
+  title={A framework for evaluation and use of automated scoring},
+  author={Williamson, David M. and Xi, Xiaoming and Breyer, F. Jay},
+  journal={Educational Measurement: Issues and Practice}, volume={31}, number={1}, pages={2--13}, year={2012}}
+
+% ---------------------------------------------------------------- Tools / models
+@misc{unsloth,
+  title={Unsloth: 2x faster {LLM} fine-tuning}, author={{Unsloth AI}}, year={2024},
+  howpublished={\url{https://github.com/unslothai/unsloth}}}
+
+@misc{gte2024,
+  title={{GTE}-multilingual-base}, author={{Alibaba-NLP}}, year={2024},
+  howpublished={\url{https://huggingface.co/Alibaba-NLP/gte-multilingual-base}}}

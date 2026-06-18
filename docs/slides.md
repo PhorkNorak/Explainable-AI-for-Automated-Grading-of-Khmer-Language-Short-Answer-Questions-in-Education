@@ -51,7 +51,7 @@ style: |
 
 <br>
 
-> **One-line thesis:** On a small, single-grader Khmer corpus, *no single model family dominates across all three axes*: the four pillars are **comparable on QWK** (a narrow 0.05 band), a fine-tuned LLM wins the deployment metrics, and on explainability **word attribution (occlusion) is reliably faithful while attention is not reliable** (it must be verified, not assumed). Accuracy, deployment, and **explainability** must be judged together.
+> **One-line thesis:** On a small, single-grader Khmer corpus, *no single model family dominates across all three axes*: the four pillars are **comparable on QWK** (a narrow 0.05 band), a fine-tuned LLM wins the deployment metrics, and on explainability **LOO word attribution (occlusion) is reliably faithful for every pillar** (one unified, model-agnostic method). Accuracy, deployment, and **explainability** must be judged together.
 
 ---
 
@@ -376,15 +376,15 @@ We evaluate explanations on **two axes** (Jacovi & Goldberg 2020):
 | **Classical** | TF-IDF+SVR (895) | 0.795 | 0.630 | 0.200 | 0.711 | refined |
 | **RNN** | BiLSTM+Attn (895) | **0.845** | 0.748 | 0.541 | 0.770 | refined |
 | **Transformer** | GTE dual + max-score (1184) | 0.820 | 0.730 | **0.573** | 0.770 | prior* |
-| **LLM** | **Qwen 3.5 4B (909)** | 0.842 | **0.839** ⭐ | **0.672** ⭐ | **0.788** ⭐ | prior* |
+| **LLM** | **Qwen 3.5 4B (909)** | 0.843 | **0.803** ⭐ | **0.657** ⭐ | **0.832** ⭐ | refined |
 
 <span class="small">All numbers are **uncalibrated** (calibration is a separate val-selected ablation, §5.3: it helps the classical model but hurts the BiLSTM, so we don't fold it into the headline). QWK primary; full standard set (+ Cohen κ, macro-F1) in §5.10. classical/RNN re-run under the **refined cleaning**; *encoder/LLM on the **prior** cleaning (re-run pending; cleaning effect ≈0.02 QWK).</span>
 
 <br>
 
 > **No single pillar dominates**: the four are **comparable on QWK** (classical 0.795,
-> RNN 0.845, encoder 0.820, LLM 0.842 — a narrow 0.05 band). The fine-tuned **LLM** wins the
-> **deployment metrics** (exact 67%, within ±1 79%, MAE ≈1 pt) by clear margins.
+> RNN 0.845, encoder 0.820, LLM 0.843 — a narrow 0.05 band). The fine-tuned **LLM** wins the
+> **deployment metrics** (exact 66%, within ±1 83%, MAE ≈0.93 pt) by clear margins.
 
 <span class="small">⚠️ These are **random-split, seen-question** numbers. The QWK scores sit in a narrow 0.05 band (§5.10), the LLM leads the deployment metrics by clear margins, and §5.11 shows performance **collapses on unseen questions.** Read 5.1 as "what's achievable when questions are seen," not as a strict pillar ranking.</span>
 
@@ -395,14 +395,14 @@ We evaluate explanations on **two axes** (Jacovi & Goldberg 2020):
 | Goal | Winner | Cell | Number |
 |---|---|---|---:|
 | Highest **QWK** (research) | RNN *(tied, n.s.)* | BiLSTM+Attn (895) | **0.845** |
-| Highest **accuracy** | LLM | Qwen 3.5 4B (909) | **0.839** |
-| Highest **exact integer match** | LLM | Qwen 3.5 4B (909) | **0.672** |
-| Highest **within ±1 point** | LLM | Qwen 3.5 4B (909) | **0.788** |
-| Lowest **MAE (points)** | LLM | Qwen 3.5 4B (909) | **0.98 pt** |
+| Highest **accuracy** | LLM | Qwen 3.5 4B (909) | **0.803** |
+| Highest **exact integer match** | LLM | Qwen 3.5 4B (909) | **0.657** |
+| Highest **within ±1 point** | LLM | Qwen 3.5 4B (909) | **0.832** |
+| Lowest **MAE (points)** | LLM | Qwen 3.5 4B (909) | **0.93 pt** |
 | **Cheapest** | Classical | TF-IDF+SVR | ~30 s, CPU only |
 
-**Head-to-head on 909 (encoder vs LLM):** QWK ties (0.842 ≈ 0.842), but Qwen beats the GTE
-encoder on accuracy (**+8.7 pp**), exact-match (**+22.7 pp**), and within-±1 (**+5.1 pp**).
+**Head-to-head on 909 (encoder vs LLM):** QWK ties (encoder 0.842 ≈ LLM 0.843), but Qwen beats the GTE
+encoder clearly on the deployment metrics (exact match, accuracy, within-±1).
 
 > The four pillars are **comparable on QWK** (the lead is small), so pick by the *other*
 > axes: **cheapest + self-explaining → classical**; **classroom point-accuracy → LLM.**
@@ -458,10 +458,10 @@ We report the **same unweighted Cohen κ** Alaoui et al. use, so the comparison 
 | Alaoui et al. 2024, transformer | Arabic | 3-class | 0.60 |
 | **This work, classical** | **Khmer** | **5-class** | **0.47** |
 | **This work, encoder / RNN** | **Khmer** | **5-class** | **0.62** |
-| **This work, LLM (Qwen)** | **Khmer** | **5-class** | **0.77** |
+| **This work, LLM (Qwen)** | **Khmer** | **5-class** | **0.71** |
 
 - On the **same metric**, our encoder/RNN (~0.62) match Alaoui's transformer (0.60), and our
-  **LLM (0.77) is higher**, while our classical (0.47) ≈ their BERT (0.48).
+  **LLM (0.71) is higher**, while our classical (0.47) ≈ their BERT (0.48).
 - For reference, our **primary QWK** (quadratic-weighted) is **0.82–0.85**; ASAP-SAS leading
   systems reach ≈0.75–0.78 QWK (English).
 
@@ -518,13 +518,14 @@ LOO occlusion for each family, scored on the same 895-set test answers (n=135, s
 | Model · LOO | gap vs random | AOPC-comp ↑ | AOPC-suff ↓ | **Faithful?** | Plaus. |
 |---|---:|---:|---:|:--:|---:|
 | **Classical** SVR · occlusion | +0.096 | **+0.150** | 0.011 | **✅ yes** | 0.75 |
-| **RNN** BiLSTM · occlusion | +0.274 | **+0.317** | 0.043 | **✅ yes** | 0.68 |
-| **Transformer** GTE · occlusion | *[HPC-pending]* | | | | |
-| **LLM** Qwen · occlusion | *[HPC-pending]* | | | | |
+| **RNN** BiLSTM · occlusion | +0.257 | **+0.289** | 0.064 | **✅ yes** | 0.69 |
+| **Transformer** GTE · occlusion | +0.135 | +0.193 | 0.007 | **✅ yes** | 0.68 |
+| **LLM** Qwen · occlusion | +0.047 | +0.126 | 0.359 | **✅ yes** | 0.63 |
 
-- **LOO occlusion is *reliably* faithful** for every model (classical AOPC-comp +0.150; BiLSTM
-  +0.317): removing the words it flags moves the score far more than random. The same method works
-  on the non-differentiable SVR and the BiLSTM with no gradient access required.
+- **LOO occlusion is *reliably* faithful** for every pillar (AOPC-comp +0.150 classical, +0.289
+  BiLSTM, +0.193 encoder, +0.126 LLM; gap > 0 in every case, strongest for the BiLSTM and weakest
+  for the LLM): removing the words it flags moves the score more than random. The same method works
+  on the non-differentiable SVR, the BiLSTM, the GTE encoder, and the fine-tuned LLM — no gradient access required.
 
 ---
 
@@ -534,8 +535,8 @@ LOO occlusion for each family, scored on the same 895-set test answers (n=135, s
 |---|---|---|---|
 | **Classical** SVR | 0.795 | weak (exact 0.20) | **faithful + plausible** ✅ |
 | **RNN** BiLSTM | 0.845 | mid (exact 0.54) | **faithful** ✅ |
-| **Transformer** GTE | 0.820 | good | *[HPC-pending]* |
-| **LLM** Qwen | 0.842 | **best (67% exact)** | *[HPC-pending]* |
+| **Transformer** GTE | 0.820 | good | **faithful** ✅ |
+| **LLM** Qwen | 0.843 | **best (66% exact)** | **faithful** ✅ (weakest) |
 
 <br>
 
@@ -549,7 +550,7 @@ LOO occlusion for each family, scored on the same 895-set test answers (n=135, s
 
 <span class="small">LOO is self-consistent with the ERASER metric (both use deletion), confirming the lower bound.
 Cross-model AOPC is model-sensitive, contextual not a strict ranking (Normalized-AOPC 2024).
-XAI models re-trained on 895 (seed 42); Transformer/LLM rows on HPC.</span>
+XAI models anchored on the same 895 split (seed 42), all four pillars.</span>
 
 ---
 
@@ -563,7 +564,7 @@ Reported set = field-standard **QWK** (primary) + **Accuracy** + **macro-F1** + 
 | Classical (TF-IDF+SVR) | 0.795 | 0.47 | 0.63 | 0.42 |
 | RNN (BiLSTM) | **0.845** | 0.62 | 0.75 | 0.53 |
 | Transformer (GTE)* | 0.820 | 0.62 | 0.73 | 0.54 |
-| **LLM (Qwen)*** | 0.842 | **0.77** | **0.84** | **0.84** |
+| **LLM (Qwen)*** | 0.843 | **0.71** | **0.80** | **0.78** |
 
 - **On QWK the four pillars sit in a narrow 0.05 band** (0.795–0.845) — no single research winner;
   the classical and BiLSTM champions (same 895 test set) differ by only 0.05.
@@ -611,14 +612,14 @@ questions. We re-evaluated the **classical champion under a question-held-out sp
 2. **RQ2: Data vs algorithm.** **Data cleaning** lifts the same model by **+0.027 QWK**, 
    **bigger than any architecture swap** on this corpus.
 3. **RQ3: Research vs deployment.** On QWK the pillars are **comparable** (a 0.05 band);
-   the **LLM is the clear winner on accuracy/deployment** (67% exact,
-   79% within ±1, MAE ≈1 pt).
+   the **LLM is the clear winner on accuracy/deployment** (66% exact,
+   83% within ±1, MAE ≈0.93 pt).
 4. **RQ4: Cheap levers.** The **max-score feature** helps consistently; **threshold
    calibration** helps the *classical* model (+0.05 QWK) but is **fragile and model-dependent**
    (it *hurts* the BiLSTM on test), so headline numbers are uncalibrated.
-5. **RQ5: Explainability.** **Occlusion is reliably faithful for every model**; **attention is
-   not reliable**, faithful in one BiLSTM cell, unfaithful in another → explanations must be
-   *verified*, not assumed. A third axis beyond accuracy/deployment.
+5. **RQ5: Explainability.** **LOO occlusion is reliably faithful for every pillar** (gap > 0 for all
+   four; strongest for the BiLSTM, weakest but still positive for the LLM) → one unified,
+   model-agnostic explanation. A third axis beyond accuracy/deployment.
 6. **RQ6: Robustness.** Under a **question-held-out** split, classical QWK **collapses
    0.76 → 0.35**: the seen-question scores are heavily inflated by **question leakage**.
 
@@ -635,8 +636,8 @@ questions. We re-evaluated the **classical champion under a question-held-out sp
    faithfulness study**, the first XAI evaluation for Khmer grading.
 2. **A model-agnostic faithfulness + plausibility (reference-overlap) protocol** (ERASER comprehensiveness/
    sufficiency **+ AOPC** vs a random baseline, over Khmer word units) usable across *all*
-   families, showing **occlusion is reliably faithful while attention is not** (its faithfulness
-   is configuration-dependent → verify, don't assume).
+   families, showing **LOO occlusion is reliably faithful for every pillar** (one unified,
+   model-agnostic explanation method).
 3. **A quantified question-leakage analysis**: a question-held-out protocol showing
    seen-question ASAG QWK is inflated by **~0.43** on this corpus; a cautionary, reusable
    evaluation lesson for small-question-pool grading.
@@ -661,9 +662,9 @@ questions. We re-evaluated the **classical champion under a question-held-out sp
   generalization number. (Full grid + neural/LLM unseen-question runs are HPC-pending.)
 - **Small corpus** (≈895–1,184) and **only 41 questions** → unseen-question test sets are tiny
   (~6 Q) and high-variance.
-- **No classroom field study** → the "79% within ±1" claim is offline.
-- **XAI scope.** Transformer + LLM faithfulness are *[HPC-pending]*; occlusion-by-occlusion is
-  self-consistent (so the BiLSTM attention-vs-occlusion contrast is the decisive result);
+- **No classroom field study** → the "83% within ±1" claim is offline.
+- **XAI scope.** LOO faithfulness is reported for all four pillars on the same 895 split; occlusion-by-occlusion is
+  self-consistent (the explanation and its ERASER evaluation share the same deletion perturbation);
   plausibility (reference-overlap) is an automatic proxy, not a human-rationale study (Jacovi \& Goldberg 2020).
 - **Cleaning/digits.** Cleaning was refined post-audit (zero-width/bullets removed); **digits are
   retained** as content, a potential lexical-leakage source not separately controlled.
@@ -705,11 +706,11 @@ questions. We re-evaluated the **classical champion under a question-held-out sp
 > **Five headline results (all reported honestly)**
 >
 > - **Seen-question QWK ≈ 0.80–0.85 across all four pillars** (classical 0.795, RNN 0.845,
->   encoder 0.820, LLM 0.842; all uncalibrated) — a narrow 0.05 band, no single research winner.
-> - **LLM is the clear winner on deployment**, 67% exact, 79% within ±1, MAE ≈1 pt
+>   encoder 0.820, LLM 0.843; all uncalibrated) — a narrow 0.05 band, no single research winner.
+> - **LLM is the clear winner on deployment**, 66% exact, 83% within ±1, MAE ≈0.93 pt
 >   (by large margins over the other pillars).
-> - **Occlusion is reliably faithful for every model; attention is not reliable** (faithful in
->   one BiLSTM cell, unfaithful in another) → explanations must be *verified*, not assumed.
+> - **LOO occlusion is reliably faithful for every pillar** (gap > 0 for all four; strongest BiLSTM,
+>   weakest but still positive LLM) → one unified, model-agnostic explanation.
 > - **Question leakage inflates QWK by ~0.40**, unseen-question grading (classical 0.35) is an
 >   open problem; we report it openly.
 > - **Robust to cleaning:** removing 561 zero-width spaces shifts QWK <0.01 (negligible).
@@ -719,7 +720,7 @@ questions. We re-evaluated the **classical champion under a question-held-out sp
 We deliver the **first *explainable* multi-pillar Khmer ASAG benchmark**, hardened with
 **three dataset variants, AOPC faithfulness, and a question-held-out leakage
 analysis.** The honest picture: pillars are **comparable on QWK**, the **LLM wins deployment**,
-**occlusion (not attention) explains faithfully**, and **generalizing to unseen questions is
+**LOO occlusion explains faithfully across all four pillars**, and **generalizing to unseen questions is
 the real open challenge**, accuracy, deployment, and explainability must be weighed together.
 
 ---
@@ -818,7 +819,7 @@ pillars, reinforcing that the cheapest pillar is also the QWK champion.
 # Appendix D · XAI protocol & example heatmaps
 
 **Protocol (one rule for all families).** Explain the *answer* at the **Khmer word** level on the
-same 895 test items. Native explainer per family (occlusion / attention / saliency / rationale)
+same 895 test items. **LOO occlusion** (one unified method for every family)
 → rank words → measure **comprehensiveness** & **sufficiency** (ERASER) against a **random-word**
 baseline, plus **reference-overlap** plausibility. Implemented in `xai/` + `experiments/exp09_xai.py`;
 results in `results_xai/`.
@@ -833,21 +834,24 @@ matplotlib/PNG **cannot shape Khmer** (it won't stack subscripts or reorder vowe
 heatmaps look broken even though the data is correct; open the `.html` and screenshot for slides:
 
 ```
-results_xai/no10c_no0/heatmaps/classical/classical_gallery.html   ← occlusion, faithful
-results_xai/no10c_no0/heatmaps/bilstm/bilstm_gallery.html         ← (occlusion on original answer)
+results_xai/no10c_no0/heatmaps/classical/classical_gallery.html   ← LOO occlusion
+results_xai/no10c_no0/heatmaps/bilstm/bilstm_gallery.html         ← LOO occlusion
+results_xai/no10c_no0/heatmaps/encoder/encoder_gallery.html       ← LOO occlusion
+results_xai/no10c_no0/heatmaps/llm/llm_gallery.html               ← LOO occlusion
 ```
 
 **Faithfulness (n=135, seed 42), single top-20% and AOPC over k∈{10..50}%:**
 
 | Explainer | Comp | Suff | gap vs random | AOPC-comp | AOPC-suff |
 |---|---:|---:|---:|---:|---:|
-| Classical · occlusion | 0.125 | 0.030 | +0.096 | **+0.150** | 0.011 |
-| BiLSTM · occlusion | 0.285 | 0.082 | +0.274 | **+0.317** | 0.043 |
-| BiLSTM · attention | 0.125 | 0.012 | +0.115 | **+0.137** | 0.003 |
+| Classical · occlusion | 0.125 | 0.030 | +0.096 | +0.150 | 0.011 |
+| BiLSTM · occlusion | 0.270 | 0.120 | +0.257 | **+0.289** | 0.064 |
+| Encoder · occlusion | 0.162 | 0.033 | +0.135 | +0.193 | 0.007 |
+| LLM · occlusion | 0.083 | 0.420 | +0.047 | +0.126 | 0.359 |
 
-Occlusion is **reliably faithful** for both models (AOPC-comp +0.150 / +0.317). The champion
-BiLSTM's **attention is faithful here (+0.137)**, but for the other BiLSTM cell (segment_ra)
-attention was **unfaithful** (gap −0.026) → attention's faithfulness is configuration-dependent.
+LOO occlusion is **reliably faithful** for every pillar (gap > 0 for all four), strongest for the
+BiLSTM (+0.289) and weakest but still positive for the LLM (+0.126); the LLM's higher sufficiency
+shows the generative model's attributions are the least sharp.
 Correct-Khmer heatmaps:
 `results_xai/no10c_no0/heatmaps/{classical,bilstm}/*_gallery.html` (open in a browser); BiLSTM
 train-vs-test curve at `results_xai/no10c_no0/curves/bilstm/train_history.png`.

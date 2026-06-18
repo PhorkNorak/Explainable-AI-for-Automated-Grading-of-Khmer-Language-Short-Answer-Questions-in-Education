@@ -7,9 +7,29 @@
 
 1. Upload this whole `thesis/` folder to a new Overleaf project (or zip and import).
 2. **Set the compiler to XeLaTeX**: Overleaf → *Menu → Compiler → XeLaTeX*. (XeLaTeX is required - the Khmer abstract and Khmer examples will not render under pdfLaTeX.)
-3. **Khmer font:** the document uses **Noto Sans Khmer**. Overleaf includes the Noto family; if the
-   Khmer text shows as boxes, upload `NotoSansKhmer-Regular.ttf` to the project root (free from
-   Google Fonts) - `fontspec` will pick it up.
+3. **Khmer font:** the document uses **Noto Sans Khmer** by default. Overleaf includes the Noto
+   family; if the Khmer text shows as boxes, upload `NotoSansKhmer-Regular.ttf` to the project root
+   (free from Google Fonts) - `fontspec` will pick it up.
+
+## Matching the official RUPP format exactly
+
+The preamble is already configured to the official RUPP report identity: **A4**, margins
+**left 1.25in, top/bottom/right 1in**, **1.5 line spacing**, **6pt** paragraph spacing,
+**12pt body**, headings in **bold** (chapter 14pt, sections 12pt, numbered `N.M`), and **12pt
+captions**. It compiles out of the box with the always-available substitute fonts
+(**TeX Gyre Termes** for Latin, **Noto Sans Khmer** for Khmer).
+
+To reproduce the *exact* official fonts (Times New Roman + the Khmer OS family), upload these
+TTFs to the Overleaf project and switch the commented lines in `main.tex` (the alternatives sit
+directly under the active ones):
+- `Times New Roman` -> uncomment `\setmainfont{Times New Roman}`;
+- `Khmer OS Siemreap` (body Khmer) -> uncomment the matching `\newfontfamily\khmerfont` line;
+- `Khmer OS Muol Light` (title-page Khmer) -> uncomment the matching `\khmertitlefont` line.
+The Khmer OS family is free (Cambodian government / KhmerOS project). If a font is not uploaded,
+keep the default line or XeLaTeX will stop with a "font not found" error.
+
+Tables use clean horizontal rules (`booktabs`). If your committee requires full-grid
+("Table Grid") tables, that is a one-package change - ask and it can be swapped.
 4. Build order is handled by Overleaf automatically (xelatex → bibtex → xelatex → xelatex). Locally:
    ```
    xelatex main && bibtex main && xelatex main && xelatex main
@@ -41,5 +61,5 @@ installed serif.
 
 ## Consistency
 All numbers match the audited results in `../results_stats/` and the paper/slides: uncalibrated
-headline QWK 0.795 / 0.845 / 0.820 / 0.842 (comparable, 0.05 band); LLM deployment 67% exact, 79% within
-±1; occlusion faithful, attention configuration-dependent; question leakage 0.76 → 0.35.
+headline QWK 0.795 / 0.845 / 0.820 / 0.843 (comparable, 0.05 band); LLM deployment 66% exact, 83% within
+±1; LOO occlusion faithful for all four pillars (gap +0.096 / +0.257 / +0.135 / +0.047); question leakage 0.76 → 0.35.

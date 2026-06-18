@@ -39,7 +39,7 @@ import config as C            # noqa: E402
 import data                   # noqa: E402
 import preprocess             # noqa: E402
 from evaluate import metrics  # noqa: E402
-from xai.explainers import tokenize_answer, occlusion_importance  # noqa: E402
+from xai.explainers import tokenize_answer, occlusion_importance, shap_importance  # noqa: E402
 from xai.faithfulness import faithfulness_report  # noqa: E402
 from xai.plausibility import plausibility        # noqa: E402
 from xai.render import render_word_heatmap         # noqa: E402
@@ -396,7 +396,7 @@ def _load_llm_finetuned(model_key, dataset, adapter_path=None, max_seq_length=10
 
 
 def run_llm_family(family, dataset, test_df, cfg, sample_n, fraction, out_root,
-                   adapter_path=None):
+                   adapter_path=None, explainers=("occlusion",), shap_max_evals=None):
     """LOO faithfulness for the fine-tuned LLM.
 
     The LLM grades from a structured prompt (Question / Reference / Answer / Max),
@@ -438,69 +438,81 @@ def run_llm_family(family, dataset, test_df, cfg, sample_n, fraction, out_root,
     print(f"[exp09] llm champion on {dataset}: test_qwk={qwk:.4f} acc={acc:.4f}")
 
     idxs = _sample_test(test_p, sample_n)
-    comp, suff, comp_rand, aopc_c, aopc_s, plaus = [], [], [], [], [], []
     heat_dir = os.path.join(out_root, "heatmaps", family)
-    gallery_items, rendered = [], 0
 
-    for idx in idxs:
-        row = test_p.loc[idx]
-        Q, R, M = str(row["Question_proc"]), str(row["Reference_proc"]), int(row["Max Score"])
+    def _faith_for(imp_name):
+        """One faithfulness row for the LLM under explainer ``imp_name``
+        (``occlusion`` or ``shap``). Heatmaps are rendered for occlusion only."""
+        comp, suff, comp_rand, aopc_c, aopc_s, plaus = [], [], [], [], [], []
+        gallery_items, rendered = [], 0
+        do_heat = (imp_name == "occlusion")
+        print(f"[exp09] llm [{imp_name}]: explaining {len(idxs)} answers ...")
+        for idx in idxs:
+            row = test_p.loc[idx]
+            Q, R, M = str(row["Question_proc"]), str(row["Reference_proc"]), int(row["Max Score"])
 
-        def pf(answer_proc, reference_proc, _Q=Q, _M=M):  # occlude answer, hold Q/R/Max
-            return score_norm(_Q, reference_proc, answer_proc, _M)
+            def pf(answer_proc, reference_proc, _Q=Q, _M=M):  # occlude answer, hold Q/R/Max
+                return score_norm(_Q, reference_proc, answer_proc, _M)
 
-        words, imp = occlusion_importance(pf, str(row["Answer_proc"]), R, mode)
-        if len(words) == 0:
-            continue
-        comp.append(comprehensiveness(pf, words, imp, R, mode, fraction))
-        suff.append(sufficiency(pf, words, imp, R, mode, fraction))
-        comp_rand.append(comprehensiveness_random(pf, words, R, mode, fraction))
-        aopc_c.append(float(np.mean([comprehensiveness(pf, words, imp, R, mode, k) for k in DEFAULT_KGRID])))
-        aopc_s.append(float(np.mean([sufficiency(pf, words, imp, R, mode, k) for k in DEFAULT_KGRID])))
-        plaus.append(plausibility(words, imp, R, mode, fraction))
+            if imp_name == "shap":
+                words, imp = shap_importance(pf, str(row["Answer_proc"]), R, mode,
+                                             max_evals=shap_max_evals)
+            else:
+                words, imp = occlusion_importance(pf, str(row["Answer_proc"]), R, mode)
+            if len(words) == 0:
+                continue
+            comp.append(comprehensiveness(pf, words, imp, R, mode, fraction))
+            suff.append(sufficiency(pf, words, imp, R, mode, fraction))
+            comp_rand.append(comprehensiveness_random(pf, words, R, mode, fraction))
+            aopc_c.append(float(np.mean([comprehensiveness(pf, words, imp, R, mode, k) for k in DEFAULT_KGRID])))
+            aopc_s.append(float(np.mean([sufficiency(pf, words, imp, R, mode, k) for k in DEFAULT_KGRID])))
+            plaus.append(plausibility(words, imp, R, mode, fraction))
 
-        if rendered < 8:  # heatmap over the ORIGINAL Khmer answer (readable tokens)
-            qraw = str(row["Question"])
+            if do_heat and rendered < 8:  # heatmap over the ORIGINAL Khmer answer
+                qraw = str(row["Question"])
 
-            def raw_pf(ans_text, ref_text, _q=qraw, _M=M):
-                return score_norm(preprocess.preprocess(_q, mode),
-                                  preprocess.preprocess(ref_text, mode),
-                                  preprocess.preprocess(ans_text, mode), _M)
+                def raw_pf(ans_text, ref_text, _q=qraw, _M=M):
+                    return score_norm(preprocess.preprocess(_q, mode),
+                                      preprocess.preprocess(ref_text, mode),
+                                      preprocess.preprocess(ans_text, mode), _M)
 
-            rw, ri = occlusion_importance(raw_pf, str(row["Answer"]), str(row["Reference"]), "raw")
-            if len(rw) > 0:
-                title = (f"{family} | true={int(row['score_label'])} "
-                         f"pred={int(round(pf(str(row['Answer_proc']), R) * 4))} "
-                         f"| word attribution on original answer")
-                render_word_heatmap(rw, ri, os.path.join(heat_dir, f"sample_{rendered:02d}.png"), title)
-                render_word_heatmap_html(rw, ri, os.path.join(heat_dir, f"sample_{rendered:02d}.html"), title)
-                gallery_items.append({"words": rw, "importance": ri, "caption": title})
-                rendered += 1
+                rw, ri = occlusion_importance(raw_pf, str(row["Answer"]), str(row["Reference"]), "raw")
+                if len(rw) > 0:
+                    title = (f"{family} | true={int(row['score_label'])} "
+                             f"pred={int(round(pf(str(row['Answer_proc']), R) * 4))} "
+                             f"| word attribution on original answer")
+                    render_word_heatmap(rw, ri, os.path.join(heat_dir, f"sample_{rendered:02d}.png"), title)
+                    render_word_heatmap_html(rw, ri, os.path.join(heat_dir, f"sample_{rendered:02d}.html"), title)
+                    gallery_items.append({"words": rw, "importance": ri, "caption": title})
+                    rendered += 1
 
-    if gallery_items:
-        render_gallery_html(gallery_items, os.path.join(heat_dir, f"{family}_gallery.html"),
-                            f"{family} — Khmer word-importance (occlusion, browser-shaped)")
-    if not comp:
-        return None
-    comp_m, rand_m = float(np.mean(comp)), float(np.mean(comp_rand))
-    return [{
-        "family": family,
-        "champion": "_".join(str(v) for v in cfg.values()),
-        "dataset": dataset,
-        "test_qwk": round(qwk, 4),
-        "test_accuracy": round(acc, 4),
-        "explainer": "occlusion",
-        "n_explained": len(comp),
-        "fraction": fraction,
-        "comprehensiveness": round(comp_m, 4),
-        "sufficiency": round(float(np.mean(suff)), 4),
-        "comprehensiveness_random": round(rand_m, 4),
-        "faithfulness_gap": round(comp_m - rand_m, 4),
-        "aopc_comprehensiveness": round(float(np.mean(aopc_c)), 4),
-        "aopc_sufficiency": round(float(np.mean(aopc_s)), 4),
-        "plausibility": round(float(np.mean(plaus)) if plaus else 0.0, 4),
-        "seconds": round(time.time() - t0, 1),
-    }]
+        if do_heat and gallery_items:
+            render_gallery_html(gallery_items, os.path.join(heat_dir, f"{family}_gallery.html"),
+                                f"{family} — Khmer word-importance (occlusion, browser-shaped)")
+        if not comp:
+            return None
+        comp_m, rand_m = float(np.mean(comp)), float(np.mean(comp_rand))
+        return {
+            "family": family,
+            "champion": "_".join(str(v) for v in cfg.values()),
+            "dataset": dataset,
+            "test_qwk": round(qwk, 4),
+            "test_accuracy": round(acc, 4),
+            "explainer": imp_name,
+            "n_explained": len(comp),
+            "fraction": fraction,
+            "comprehensiveness": round(comp_m, 4),
+            "sufficiency": round(float(np.mean(suff)), 4),
+            "comprehensiveness_random": round(rand_m, 4),
+            "faithfulness_gap": round(comp_m - rand_m, 4),
+            "aopc_comprehensiveness": round(float(np.mean(aopc_c)), 4),
+            "aopc_sufficiency": round(float(np.mean(aopc_s)), 4),
+            "plausibility": round(float(np.mean(plaus)) if plaus else 0.0, 4),
+            "seconds": round(time.time() - t0, 1),
+        }
+
+    rows = [r for r in (_faith_for(name) for name in explainers) if r]
+    return rows or None
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -508,7 +520,8 @@ def run_llm_family(family, dataset, test_df, cfg, sample_n, fraction, out_root,
 # ────────────────────────────────────────────────────────────────────────────
 
 
-def run_family(family, dataset, sample_n, fraction, out_root, adapter_path=None):
+def run_family(family, dataset, sample_n, fraction, out_root, adapter_path=None,
+               explainers=("occlusion",), shap_max_evals=None):
     cfg = CHAMPIONS[family]
     fmt = cfg["input"]
     df = data.load_dataframe()
@@ -517,7 +530,8 @@ def run_family(family, dataset, sample_n, fraction, out_root, adapter_path=None)
 
     if family == "llm":
         return run_llm_family(family, dataset, test_df, cfg, sample_n, fraction,
-                              out_root, adapter_path=adapter_path)
+                              out_root, adapter_path=adapter_path, explainers=explainers,
+                              shap_max_evals=shap_max_evals)
 
     if family == "classical":
         predict_fn, explain, test_p, explainer = _build_classical(train_df, test_df, cfg)
@@ -574,10 +588,15 @@ def run_family(family, dataset, sample_n, fraction, out_root, adapter_path=None)
                             os.path.join(heat_dir, f"{family}_gallery.html"),
                             f"{family} — Khmer word-importance (occlusion, browser-shaped)")
 
-    variants = [("occlusion", explain)]
+    imp_fns = {
+        "occlusion": explain,
+        "shap": (lambda a, r: shap_importance(predict_fn, a, r, mode, max_evals=shap_max_evals)),
+    }
+    variants = [(name, imp_fns[name]) for name in explainers if name in imp_fns]
 
     out_rows = []
     for vname, vfn in variants:
+        print(f"[exp09] {family} [{vname}]: explaining {len(inst)} answers ...")
         per_instance, plaus = [], []
         for row, ans, ref in inst:
             words, imp = vfn(ans, ref)
@@ -618,6 +637,13 @@ def main():
                     help="number of test answers to explain (balanced by score)")
     ap.add_argument("--fraction", type=float, default=0.2,
                     help="top-k fraction of words for faithfulness/plausibility")
+    ap.add_argument("--explainers", nargs="+", default=["occlusion"],
+                    choices=["occlusion", "shap"],
+                    help="attribution method(s); LOO occlusion is the headline, "
+                         "shap is the comparison (slower, esp. for the LLM)")
+    ap.add_argument("--shap-max-evals", type=int, default=None,
+                    help="cap SHAP evaluations per answer (lower = faster; for the "
+                         "LLM try ~2*num_words). Default: max(2*words+1, 100).")
     ap.add_argument("--llm-adapter", default=None,
                     help="path to the fine-tuned LoRA adapter dir (lora_adapter/); "
                          "auto-discovered from the exp08 run if omitted")
@@ -631,7 +657,8 @@ def main():
     for fam in args.families:
         try:
             r = run_family(fam, args.dataset, args.sample, args.fraction, out_root,
-                           adapter_path=args.llm_adapter)
+                           adapter_path=args.llm_adapter, explainers=tuple(args.explainers),
+                           shap_max_evals=args.shap_max_evals)
         except Exception as e:
             import traceback; traceback.print_exc()
             print(f"[exp09] family '{fam}' FAILED: {type(e).__name__}: {e}")
@@ -642,9 +669,11 @@ def main():
     if rows:
         lb = os.path.join(out_root, "faithfulness_leaderboard.csv")
         existing = []
+        new_keys = {(r["family"], r["explainer"]) for r in rows}
         if os.path.exists(lb):
             with open(lb, encoding="utf-8") as f:
-                existing = [r for r in csv.DictReader(f) if r["family"] not in args.families]
+                existing = [r for r in csv.DictReader(f)
+                            if (r["family"], r["explainer"]) not in new_keys]
         with open(lb, "w", newline="", encoding="utf-8") as f:
             w = csv.DictWriter(f, fieldnames=LEADERBOARD_HEADER)
             w.writeheader()
@@ -654,8 +683,8 @@ def main():
                 w.writerow(r)
         print(f"\n[exp09] wrote {lb}")
         for r in rows:
-            print(f"  {r['family']:8s} [{r['explainer']:9s}] gap={r['faithfulness_gap']:+.3f} "
-                  f"AOPC-comp={r['aopc_comprehensiveness']:+.3f} "
+            print(f"  {r['family']:8s} [{r['explainer']:9s}] n={r['n_explained']:>3} "
+                  f"gap={r['faithfulness_gap']:+.3f} AOPC-comp={r['aopc_comprehensiveness']:+.3f} "
                   f"AOPC-suff={r['aopc_sufficiency']:+.3f} plaus={r['plausibility']:.3f}")
 
 

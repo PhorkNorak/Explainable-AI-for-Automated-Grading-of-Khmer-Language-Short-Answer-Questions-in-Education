@@ -119,9 +119,9 @@ distinction. Classical+RNN run here; encoder+LLM on HPC.
 
 ### 5.1 Per-pillar champions
 The money slide. **The four pillars are comparable on QWK**, classical 0.795, RNN 0.845,
-encoder 0.820, LLM 0.842, all **uncalibrated** and within a narrow 0.05 band. Say it plainly:
+encoder 0.820, LLM 0.843, all **uncalibrated** and within a narrow 0.05 band. Say it plainly:
 no single research winner. The **LLM is the clear winner, and only on
-deployment**, Qwen wins all four deployment metrics (exact 0.672, within±1 0.788, MAE 0.98 pt).
+deployment**, Qwen wins all four deployment metrics (exact 0.657, within±1 0.832, MAE 0.93 pt).
 Land the line: **no single pillar dominates.** (If asked why uncalibrated: see 5.3, calibration is
 model-dependent, so we report one consistent uncalibrated number per pillar.)
 
@@ -145,7 +145,7 @@ neural win in the grid.
 
 ### 5.5 QWK in context, caveat slide
 Be explicitly careful here. We compare on the **same unweighted Cohen κ** Alaoui uses (like-for-like
-metric): ours **0.47 (classical) → 0.77 (LLM)** vs their **0.48 (BERT) / 0.60 (transformer)**. Our
+metric): ours **0.47 (classical) → 0.71 (LLM)** vs their **0.48 (BERT) / 0.60 (transformer)**. Our
 encoder/RNN (~0.62) match their transformer; our LLM is higher. Then the caveat out loud: **still
 different datasets and class counts (5-class Khmer vs 3-class Arabic), so this is context, not a
 leaderboard.** Our primary QWK (quadratic-weighted) is reported separately. The fully fair
@@ -163,12 +163,13 @@ partial-credit granularity). This scopes future work precisely.
 
 ### 5.8 Explainability results, the star finding (RQ5)
 Slow down here; this is the title's payoff. **LOO word attribution is reliably faithful for every
-model**: removing its top words drops the score far more than random (classical AOPC-comp **+0.150**,
-BiLSTM **+0.317**), and keeping only those words preserves the score (low sufficiency). LOO works
-identically on the non-differentiable SVR and the BiLSTM — no gradient access required. Explanations
+pillar**: removing its top words drops the score more than random for all four (AOPC-comp **+0.150**
+classical, **+0.289** BiLSTM, **+0.193** encoder, **+0.126** LLM; strongest BiLSTM, weakest LLM), and
+keeping only those words preserves the score (low sufficiency, except the LLM which is less sharp). LOO works
+identically on the non-differentiable SVR, the BiLSTM, the GTE encoder, and the fine-tuned LLM — no gradient access required. Explanations
 are also **plausible** (≈68–75% reference overlap). Be honest about the consistency caveat (LOO
 judged by an occlusion-based metric has a lower bar, but the positive gap vs random confirms it's
-doing real work). Encoder/LLM rows are HPC-pending; say so plainly.
+doing real work). All four pillars are on the same split; the LLM is the least sharp (highest sufficiency) but still positive.
 
 ### 5.9 The third axis
 Tie it together: three dimensions, accuracy, deployment, explainability, but they behave
@@ -221,8 +222,8 @@ first to raise them is a strength.
 more LLMs (incl. re-tuning Gemma), diverse ensemble, field study.
 
 ### 6.5 Summary
-Headline results: **QWK 0.80–0.85 across four tied pillars** / 67% exact / 79% within ±1 /
-**faithful occlusion vs unreliable attention** / **leakage 0.76→0.35**, plus the one-paragraph
+Headline results: **QWK 0.80–0.85 across four tied pillars** / 66% exact / 83% within ±1 /
+**LOO occlusion faithful across all four pillars** / **leakage 0.76→0.35**, plus the one-paragraph
 "first *explainable* Khmer ASAG benchmark."
 
 ### 7 System, live prototype (demo / closer)
@@ -263,14 +264,14 @@ one real answer (~30 s); if not, show the 1–2 screenshots. Then stop and invit
 
 ### XAI-specific Q&A
 - **"Isn't occlusion judged by an occlusion metric circular?"** LOO judged by an occlusion-based
-  metric is self-consistent (a lower bar), but the positive gap vs random removal on both models
-  (+0.096 classical, +0.274 BiLSTM) confirms it's doing real work. I report a random baseline and
+  metric is self-consistent (a lower bar), but the positive gap vs random removal on all four pillars
+  (+0.096 classical, +0.257 BiLSTM, +0.135 encoder, +0.047 LLM) confirms it's doing real work. I report a random baseline and
   AOPC across five k-values, not a single cutoff.
 - **"Why is the classical model both accurate and explainable?"** TF-IDF features are lexical
   and the SVR score moves directly with word presence, so occlusion attributions are
   meaningful and overlap the reference. It's a genuine advantage for accountability.
 - **"What about the LLM's explanations?"** I evaluate LOO word attribution on the LLM with the
-  same ERASER faithfulness on HPC, so a convincing output can't pass unchecked.
-  (Result currently HPC-pending.)
+  same ERASER faithfulness, so a convincing output can't pass unchecked. The LLM is faithful
+  (gap +0.047, positive) but the least sharp of the four (highest sufficiency) — worth stating honestly.
 - **"Why only word-level, not character-level?"** Khmer has no word spaces; word units (via
   khmernltk) are what a teacher reads and what aligns to the rubric.

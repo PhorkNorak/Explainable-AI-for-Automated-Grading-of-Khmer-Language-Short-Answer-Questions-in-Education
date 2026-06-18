@@ -202,23 +202,53 @@ def fig_qwk_pillars():
     _save(fig, "fig_qwk_pillars.png")
 
 
+def _train_qwk_acc(fam):
+    """Train QWK and accuracy for a pillar (test comes from champion_metrics.csv).
+    Sources: champion metrics.json for rnn/encoder/llm; the uncalibrated champion
+    leaderboard row (segment_ra) for classical, since its champion dir is calibrated."""
+    import json
+    mj = {
+        "rnn":     "results/champions/rnn_clean_ra_bilstm_895/metrics.json",
+        "encoder": "results/champions/encoder_clean_qar_dual_gte_maxfeat_1184/metrics.json",
+        "llm":     "results/champions/llm_clean_qar_qwen35_4b_909/metrics.json",
+    }
+    if fam in mj:
+        d = json.load(open(os.path.join(_ROOT, mj[fam]), encoding="utf-8"))
+        return float(d["train"]["qwk"]), float(d["train"]["accuracy"])
+    # classical: uncalibrated champion = segment_ra in v03_maxfeat (test_qwk 0.7946 = 0.795)
+    df = _rd("results/leaderboards/no10c_no0_v03_maxfeat.csv")
+    row = df[df["run_id"] == "segment_ra_tfidf_svr_maxfeat"].iloc[0]
+    return float(row["train_qwk"]), float(row["train_accuracy"])
+
+
 def fig_metrics_grouped():
-    df = _champion_metrics()
-    metrics = [("qwk", "QWK"), ("cohen_kappa", "Cohen kappa"),
-               ("accuracy", "Accuracy"), ("f1_macro", "Macro-F1")]
-    x = np.arange(len(metrics))
-    w = 0.2
-    fig, ax = plt.subplots(figsize=(7.2, 3.8))
-    for i, p in enumerate(PILLAR_ORDER):
-        vals = [float(df.loc[p, m]) for m, _ in metrics]
-        ax.bar(x + (i - 1.5) * w, vals, w, label=PILLAR_LABELS[p], color=PILLAR_COLORS[p])
-    ax.set_xticks(x)
-    ax.set_xticklabels([lab for _, lab in metrics])
-    ax.set_ylabel("Score")
-    ax.set_ylim(0, 1.0)
-    ax.set_title("Standard agreement metrics by pillar")
-    ax.legend(fontsize=8, ncol=4, loc="upper center", bbox_to_anchor=(0.5, -0.12))
-    ax.grid(alpha=0.3, axis="y")
+    """Train vs test QWK and accuracy by pillar (generalization gap; no Cohen kappa,
+    no macro-F1 since train F1 is not saved for most pillars)."""
+    test = _champion_metrics()
+    qwk_tr, qwk_te, acc_tr, acc_te = [], [], [], []
+    for p in PILLAR_ORDER:
+        trq, tra = _train_qwk_acc(p)
+        qwk_tr.append(trq); qwk_te.append(float(test.loc[p, "qwk"]))
+        acc_tr.append(tra); acc_te.append(float(test.loc[p, "accuracy"]))
+    x = np.arange(len(PILLAR_ORDER))
+    w = 0.38
+    fig, axes = plt.subplots(1, 2, figsize=(9.2, 3.8))
+    for ax, (tr, te, title) in zip(
+            axes, [(qwk_tr, qwk_te, "QWK"), (acc_tr, acc_te, "Accuracy")]):
+        ax.bar(x - w / 2, tr, w, label="Train", color=SERIES_A)
+        ax.bar(x + w / 2, te, w, label="Test", color=SERIES_B)
+        for i in range(len(x)):
+            ax.text(x[i] - w / 2, tr[i] + 0.01, f"{tr[i]:.2f}", ha="center", fontsize=7)
+            ax.text(x[i] + w / 2, te[i] + 0.01, f"{te[i]:.2f}", ha="center", fontsize=7)
+        ax.set_xticks(x)
+        ax.set_xticklabels([PILLAR_LABELS[p] for p in PILLAR_ORDER], fontsize=8)
+        ax.set_ylim(0, 1.0)
+        ax.set_title(title)
+        ax.grid(alpha=0.3, axis="y")
+    axes[0].set_ylabel("Score")
+    axes[0].legend(fontsize=8)
+    fig.suptitle("Train vs test by pillar (generalization gap)", fontsize=11)
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
     _save(fig, "fig_metrics_grouped.png")
 
 

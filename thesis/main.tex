@@ -10,18 +10,28 @@
 % ============================================================================
 \documentclass[12pt,a4paper,oneside]{report}
 
-% ---- Page geometry (RUPP-style binding margin) ----
-\usepackage[a4paper,left=3.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm]{geometry}
+% ---- Page geometry (official RUPP report: left 1.25in, top/bottom/right 1in) ----
+\usepackage[a4paper,left=3.175cm,right=2.54cm,top=2.54cm,bottom=2.54cm]{geometry}
 
 % ---- Fonts & languages (XeLaTeX) ----
 \usepackage{fontspec}
 \usepackage{polyglossia}
 \setdefaultlanguage{english}
 \setotherlanguage{khmer}
-% Latin body font (Times-like; bundled on Overleaf/TeX Live):
+% Latin body font. The official RUPP template specifies Times New Roman 12pt.
+% TeX Gyre Termes is the metric-compatible substitute bundled on Overleaf/TeX Live,
+% so the document compiles out of the box. To use the exact official font, upload
+% "Times New Roman" to the Overleaf project and switch the two commented lines.
 \setmainfont{TeX Gyre Termes}
-% Khmer font - upload "Noto Sans Khmer" to the Overleaf project if not present.
+% \setmainfont{Times New Roman}
+% Khmer fonts. Noto Sans Khmer is bundled on Overleaf and renders Khmer correctly,
+% so it is the default. For the exact official identity, upload the Khmer OS family
+% (Khmer OS Siemreap for body, Khmer OS Muol Light for the title page) and switch
+% the commented lines below. Do NOT remove fontspec / polyglossia (Khmer needs them).
 \newfontfamily\khmerfont[Script=Khmer]{Noto Sans Khmer}
+% \newfontfamily\khmerfont[Script=Khmer]{Khmer OS Siemreap}
+\newfontfamily\khmertitlefont[Script=Khmer]{Noto Sans Khmer}
+% \newfontfamily\khmertitlefont[Script=Khmer]{Khmer OS Muol Light}
 
 % ---- Core packages ----
 \usepackage{amsmath,amssymb}
@@ -31,23 +41,58 @@
 \usepackage{multirow}
 \usepackage{longtable}
 \usepackage{setspace}
-\usepackage[font=small,labelfont=bf]{caption}
+\usepackage[labelfont=bf]{caption}
+\usepackage{titlesec}
+\usepackage{chngcntr}
 \usepackage{enumitem}
 \usepackage{xcolor}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning}
 \usepackage{fancyhdr}
-\usepackage[round,authoryear]{natbib}
+\usepackage[numbers,sort&compress]{natbib}   % IEEE-style numbered citations [1], [2]-[4]
+\setlength{\bibsep}{6pt}                      % space between reference entries
+\usepackage[nottoc]{tocbibind}               % add List of Figures/Tables + References to the ToC
 \usepackage[hidelinks]{hyperref}
 
-% ---- Citation style (author-year, RUPP/APA-like) ----
-\bibliographystyle{apalike}
+% ---- Citation style (IEEE numbered, matching the senior report) ----
+\bibliographystyle{IEEEtran}
+\renewcommand{\bibname}{References}           % bibliography heading (report class)
+\renewcommand{\contentsname}{Table of Contents}
 
 % ---- Layout niceties ----
-\onehalfspacing
-\setlength{\parskip}{4pt}
+\onehalfspacing                       % 1.5 line spacing (official RUPP body/sections)
+\setlength{\parskip}{6pt}             % 6pt paragraph spacing (official RUPP body)
+\setlength{\parindent}{0pt}           % block paragraphs (no first-line indent), matches template
 \graphicspath{{figures/}}
-\renewcommand{\arraystretch}{1.15}
+\renewcommand{\arraystretch}{1.2}
+
+% Sequential figure/table numbering across the whole thesis (Figure 1, 2, 3 ...;
+% Table 1, 2, 3 ...), matching the senior report rather than per-chapter (5.1) numbering.
+\counterwithout{figure}{chapter}
+\counterwithout{table}{chapter}
+
+% ============================================================================
+% Heading styles, matched to the official Report.doc template:
+%   CHAPTER N (line 1): Times New Roman 12pt bold, CENTERED, single-spaced,
+%                       12pt space before, 0 after.
+%   TITLE     (line 2): Times New Roman 12pt bold, CENTERED, UPPERCASE,
+%                       0 before, 12pt after.
+%   N.N section       : Times New Roman 12pt bold, left, 12pt before / 6pt after.
+%   body              : Times New Roman 12pt, justified, 6pt spacing, 1.5 lines.
+% ============================================================================
+\titleformat{\chapter}[display]
+  {\centering\normalfont\fontsize{12}{14}\selectfont\bfseries\singlespacing}
+  {CHAPTER \thechapter}{0pt}{\MakeUppercase}
+\titlespacing*{\chapter}{0pt}{12pt}{12pt}
+\titleformat{\section}
+  {\normalfont\fontsize{12}{15}\selectfont\bfseries}{\thesection}{0.6em}{}
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+\titleformat{\subsection}
+  {\normalfont\fontsize{12}{15}\selectfont\bfseries}{\thesubsection}{0.6em}{}
+\titlespacing*{\subsection}{0pt}{10pt}{4pt}
+\titleformat{\subsubsection}
+  {\normalfont\fontsize{12}{15}\selectfont\bfseries\itshape}{\thesubsubsection}{0.6em}{}
+\titlespacing*{\subsubsection}{0pt}{8pt}{4pt}
 
 % Running header
 \setlength{\headheight}{14.5pt}
@@ -59,6 +104,9 @@
 
 % Convenience macro for inline Khmer
 \newcommand{\km}[1]{\textkhmer{#1}}
+% Inline English/Latin inside a Khmer block (Noto Sans Khmer has no Latin glyphs,
+% so English terms must switch back to the Latin main font).
+\newcommand{\en}[1]{\textenglish{#1}}
 
 \begin{document}
 

@@ -37,7 +37,7 @@ that measures \emph{faithfulness} (ERASER comprehensiveness/sufficiency and area
 AOPC) and reference-overlap plausibility, rather than only displaying saliency. We highlight three findings.
 (i) The four families are \emph{comparable on Quadratic Weighted Kappa} (QWK), falling in a narrow
 $0.795$--$0.845$ band, while the fine-tuned LLM is the clear best on the deployment metrics
-(67\% exact integer-score match, 79\% within one point). (ii)
+(66\% exact integer-score match, 83\% within one point). (ii)
 \emph{Leave-One-Out (LOO) word-attribution} (text-highlighting) explanations are \emph{reliably}
 faithful for every model family, verified by ERASER comprehensiveness and sufficiency, making LOO the
 unified, model-agnostic explanation method across all four pillars. (iii) Under a
@@ -242,7 +242,7 @@ no re-training.
 \textbf{Per-pillar champions.} Table~\ref{tab:champs} shows each pillar's best cell. On
 \textbf{QWK the four pillars are close}, falling in a narrow band ($0.795$--$0.845$, a $0.05$
 spread), with the RNN highest and the classical model lowest; on \textbf{deployment} the fine-tuned
-LLM is the clear winner ($67\%$ exact integer match vs.\ at most $57\%$ for the others, and the best
+LLM is the clear winner ($66\%$ exact integer match vs.\ at most $57\%$ for the others, and the best
 accuracy and macro-F1). All headline QWKs are \emph{uncalibrated} (computed from the saved
 continuous predictions), reported consistently across pillars; threshold calibration is treated as
 a separate model-dependent ablation (next paragraph).
@@ -261,7 +261,7 @@ Pillar & QWK & Cohen $\kappa$ & Acc. & macro-F1 & Exact & Adj.($\pm1$) \\
 Classical (SVR)$^\ddagger$ & 0.795 & 0.47 & 0.63 & 0.42 & 0.20 & 0.71 \\
 RNN (BiLSTM)$^\ddagger$    & \textbf{0.845} & 0.62 & 0.75 & 0.53 & 0.54 & 0.77 \\
 Transformer (GTE) & 0.820 & 0.62 & 0.73 & 0.54 & 0.57 & 0.77 \\
-LLM (Qwen)      & 0.842 & \textbf{0.77} & \textbf{0.84} & \textbf{0.84} & \textbf{0.67} & \textbf{0.79} \\
+LLM (Qwen)      & 0.843 & \textbf{0.71} & \textbf{0.80} & \textbf{0.78} & \textbf{0.66} & \textbf{0.83} \\
 \bottomrule
 \end{tabular}
 \\[2pt]
@@ -282,7 +282,7 @@ validation gain), so we keep headline numbers uncalibrated.
 
 \textbf{Generalization gap.} Both our work and~\cite{alaoui2024} report accuracy, so we compare
 the train$\to$test \emph{gap}: their best transformer shows $+18.5$ points (95.67/77.22), whereas
-our deep cells are far tighter ($+1.4$ GTE, $+2.4$ Qwen 86.3/83.9) and even the simple classical
+our deep cells are far tighter ($+1.4$ GTE, $+3.0$ Qwen 83.3/80.3) and even the simple classical
 ($+15.6$, 78.6/63.0) stays under their transformer, indicating no hidden overfitting on the
 \emph{seen-question} split. We do \emph{not} compare QWK to their unweighted $\kappa=0.60$ on a
 3-class scale, as the metrics and class counts differ.
@@ -305,11 +305,13 @@ questions), five seeds, mean$\pm$std.}
 \end{figure}
 
 \textbf{Explainability and faithfulness.} Table~\ref{tab:xai} and Fig.~\ref{fig:faith} report
-LOO faithfulness on 135 test answers (seed 42). \emph{LOO occlusion is reliably faithful} for every
-model (AOPC-comprehensiveness $+0.150$ classical, $+0.317$ BiLSTM): removing the words it flags moves
-the score far more than random removal, and keeping only them preserves it (low sufficiency). LOO
-requires no gradients and works identically on the non-differentiable SVR and the BiLSTM. (Encoder
-and LLM faithfulness rows are HPC-pending.)
+LOO faithfulness on 135 test answers (seed 42), all four pillars on the same split.
+\emph{LOO occlusion is reliably faithful} for every pillar (AOPC-comprehensiveness $+0.150$ classical,
+$+0.289$ BiLSTM, $+0.193$ encoder, $+0.126$ LLM): removing the words it flags moves the score more
+than random removal in every case (positive gap), strongest for the BiLSTM and smallest but still
+positive for the LLM (whose higher sufficiency shows the generative model's attributions are the least
+sharp). LOO requires no gradients and works identically on the non-differentiable SVR, the BiLSTM, the
+GTE encoder, and the fine-tuned LLM.
 
 \begin{table}[t]
 \caption{LOO faithfulness ($n{=}135$, seed 42). AOPC over $k\in\{10\dots50\}\%$; higher
@@ -321,18 +323,21 @@ the random-removal baseline ($>0$ means it beats random).}
 \toprule
 Model $\cdot$ LOO & Comp & Suff & gap & AOPC-C & AOPC-S \\
 \midrule
-Classical $\cdot$ occlusion & 0.125 & 0.030 & $+$0.096 & \textbf{0.150} & 0.011 \\
-BiLSTM $\cdot$ occlusion     & 0.285 & 0.082 & $+$0.274 & \textbf{0.317} & 0.043 \\
+Classical $\cdot$ occlusion & 0.125 & 0.030 & $+$0.096 & 0.150 & 0.011 \\
+BiLSTM $\cdot$ occlusion     & 0.270 & 0.120 & $+$0.257 & \textbf{0.289} & 0.064 \\
+Encoder $\cdot$ occlusion    & 0.162 & 0.033 & $+$0.135 & 0.193 & 0.007 \\
+LLM $\cdot$ occlusion        & 0.083 & 0.420 & $+$0.047 & 0.126 & 0.359 \\
 \bottomrule
 \end{tabular}
 \\[2pt]
-{\footnotesize Champion cells (refined cleaning). LOO occlusion is faithfully verified for both CPU-local families; encoder/LLM rows are HPC-pending.}
+{\footnotesize Champion cells, all four anchored on the same \texttt{no10c\_no0} split. LOO occlusion
+beats random removal for every pillar (positive gap); strongest for the BiLSTM, weakest for the LLM.}
 \end{table}
 
 \begin{figure}[t]
 \centering\includegraphics[width=0.82\columnwidth]{figures/fig_faithfulness.png}
-\caption{AOPC comprehensiveness for LOO occlusion. Positive gap confirms the explainer beats random
-removal for both CPU-local families.}
+\caption{AOPC comprehensiveness for LOO occlusion across all four pillars. Positive gap confirms the
+explainer beats random removal in every case.}
 \label{fig:faith}
 \end{figure}
 

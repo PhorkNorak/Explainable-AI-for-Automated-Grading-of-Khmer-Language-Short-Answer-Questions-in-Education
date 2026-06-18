@@ -1,29 +1,37 @@
 \chapter{Conclusion}
 \label{ch:conclusion}
 
-This thesis set out to build the first reproducible, \emph{explainable} automatic short-answer
-grading benchmark for Khmer, and to characterise honestly what current model families can achieve on
-it. It delivered a 1{,}184-answer teacher-graded corpus with three curated variants, a Khmer-aware
-preprocessing pipeline, a unified pipeline comparing four model families (classical, RNN, Transformer,
-and a fine-tuned LLM), a cross-family faithfulness study, a quantified question-leakage analysis, and
-a live teacher-facing prototype.
+\section{Conclusions}
+\label{sec:conclusions}
+In this study, we set out to build the first reproducible, \emph{explainable} automatic short-answer
+grading benchmark for Khmer, and to describe honestly what current model families can achieve on it. We
+delivered a 1{,}184-answer teacher-graded corpus of real semester examination answers from two
+Cambodian high schools, with three curated variants, a Khmer-aware preprocessing pipeline, a unified
+pipeline comparing four model families (classical, RNN, Transformer, and a fine-tuned LLM), a
+cross-family faithfulness study, a quantified question-leakage analysis, and a live teacher-facing
+prototype.
 
-The six research questions are answered as follows. \textbf{(RQ1)} All four pillars reach QWK in the
-0.80--0.85 range, and none is universally best. \textbf{(RQ2)} Data cleaning lifts the same model by
-$+0.027$ QWK, at least as much as swapping architectures on this small corpus. \textbf{(RQ3)} On QWK
-the pillars are comparable (a 0.05 band), and the fine-tuned LLM is the clear winner only on
-the deployment metrics (67\% exact match, 79\% within one point). \textbf{(RQ4)} The max-score feature
-gives consistent, near-free gains, while post-hoc calibration is fragile and model-dependent and so is
-reported as an ablation rather than in the headline. \textbf{(RQ5)} Leave-One-Out (LOO) occlusion word attribution is reliably faithful for every model
-family across all four pillars, as verified by ERASER comprehensiveness and sufficiency. Explanations
-have to be \emph{measured}. \textbf{(RQ6)} Under a question-held-out split the
-classical QWK collapses from 0.76 to 0.35, showing that small-question-pool ASAG scores are heavily
-inflated by question leakage.
+The six research questions are answered as follows. \textbf{(RQ1)} On this real Khmer exam corpus the
+most expensive model does \emph{not} win the research metric: all four pillars reach QWK in the
+0.80--0.85 band, and a 30-second CPU classical model is within 0.05 QWK of a fine-tuned LLM.
+\textbf{(RQ2)} Data cleaning lifts the same model by $+0.027$ QWK, at least as much as swapping
+architectures on this small corpus, with the single biggest step being removal of the inconsistently
+graded 10C Biology subset. \textbf{(RQ3)} On QWK the pillars are comparable, and the fine-tuned LLM is
+the clear winner only on the deployment metrics (66\,\% exact match, 83\,\% within one point, MAE
+$\approx$0.93 points). \textbf{(RQ4)} The max-score feature gives consistent, near-free gains, while
+post-hoc calibration is fragile and model-dependent and so is reported as an ablation rather than in
+the headline. \textbf{(RQ5)} Leave-One-Out (LOO) occlusion word attribution is reliably faithful for
+every model family, as verified by ERASER comprehensiveness and sufficiency against a random baseline,
+strongest for the small BiLSTM and weakest (but still positive) for the LLM; explanations have to be
+\emph{measured}, not assumed. \textbf{(RQ6)} Under a question-held-out split the classical QWK
+collapses from 0.76 to 0.35, showing that small-question-pool ASAG scores are heavily inflated by
+question leakage.
 
 The central message is that for Khmer short-answer grading, accuracy, deployment quality, and
-explainability must be judged \emph{together}: a 30-second CPU classical model is competitive on the
-research metric and explains itself faithfully through word attribution, a fine-tuned LLM is the right choice
-when exact teacher scores matter, and, above all, an explanation is only worth showing to a teacher
-if it has been shown to be faithful. By releasing the dataset, code, seeds, and results, and by
-realising the work as a usable prototype, this thesis provides both a foundation for future Khmer
-educational NLP and a cautionary, reusable lesson about evaluating grading systems honestly.
+explainability must be judged \emph{together}: no single pillar dominates all three. A 30-second CPU
+classical model is competitive on the research metric and explains itself faithfully through word
+attribution; a fine-tuned LLM is the right choice when exact teacher scores matter; and, above all, an
+explanation is only worth showing to a teacher if it has been shown to be faithful. By releasing the
+dataset, code, seeds, results, and the KhmerGrader models, and by realising the work as a usable
+prototype, this thesis provides both a foundation for future Khmer educational NLP and a cautionary,
+reusable lesson about evaluating grading systems honestly.

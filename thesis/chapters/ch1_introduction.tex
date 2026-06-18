@@ -1,135 +1,141 @@
 \chapter{Introduction}
 \label{ch:intro}
 
-\section{Background and Motivation}
-Assessment is a foundational part of education: it measures what students have learned, guides
-teaching, and gives learners feedback on how to improve. A large share of classroom assessment uses
-\emph{short-answer questions}, which ask a student to write one to a few sentences that are
-then judged for \emph{content correctness} against a reference answer. Grading such answers by hand
-is slow and can be inconsistent from one marking session to the next, which limits how often
-teachers can give detailed, formative feedback.
+\section{Background to the Study}
+Assessment is a core part of education. It measures what students have learned, guides teaching, and
+gives learners feedback on how to improve. Much of this assessment uses \emph{short-answer questions}:
+a student writes one to a few sentences, which are then judged for \emph{content correctness} against
+a reference answer. Short-answer questions sit between multiple-choice items (easy to mark but mostly
+testing recall) and essays (rich but slow to grade). They are common in school exams, and grading
+them by hand is slow and not always consistent, which limits how often teachers can give detailed
+feedback.
 
 \emph{Automatic Short-Answer Grading} (ASAG) studies how to score these answers with a computer. The
-field has progressed from early systems based on semantic-similarity and dependency
-features~\citep{mohler2011}, through shared tasks that standardised datasets and
-evaluation~\citep{dzikovska2013}, to deep neural networks and, most recently, Transformer-based
-language models~\citep{vaswani2017attention,devlin2019bert,sung2022survey}. These advances have
-markedly improved ASAG for high-resource languages such as English, Arabic, and Chinese.
+field has moved from early similarity-based systems to deep neural networks, and most recently to
+Transformer-based and large language models~\citep{sung2022survey,devlin2019bert}. These advances have
+improved ASAG for high-resource languages such as English, Arabic, and Chinese.
 
-The benefits, however, have largely \emph{not} reached low-resource languages. \textbf{Khmer}
+Those benefits have mostly \emph{not} reached low-resource languages. \textbf{Khmer}
 (\km{ភាសាខ្មែរ}), the official language of Cambodia and spoken by more than 17 million people, is
-still treated as low-resource in natural language processing (NLP). Multilingual encoders such as
-mBERT, XLM-R, and GTE-multilingual see comparatively little Khmer during pre-training, and the Khmer
-script has \emph{no whitespace word boundaries}, so even tokenising a sentence into words is
-non-trivial~\citep{buoy2022khmer,khmernltk2020}. Existing Khmer NLP work targets tokenisation,
-part-of-speech tagging, and text retrieval, but not educational assessment. At the same time,
-artificial intelligence in education is a growing priority for Cambodia~\citep{huot2025cambodia},
-which makes a reliable, transparent Khmer grading tool both timely and useful.
-
-A second motivation is \emph{explainability}. A grade is a high-stakes decision: students, teachers,
-and parents need to understand \emph{why} an answer received its score, especially if it is to be
-trusted or appealed. A teacher will only adopt an automatic grader they can \emph{audit}: one that
-visibly rewards the content the rubric cares about rather than spurious surface cues. Crucially, an
-explanation is only useful if it is \emph{faithful}: it must reflect what the model actually used,
-not merely produce a plausible-looking highlight. Plausible-but-unfaithful explanations are arguably
-worse than none, because they create false confidence~\citep{jacovi2020faithfulness}. This thesis
-therefore treats explainability as a first-class objective rather than an afterthought.
-
-\section{Problem Statement}
-We want to grade Khmer short answers automatically and to \emph{honestly characterise} what is
-achievable on a real classroom corpus. Three properties of the available data make this difficult.
+still low-resource in NLP. The Khmer script is also hard to process:
 
 \begin{itemize}[leftmargin=1.4em]
-  \item \textbf{No benchmark and no baselines.} To our knowledge there is no published Khmer ASAG
-  dataset or system to compare against, so the work must build both the benchmark and the reference
-  results.
-  \item \textbf{Heterogeneous scoring scales.} Each question has its own maximum score, drawn from
-  $\{5,6,7,8,10,12,15,20\}$. A raw score of ``8'' therefore means different things on different
-  questions, which complicates both modelling and evaluation.
-  \item \textbf{A small, single-grader corpus.} The corpus has 1{,}184 answers graded by a
-  \emph{single} teacher, so there is limited data and no second grader against whom to measure a
-  human agreement ceiling.
+  \item it has \textbf{no spaces between words}, so even splitting a sentence into words is a
+  machine-learning task in itself;
+  \item it stacks subscript consonants (\km{ជើង}) and reorders vowels inside a syllable;
+  \item it carries invisible formatting characters that survive naive cleaning.
 \end{itemize}
 
-A further problem, often blurred in ASAG papers, is that two different questions are usually
-reported together: \emph{research quality} (how well the model's ordinal scores agree with the
-teacher, measured by Quadratic Weighted Kappa) and \emph{deployment quality} (whether the model
-predicts the \emph{exact} teacher score in points). This thesis keeps the two separate. Finally, when
-a benchmark has few distinct questions, models can memorise question-specific patterns; we must
-therefore test how performance holds up on \emph{unseen} questions.
+Multilingual models see little Khmer during pre-training, and existing Khmer NLP work covers
+tokenisation, part-of-speech tagging, and search, but not grading~\citep{buoy2022khmer,khmernltk2020}.
+At the same time, AI in education is a growing priority for Cambodia~\citep{huot2025cambodia}, which
+makes a reliable, transparent Khmer grading tool both timely and useful.
 
-\section{Research Questions}
-\label{sec:rqs}
-This thesis addresses six research questions.
+\section{Problem Statement}
+We want to grade Khmer short answers automatically and to \emph{honestly} describe what is achievable
+on a real classroom corpus. Three properties of the data make this hard:
 
-\begin{description}[leftmargin=2.4em,style=nextline]
-  \item[RQ1 -- Model families.] How far can each family of grading model (classical machine
-  learning, a recurrent neural network, a Transformer encoder, and a fine-tuned large language
-  model) go on a 1{,}184-sample Khmer corpus?
-  \item[RQ2 -- Data versus algorithm.] On small-data ASAG, does improving \emph{data quality} move
-  results more than swapping the learning algorithm?
-  \item[RQ3 -- Research versus deployment.] Does the model that wins the standard research metric
-  (QWK) also win the metrics that matter in a classroom (exact-score match and agreement within one
-  point)?
-  \item[RQ4 -- Cheap levers.] Do two low-cost additions (encoding each question's \emph{maximum
-  score} as a feature, and \emph{post-hoc threshold calibration}) improve grading?
-  \item[RQ5 -- Explainability (central).] Across the four families, which produces the most
-  \emph{faithful} explanations, how well do those explanations align with the teacher's reference
-  answer (\emph{plausibility}), and is there an accuracy-versus-explainability trade-off?
-  \item[RQ6 -- Robustness.] How large is the \emph{question-leakage} effect, how much does
-  performance depend on having seen the question during training, and how well do models grade
-  genuinely unseen questions?
-\end{description}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{No benchmark and no baselines.} There is no published Khmer ASAG dataset or system, so
+  we must build both the benchmark and the reference results.
+  \item \textbf{Different scoring scales.} Each question has its own maximum score, from the set
+  $\{5,6,7,8,10,12,15,20\}$. A raw score of ``8'' means different things on different questions, so the
+  scores must be normalised.
+  \item \textbf{A small, single-grader corpus.} The corpus has 1{,}184 answers graded by \emph{one}
+  teacher, so there is limited data, no second grader to measure a human ceiling, and some real
+  marking noise to confront.
+\end{itemize}
 
-\section{Aim and Objectives}
-The aim of this thesis is to build the first reproducible, \emph{explainable} ASAG benchmark for
-Khmer and to characterise, honestly and with statistical rigour, what current model families can and
-cannot do on it. The specific objectives are:
+A further problem, often blurred in ASAG papers, is that two different questions are usually reported
+together: \emph{research quality} (how well the model's grades agree with the teacher, measured by
+QWK) and \emph{deployment quality} (whether the model predicts the \emph{exact} mark in points). We
+keep the two apart, because a model can be good at one and weak at the other. Finally, with only 41
+distinct questions, a model can memorise question-specific patterns, so we must also test it on
+\emph{unseen} questions.
+
+\section{Aim and Objectives of the Study}
+The aim of this study is to build the first reproducible, \emph{explainable} ASAG benchmark for Khmer
+and to describe honestly what current models can and cannot do on it. To reach this aim, our
+objectives are:
 
 \begin{enumerate}[leftmargin=1.8em]
-  \item to construct and document a Khmer short-answer corpus with three curated cleaning variants,
-  and a Khmer-aware preprocessing pipeline that addresses script-specific issues;
-  \item to implement a single, consistent training-and-evaluation pipeline that compares four model
-  families as bounded ordinal regression;
-  \item to design a \emph{model-agnostic explainability protocol} that measures explanation
-  faithfulness (using ERASER comprehensiveness/sufficiency and AOPC) and plausibility, and to apply
-  it across all families;
-  \item to evaluate every model with field-standard metrics, reported consistently across three
-  dataset variants, and to quantify the question-leakage effect;
-  and
-  \item to realise the explainability contribution as a live, teacher-facing web prototype.
+  \item to build and document a Khmer short-answer corpus with three cleaning variants and a
+  Khmer-aware preprocessing pipeline;
+  \item to implement one shared training-and-evaluation pipeline that compares four model families
+  (classical, RNN, Transformer encoder, and a fine-tuned LLM) as bounded ordinal regression;
+  \item to design a model-agnostic explainability protocol that \emph{measures} explanation
+  faithfulness and plausibility, and to apply it to all four families;
+  \item to evaluate every model with field-standard metrics across three dataset variants, and to
+  measure the question-leakage effect;
+  \item to deliver the explainability feature as a live, teacher-facing web prototype.
 \end{enumerate}
 
-\section{Significance of the Study}
-This study makes the first contribution of automated short-answer grading technology to the Khmer
-language, providing a reproducible benchmark, baselines across four model families, and a released
-dataset and codebase that future Khmer NLP work can build on. Methodologically, it contributes a
-cross-family \emph{faithfulness} protocol that measures, rather than assumes, that explanations
-reflect the model's reasoning, together with an honest \emph{question-leakage} analysis that
-quantifies how much small-question-pool ASAG scores are inflated. Practically, the live prototype demonstrates how
-a transparent grading assistant could give Cambodian teachers faster, auditable feedback. The thesis
-is also written to be \emph{honest by construction}: every headline number is tied to a verified
-computed result, results are reported on both train and test across three dataset variants, and the
-limits of the work are stated plainly.
+In meeting these objectives, the study answers six research questions:
 
-\section{Scope and Limitations}
-The thesis focuses on short-answer questions (typically one to a few sentences) in Khmer, drawn from
-secondary-school subjects (Biology, History, Geography, and Earth Science). It studies
-\emph{content} scoring against a reference answer, not the grading of essays for style or grammar. A
-single teacher graded every answer, so the work reports agreement \emph{with that grader} rather
-than against a measured human ceiling; obtaining a second annotator was not possible within the
-scope of the study. The most computationally heavy models (the Transformer encoders and the
-fine-tuned LLM) require a GPU and were run on dedicated hardware; the classical and recurrent
-baselines run on a CPU. These limitations are revisited in Chapter~\ref{ch:limitations}.
+\begin{description}[leftmargin=2.4em,style=nextline]
+  \item[RQ1.] Does the most expensive model (a fine-tuned LLM) actually beat a 30-second CPU baseline
+  on a real Khmer exam corpus?
+  \item[RQ2.] On small-data ASAG, does better \emph{data quality} help more than changing the learning
+  algorithm?
+  \item[RQ3.] Does the model that wins QWK also win the metrics a classroom cares about (the exact
+  mark, and agreement within one point)?
+  \item[RQ4.] Do two cheap additions help: giving the model each question's maximum score, and
+  post-hoc threshold calibration?
+  \item[RQ5.] Across the four families, which gives the most \emph{faithful} explanations, and is there
+  an accuracy-versus-explainability trade-off?
+  \item[RQ6.] How large is the \emph{question-leakage} effect, and how well do models grade genuinely
+  unseen questions?
+\end{description}
 
-\section{Thesis Organisation}
-The remainder of the thesis is organised as follows. Chapter~\ref{ch:literature} reviews the
-literature on ASAG, Transformer models, explainable AI and faithfulness, cross-lingual and
-low-resource scoring, and Khmer NLP, and identifies the research gap. Chapter~\ref{ch:methodology}
-describes the research design, the dataset and preprocessing, the four model pillars, the
-explainability protocol, and the evaluation methodology. Chapter~\ref{ch:experiments} reports the
-experimental setup, the experiment grid, hyperparameter tuning, and the live prototype.
-Chapter~\ref{ch:results} presents and discusses the results, per-pillar performance with confidence
-intervals, the research-versus-deployment trade-off, the explainability study, and the leakage
-analysis. Chapter~\ref{ch:limitations} states limitations and future work, and
-Chapter~\ref{ch:conclusion} concludes.
+\section{Rationale of the Study}
+This study is motivated by a clear gap: short-answer grading has advanced for high-resource languages
+but not for Khmer, and a grade is a high-stakes decision that a teacher will only trust if it can be
+\emph{audited}. An explanation is only useful if it is \emph{faithful}, that is, if it reflects what
+the model actually used rather than just looking reasonable; a plausible but unfaithful explanation is
+arguably worse than none, because it creates false confidence~\citep{lyu2024faithfulsurvey}. We
+therefore treat explainability as a first-class goal and measure whether explanations are faithful.
+
+The study makes the following contributions:
+
+\begin{enumerate}[leftmargin=1.8em]
+  \item \textbf{The first Khmer ASAG benchmark}: 1{,}184 real teacher-graded answers (41 questions,
+  203 students, four subjects, two schools), released with three cleaning variants.
+  \item \textbf{A four-family comparison under one pipeline}: classical, RNN, Transformer, and a
+  fine-tuned LLM (the KhmerGrader family).
+  \item \textbf{A cross-family faithfulness protocol}: one model-agnostic Leave-One-Out (LOO)
+  word-attribution method applied to all families and \emph{measured} for faithfulness.
+  \item \textbf{An honest question-leakage analysis} that measures how much small-question-pool scores
+  are inflated.
+  \item \textbf{A live teacher-facing prototype} that returns a score, a faithful word-attribution
+  explanation, and written feedback.
+\end{enumerate}
+
+To ground the data in reality, we collected real semester exam answers by hand from two Cambodian high
+schools chosen to differ: one in a province and one in the capital. The two sites differ in students'
+answering style and in the marking teacher, so a model that works across both is tested against real
+classroom variation.
+
+\section{Limitation and Scope}
+This study covers short-answer questions in Khmer from four secondary-school subjects (Biology,
+History, Geography, Earth Science). We study \emph{content} scoring against a reference answer, not
+essay style or grammar. A single teacher graded every answer, so results are agreement \emph{with that
+grader}, not against a measured human ceiling. The heavier models (the Transformer encoders and the
+LLM) need a GPU and were run on dedicated hardware; the classical and RNN baselines run on a CPU. We
+revisit these limits in Chapter~\ref{ch:limitations}.
+
+\section{Structure of the Study}
+The rest of this thesis is organised as follows:
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Chapter~\ref{ch:literature}: Literature Review} reviews ASAG, the core concepts
+  (Transformers and explainability), related work, and the research gap.
+  \item \textbf{Chapter~\ref{ch:methodology}: Methodology} describes the research design, data
+  collection, preprocessing, the four models, the tools, and the evaluation metrics.
+  \item \textbf{Chapter~\ref{ch:experiments}: Experiment} describes the environment and the
+  before-training, training, and testing phases, including the prototype.
+  \item \textbf{Chapter~\ref{ch:results}: Results and Discussion} presents the results and discusses
+  them.
+  \item \textbf{Chapter~\ref{ch:limitations}: Limitations and Future Work} states the limits and the
+  next steps.
+  \item \textbf{Chapter~\ref{ch:conclusion}: Conclusion} concludes the study.
+\end{itemize}

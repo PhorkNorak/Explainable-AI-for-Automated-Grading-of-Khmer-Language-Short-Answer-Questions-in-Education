@@ -13,7 +13,7 @@ model families ("pillars") under one consistent recipe:
 | **Classical** | TF-IDF + RBF-SVR | QWK 0.795 (895) | exact 0.20 |
 | **RNN** | BiLSTM + Attention (char-level) | **QWK 0.845** (895) | exact 0.54 |
 | **Transformer** | GTE-multilingual dual-encoder (+ max-score feature) | QWK 0.820 (1184) | raw-exact 0.573 |
-| **LLM** | Qwen 3.5 4B, QLoRA fine-tune | QWK 0.842 (909) | **67% exact**, **79% within ±1 pt** |
+| **LLM** | Qwen 3.5 4B, QLoRA fine-tune (KhmerGrader family) | QWK 0.843 (909) | **66% exact**, **83% within ±1 pt** |
 
 All four QWKs fall in a narrow 0.05 band (0.795–0.845; see `results_stats/champion_metrics.csv`),
 so **no pillar is a clear research winner on QWK**; the LLM's lead on the deployment/accuracy metrics
@@ -66,7 +66,7 @@ final_kxs/
 ├── xai.py             gradient × input saliency for the top transformer cell
 ├── models/            classical.py · bilstm.py · dual.py · cross.py
 ├── xai/               explainable-AI toolkit shared across all four families
-│   ├── explainers.py  occlusion · BiLSTM attention · (encoder saliency) · (LLM rationale)
+│   ├── explainers.py  LOO occlusion — the sole unified word-attribution method (all 4 pillars)
 │   ├── attributions.py popular attribution methods: occlusion · LIME · SHAP (one dispatcher)
 │   ├── faithfulness.py ERASER comprehensiveness & sufficiency + random baseline
 │   ├── plausibility.py reference-overlap plausibility proxy (answer↔reference word overlap)
