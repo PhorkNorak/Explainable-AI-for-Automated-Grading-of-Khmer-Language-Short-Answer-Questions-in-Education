@@ -131,9 +131,10 @@ def call_api(base_url, model, key, prompt, mode, max_retries=5):
     `reasoning` mode allows a longer answer (model may emit CoT); `bare` asks for the
     integer directly with a tight token budget."""
     import requests
-    # bare gets a small but non-trivial budget: reasoning-style models otherwise spend the
-    # whole window thinking and return empty visible content.
-    max_tokens = 1024 if mode == "reasoning" else 64
+    # bare still needs headroom: hybrid models (e.g. DeepSeek v4) reason internally even when
+    # asked for a bare integer, and a tight budget gets consumed before any visible content is
+    # emitted (returns ""). 256 lets the final integer land while staying well under reasoning.
+    max_tokens = 1024 if mode == "reasoning" else 256
     body = {"model": model, "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.0, "max_tokens": max_tokens, "stream": False}
     delay = 2.0
