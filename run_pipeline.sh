@@ -67,6 +67,15 @@ python -c "import khmernltk; print('khmernltk OK')"
   python -u experiments/exp11_cleaning_ablation.py  # format-noise robustness
   python -u experiments/exp12_hparam_tuning.py      # classical hyperparameter sweep
 
+  echo "=================== 2b. FRONTIER BASELINES (paid API, ~\$5-11, cached) ==================="
+  # Frontier LLMs via one OpenRouter key (zero-shot, bare + reasoning, no10c). Responses cache
+  # to results_frontier/, so a re-run is free; skipped automatically if no key is exported.
+  if [ -n "${OPENROUTER_API_KEY:-}" ]; then
+    python -u experiments/exp14_frontier_baselines.py --gateway openrouter --dataset no10c
+  else
+    echo "[skip] OPENROUTER_API_KEY not set; skipping exp14 frontier baselines."
+  fi
+
   echo "=================== 3. AGGREGATE + FIGURES ==================="
   python -u experiments/compare_all.py --topk 20
   python -u paper/make_figures.py                   # regenerate the figure suite from the CSVs
@@ -76,6 +85,6 @@ python -c "import khmernltk; print('khmernltk OK')"
 echo
 echo "Pipeline finished. Manual follow-up (needs a browser, for correct Khmer shaping):"
 echo "  1) Open the SHAP heatmap HTML galleries and screenshot each to a PNG:"
-echo "       results_xai/no10c_no0/heatmaps/{classical,bilstm,encoder,llm}/*_gallery.html"
+echo "       results_xai/no10c/heatmaps/{classical,bilstm,encoder,llm}/*_gallery.html"
 echo "     Save as thesis/figures/heatmap_{classical,bilstm,encoder,llm}.png"
 echo "  2) Then propagate refreshed numbers from results_stats/*.csv into the thesis/paper tables."

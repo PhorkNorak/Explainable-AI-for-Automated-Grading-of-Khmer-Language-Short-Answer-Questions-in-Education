@@ -86,28 +86,44 @@ _ANSWER_MARKERS = ("</think>", "<|channel|>final", "final answer", "Final answer
                    "answer:", "Answer:", "score:", "Score:")
 
 
-def grading_prompt(question, reference, answer, max_score):
-    """The same grading prompt used to fine-tune the KhmerGrader (fair comparison)."""
-    return (
+def grading_prompt(question, reference, answer, max_score, mode="bare"):
+    """The same grading task used to fine-tune the KhmerGrader (fair comparison). The
+    output-format instruction is mode-specific: `bare` asks for the integer alone; `reasoning`
+    lets the model think, then pins the final answer behind a `Score:` marker we parse."""
+    body = (
         f"Below is a Khmer short-answer grading task. Score the student's answer "
         f"on a scale from 0 to {int(max_score)}.\n\n"
         f"Question: {question}\n\n"
         f"Reference answer: {reference}\n\n"
         f"Student answer: {answer}\n\n"
-        f"The score (integer from 0 to {int(max_score)}):"
     )
+    if mode == "reasoning":
+        return body + (f"Reason briefly, then on the final line write exactly "
+                       f"`Score: N` where N is an integer from 0 to {int(max_score)}.")
+    return body + (f"Reply with only the integer score from 0 to {int(max_score)}, "
+                   f"with no words, explanation, or punctuation.")
 
 
 def parse_int(text, max_score):
-    """Marker-aware integer parser. Returns None if no integer is found (excluded)."""
-    parsed = text or ""
-    for marker in _ANSWER_MARKERS:
-        if marker in parsed:
-            parsed = parsed.split(marker)[-1]
-    m = re.search(r"\d+", parsed)
-    if not m:
+    """Marker-aware integer parser, robust to chatty models. If an answer marker (e.g.
+    `Score:`, `</think>`) is present, take the FIRST integer after the LAST marker (the stated
+    final answer). Otherwise fall back to the LAST integer in the text, since a final score
+    typically trails any reasoning. Returns None if no integer is found (excluded)."""
+    parsed = (text or "").strip()
+    if not parsed:
         return None
-    return max(0, min(int(m.group()), int(max_score)))
+    # keep only the text after the rightmost answer marker, if any
+    cut = -1
+    for marker in _ANSWER_MARKERS:
+        idx = parsed.rfind(marker)
+        if idx != -1:
+            cut = max(cut, idx + len(marker))
+    ints = re.findall(r"\d+", parsed[cut:] if cut != -1 else parsed)
+    if not ints:
+        return None
+    # after an explicit marker the score comes first; unmarked, the final number is the answer
+    chosen = ints[0] if cut != -1 else ints[-1]
+    return max(0, min(int(chosen), int(max_score)))
 
 
 def call_api(base_url, model, key, prompt, mode, max_retries=5):
@@ -115,7 +131,9 @@ def call_api(base_url, model, key, prompt, mode, max_retries=5):
     `reasoning` mode allows a longer answer (model may emit CoT); `bare` asks for the
     integer directly with a tight token budget."""
     import requests
-    max_tokens = 1024 if mode == "reasoning" else 16
+    # bare gets a small but non-trivial budget: reasoning-style models otherwise spend the
+    # whole window thinking and return empty visible content.
+    max_tokens = 1024 if mode == "reasoning" else 64
     body = {"model": model, "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.0, "max_tokens": max_tokens, "stream": False}
     delay = 2.0
@@ -174,8 +192,12 @@ def score_model(provider, mode, test_df, out_dir, gateway="direct"):
         return None
 
     preds, labels, maxes, raws, n_unparsed = [], [], [], [], 0
+    n_total = len(test_df)
+    n_cached = sum(1 for i in test_df.index if str(test_df.loc[i].get("AnswerID", i)) in cache)
+    print(f"  {provider}/{mode}: {n_total} answers ({n_cached} cached, "
+          f"{n_total - n_cached} to call)", flush=True)
     fcache = open(cache_path, "a", encoding="utf-8")
-    for i, row in test_df.iterrows():
+    for k, (i, row) in enumerate(test_df.iterrows(), 1):
         aid = str(row.get("AnswerID", i))
         max_score = int(row["Max Score"])
         if aid in cache:
@@ -183,7 +205,7 @@ def score_model(provider, mode, test_df, out_dir, gateway="direct"):
         else:
             if not key:
                 continue
-            prompt = grading_prompt(row["Question"], row["Reference"], row["Answer"], max_score)
+            prompt = grading_prompt(row["Question"], row["Reference"], row["Answer"], max_score, mode)
             try:
                 raw_text = call_api(base_url, model, key, prompt, mode)
             except Exception as e:
@@ -200,6 +222,8 @@ def score_model(provider, mode, test_df, out_dir, gateway="direct"):
         labels.append(int(row["score_label"]))
         maxes.append(max_score)
         raws.append(int(row["Student Score"]))
+        if k % 10 == 0 or k == n_total:
+            print(f"    {provider}/{mode}: {k}/{n_total}", flush=True)
     fcache.close()
     if not preds:
         print(f"  [skip] {provider}/{mode}: no parsed predictions")
