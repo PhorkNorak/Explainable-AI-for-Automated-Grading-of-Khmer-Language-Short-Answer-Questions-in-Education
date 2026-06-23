@@ -51,7 +51,7 @@ python experiments/exp01_tfidf_baseline.py --datasets no10c   # 909 only
 
 ## How to run
 
-Each script iterates over **all 3 datasets** sequentially by default, patching
+Each script iterates over **both datasets** sequentially by default, patching
 `config.RAW_CSV`, `DROP_SCORE_ZERO`, and the output paths between datasets.
 
 ```powershell

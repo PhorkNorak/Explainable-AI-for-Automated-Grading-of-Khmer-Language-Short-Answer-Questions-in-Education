@@ -103,7 +103,7 @@ it's an engineering footnote. Restate metrics: QWK primary + deployment metrics.
 ### 4.5 v01–v08 grid
 Don't read every row. Frame it as: classical baseline (v01) + cheap levers (v02 calibration,
 v03/v03b max-score) + the model families (v05 RNN, v06 encoders) + ensemble (v07) + LLM (v08),
-all × 3 datasets, all reported train+test. "Hundreds of cells, one leaderboard, fully
+all × 2 datasets, all reported train+test. "Hundreds of cells, one leaderboard, fully
 reproducible."
 
 ### 4.6 Explainability method (RQ5)
@@ -196,7 +196,7 @@ SHAP; Qwen for exact points.
 ### 6.2 Contributions
 (1) the **first *explainable* Khmer ASAG benchmark**; (2) a **model-agnostic SHAP word-attribution
 + plausibility protocol** across all four families (the XAI core); (3) **honest multi-variant
-reporting** (train+test across 3 dataset variants); (4) max-score feature + a calibration ablation.
+reporting** (train+test across 2 dataset variants); (4) max-score feature + a calibration ablation.
 Lead with (1) and (2), they are what the title promises.
 
 ### 6.3 Limitations

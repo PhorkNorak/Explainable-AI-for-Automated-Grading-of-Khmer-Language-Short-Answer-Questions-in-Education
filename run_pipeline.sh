@@ -40,7 +40,7 @@ python -c "import torch; print('CUDA available:', torch.cuda.is_available())"
 python -c "import khmernltk; print('khmernltk OK')"
 
 {
-  echo "=================== 1. MODEL GRID (3 datasets x text axes) ==================="
+  echo "=================== 1. MODEL GRID (2 datasets x text axes) ==================="
   python -u experiments/exp01_tfidf_baseline.py        --resume
   python -u experiments/exp03_maxscore_feature.py      --resume
   python -u experiments/exp04_bucket_svr.py            --resume

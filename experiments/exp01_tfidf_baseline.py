@@ -4,7 +4,7 @@ This replaces the older `run_tfidf_3datasets.py` and uses the shared
 `_common.DATASETS` so the 1184 ("full") dataset is included automatically.
 
 3 preprocess x 2 input x 2 models (tfidf_cos + tfidf_svr) = 12 cells per dataset.
-Default runs on all 3 datasets; use --datasets to subset.
+Default runs on both datasets; use --datasets to subset.
 
 Examples:
     python experiments/exp01_tfidf_baseline.py                 # all 3
