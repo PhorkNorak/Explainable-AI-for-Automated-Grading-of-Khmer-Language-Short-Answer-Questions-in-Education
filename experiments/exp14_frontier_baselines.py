@@ -131,12 +131,14 @@ def call_api(base_url, model, key, prompt, mode, max_retries=5):
     `reasoning` mode allows a longer answer (model may emit CoT); `bare` asks for the
     integer directly with a tight token budget."""
     import requests
-    # bare still needs headroom: hybrid models (e.g. DeepSeek v4) reason internally even when
-    # asked for a bare integer, and a tight budget gets consumed before any visible content is
-    # emitted (returns ""). 256 lets the final integer land while staying well under reasoning.
     max_tokens = 1024 if mode == "reasoning" else 256
     body = {"model": model, "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.0, "max_tokens": max_tokens, "stream": False}
+    # OpenRouter's unified reasoning switch makes the two modes a clean controlled contrast:
+    # bare turns CoT OFF (hybrid models like DeepSeek v4 otherwise reason internally and return
+    # empty content), reasoning turns it ON. Only sent when actually hitting OpenRouter.
+    if "openrouter.ai" in base_url:
+        body["reasoning"] = {"enabled": mode == "reasoning"}
     delay = 2.0
     for attempt in range(max_retries):
         try:
@@ -149,7 +151,13 @@ def call_api(base_url, model, key, prompt, mode, max_retries=5):
                 ra = r.headers.get("Retry-After")
                 time.sleep(float(ra) if ra else delay); delay *= 2; continue
             r.raise_for_status()
-            return (r.json()["choices"][0]["message"]["content"] or "").strip()
+            msg = r.json()["choices"][0]["message"]
+            # fall back to the reasoning trace if visible content is empty (parse_int picks the
+            # final integer out of it), so a reasoned-but-silent answer is not lost.
+            content = (msg.get("content") or "").strip()
+            if not content:
+                content = (msg.get("reasoning") or msg.get("reasoning_content") or "").strip()
+            return content
         except Exception:
             if attempt == max_retries - 1:
                 raise
