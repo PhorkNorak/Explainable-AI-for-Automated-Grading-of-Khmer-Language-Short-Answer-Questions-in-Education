@@ -134,11 +134,10 @@ def call_api(base_url, model, key, prompt, mode, max_retries=5):
     max_tokens = 1024 if mode == "reasoning" else 256
     body = {"model": model, "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.0, "max_tokens": max_tokens, "stream": False}
-    # OpenRouter's unified reasoning switch makes the two modes a clean controlled contrast:
-    # bare turns CoT OFF (hybrid models like DeepSeek v4 otherwise reason internally and return
-    # empty content), reasoning turns it ON. Only sent when actually hitting OpenRouter.
-    if "openrouter.ai" in base_url:
-        body["reasoning"] = {"enabled": mode == "reasoning"}
+    # NOTE: we do NOT send a `reasoning` toggle. OpenRouter rejects it (HTTP 400) for some
+    # hybrid models, so the bare/reasoning contrast is driven by the prompt instruction plus
+    # the token budget. Bare may leave a few empty (reasoned-but-silent) answers on hybrid
+    # models; those are excluded-and-reported, and the reasoning variant recovers them.
     delay = 2.0
     for attempt in range(max_retries):
         try:
