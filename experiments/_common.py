@@ -1,7 +1,7 @@
 """Shared utilities for all experiments.
 
 Provides:
-  * DATASETS — iteration over the three dataset variants (1184 / 909 / 895)
+  * DATASETS — iteration over the two dataset variants (1184 / 909)
   * patch_config — swap RAW_CSV / RUN_NAME / DROP_SCORE_ZERO / paths for a variant
   * LEADERBOARD_HEADER — same 24-column schema as run_all.py
   * append_row, reset_leaderboard, row_from_metrics — leaderboard helpers
@@ -24,15 +24,13 @@ if _PROJECT_ROOT not in sys.path:
 import config  # noqa: E402
 
 
-# Three dataset variants. Every experiment runs on all of them by default.
-# `raw_csv` is relative to PROJECT_ROOT/data/.
+# Two dataset variants. Every experiment runs on both by default. Grade-0 is kept
+# (full 5-class task). `raw_csv` is relative to PROJECT_ROOT/data/.
 DATASETS = [
     {"run_name": "full",      "drop_zero": False, "raw_csv": "dataset.csv",
      "label": "1184 (full)"},
     {"run_name": "no10c",     "drop_zero": False, "raw_csv": "dataset_no_10c_biology.csv",
      "label": "909 (no 10C biology)"},
-    {"run_name": "no10c_no0", "drop_zero": True,  "raw_csv": "dataset_no_10c_biology.csv",
-     "label": "895 (no 10C, drop 0)"},
 ]
 
 
@@ -69,7 +67,7 @@ def patch_config(run_name: str, drop_zero: bool, exp_suffix: str = "",
     Parameters
     ----------
     run_name : str
-        Dataset identifier — "full", "no10c", or "no10c_no0".
+        Dataset identifier — "full" or "no10c".
     drop_zero : bool
         Whether to filter out score_label==0 rows.
     exp_suffix : str

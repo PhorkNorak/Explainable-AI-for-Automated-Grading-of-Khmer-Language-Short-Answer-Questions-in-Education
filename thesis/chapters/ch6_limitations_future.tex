@@ -2,7 +2,9 @@
 \label{ch:limitations}
 
 \section{Limitations}
-We state the limits of this study plainly, since doing so is part of an honest benchmark.
+We state the limits of this study plainly, since doing so is part of an honest benchmark. Each
+limitation below is tied to a concrete result so that a reader knows not just \emph{that} a caveat
+exists but how much it could matter.
 
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Single grader, no inter-annotator agreement.} A second grader could not be obtained
@@ -10,48 +12,60 @@ We state the limits of this study plainly, since doing so is part of an honest b
   agreement \emph{with this teacher}, and may inherit that grader's biases. Reporting across three
   dataset variants partially mitigates, but does not remove, this limitation, and the 10C Biology case
   (\S\ref{sec:noisy}) shows that even a single grader is not perfectly self-consistent.
-  \item \textbf{Question leakage in the headline split.} Because only 41 distinct questions exist, the
-  random split shares questions between train and test. The leakage is now \emph{measured}
-  (\S\ref{sec:leakage}) rather than merely flagged, and both seen- and unseen-question numbers are
-  reported; but the seen-question headline numbers should be read with this in mind.
-  \item \textbf{Small corpus.} With roughly 895 to 1{,}184 answers and few questions, the
-  unseen-question test sets are tiny ($\sim$6 questions) and high-variance, and the corpus covers four
-  subjects from two schools rather than a national sample. Earth Science in particular contributes
-  only nine answers.
-  \item \textbf{Partial cross-pillar comparability.} The pillars were evaluated on different dataset
-  variants (895/909/1{,}184) and only the classical and BiLSTM models share a test set, so cross-pillar
-  QWK differences should be read as indicative rather than head-to-head.
-  \item \textbf{Explainability scope.} LOO faithfulness is reported for all four pillars on the same
-  \texttt{no10c\_no0} split; the LLM is faithful but the least sharp (highest sufficiency). The
-  plausibility measure is an automatic reference-overlap proxy, not a human-rationale study, so it
-  approximates rather than measures pedagogical usefulness.
+  \item \textbf{Small corpus and few questions.} With roughly 909 to 1{,}184 answers across only 41
+  distinct questions, the corpus covers four subjects from two schools rather than a national sample,
+  and some cells are very small: Earth Science in particular contributes only nine answers.
+  \item \textbf{Partial cross-pillar comparability.} The pillars were evaluated on two dataset
+  variants (909/1{,}184): the classical, RNN, and LLM champions share the \texttt{no10c} test set,
+  while the encoder was selected on \texttt{full}, so the champion metrics are computed on slightly
+  different test sizes. Cross-pillar QWK differences should therefore be read as indicative rather than
+  head-to-head, which is also why we lean on the within-0.05 ``comparable'' band rather than declaring
+  a single QWK winner.
+  \item \textbf{Explainability scope.} SHAP plausibility is reported for all four pillars on the
+  \texttt{no10c} split; the LLM uses a \emph{capped} SHAP evaluation budget, since each evaluation is a
+  full generation, so its plausibility is an approximation of the full sweep. The plausibility measure is
+  itself an automatic reference-overlap proxy, not a human-rationale study, so it approximates rather
+  than measures pedagogical usefulness.
+  \item \textbf{Frontier baselines are a dated API snapshot.} The frontier-model comparison
+  (\S\ref{sec:frontier}) calls closed, continuously-updated services, so those numbers are not exactly
+  reproducible if a provider revises or retires a version. We pin each version, record the evaluation
+  date, and cache the raw responses as mitigation; the KhmerGrader weights, code, and data remain fully
+  reproducible.
   \item \textbf{No formal field study.} The live prototype demonstrates feasibility, but its classroom
   value has not yet been evaluated with teachers in a controlled study.
 \end{itemize}
 
 \section{Future Work}
+\label{sec:future}
 Several directions follow naturally and would address the limitations above.
 
 \begin{itemize}[leftmargin=1.4em]
-  \item \textbf{A second grader and a question-held-out benchmark.} Adding a second annotator would
-  give a true agreement ceiling, and re-running the \emph{full} grid (all four pillars and the LLM)
-  under the question-held-out split would turn the leakage analysis into the primary, honest
-  generalisation benchmark.
+  \item \textbf{A second grader.} Adding a second annotator would give a true agreement ceiling, so
+  that results could be reported against measured human agreement rather than against a single grader.
+  \item \textbf{Few-shot prompting of the bases and frontier models.} We prompt only zero-shot; adding
+  in-context examples (for instance one calibration exemplar per grade band) could strengthen the
+  prompted baselines. The example count and selection matter as much as their presence, and prompting is
+  known to be prone to majority-label and recency biases, so a careful few-shot study, including
+  boundary-aware exemplar selection, is left as future work.
   \item \textbf{A larger, multi-school corpus.} Extending collection beyond the two schools and four
-  subjects, with more distinct questions, would shrink the unseen-question variance and make the
-  benchmark more representative of Cambodian secondary education.
+  subjects, with more distinct questions, would make the benchmark more representative of Cambodian
+  secondary education.
   \item \textbf{Khmer-specific pretraining.} Continued pretraining of a multilingual encoder on Khmer
   text, or a Khmer-native encoder, may close the gap left by the limited Khmer seen during generic
   multilingual pretraining.
-  \item \textbf{Human plausibility and unseen-question explanations.} The automatic reference-overlap
-  plausibility proxy could be replaced with a human-rationale study, and LOO faithfulness could be
-  re-measured under the question-held-out split to test whether explanations stay faithful on unseen
-  questions.
+  \item \textbf{A human plausibility study.} The automatic reference-overlap plausibility proxy could be
+  replaced with a human-rationale study, in which teachers mark the words they consider relevant and the
+  SHAP attributions are scored against those rationales.
   \item \textbf{Cross-lingual transfer.} Transferring scoring ability from high-resource languages to
   Khmer (for example, via multilingual representations or cross-lingual contrastive learning) could
-  help in the genuinely low-data, unseen-question regime.
+  help in the genuinely low-data regime.
   \item \textbf{Feedback quality.} The prototype's written feedback should be evaluated for
   pedagogical usefulness in classroom settings, building on rubric-aligned feedback work.
   \item \textbf{A teacher field study.} A controlled study of how Cambodian teachers use, trust, and
   benefit from the prototype would test the explainability contribution where it ultimately matters.
 \end{itemize}
+
+Of these, the highest priority is a second grader, because it attacks the result that most limits the
+study's external validity: it would replace agreement-with-one-teacher with a measured human ceiling. A
+larger, multi-school corpus with more distinct questions is the natural next step. The remaining
+directions are valuable but build on top of those two foundations.

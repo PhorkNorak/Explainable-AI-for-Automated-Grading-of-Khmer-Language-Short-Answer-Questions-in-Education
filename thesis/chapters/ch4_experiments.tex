@@ -4,60 +4,101 @@
 \section{Environment Setup}
 \label{sec:env}
 We implement the pipeline in Python. The classical and recurrent models run on a CPU; the Transformer
-encoders and the QLoRA-fine-tuned LLM need a CUDA GPU, which we run on dedicated hardware. We use the
+encoders and the QLoRA-fine-tuned LLM need a CUDA GPU, which we run on the MISTI-HPC cluster (an NVIDIA
+A40) in \texttt{tmux} sessions. We use the
 \texttt{khmer-nltk} segmenter for Khmer word segmentation. Every run writes a self-contained directory
 with its configuration, its per-answer predictions for the train/validation/test splits, and a metrics
 file, so we can recompute every reported number from saved predictions without re-training. We use a
-fixed random seed (42) throughout, and five seeds (42, 1337, 2024, 7, 99) for the variance-sensitive
-leakage analysis.
+fixed random seed (42) throughout.
 
-\section{Before Training Phase}
-\label{sec:before}
-Before training, we fix the data and the experiment plan. We run every modelling experiment over the
-three dataset variants (\texttt{full}, \texttt{no10c}, \texttt{no10c\_no0}) and the
-preprocessing/input-format axes, and each experiment writes its own leaderboard. We organise the work
-as a grid in which each row isolates one design choice (Table~\ref{tab:grid}), so each result can be
-attributed to a single change.
+\section{The Experiment Grid}
+\label{sec:grid}
+The study is organised as a registry of experiments, each isolating a single design choice so that any
+change in the result can be traced to one cause. Twelve experiments make up the grid
+(Table~\ref{tab:grid}). The first eight (\texttt{v01}--\texttt{v08}) build up the four model pillars
+from the cheapest classical baseline to the fine-tuned LLM; the last four (\texttt{exp09}--\texttt{exp12})
+are the analyses that turn the trained models into the thesis's findings: the explainability study, the
+champion point-metrics, the data-cleaning ablation, and the classical hyperparameter sweep.
+
+Every modelling experiment sweeps the same two text axes from \S\ref{sec:axes} (three preprocessing
+modes $\times$ two input formats) crossed with its own model choices, and runs over both dataset
+variants (\texttt{full}, \texttt{no10c}). The baseline (\texttt{v01}) and the
+BiLSTM grid (\texttt{v05}) are 12 cells per dataset each; the Transformer grid (\texttt{v06}) is 36
+cells per dataset (three backbones $\times$ dual/cross $\times$ the text axes). This is why the full
+grid runs to hundreds of cells, and why the experiments are split by hardware: the classical and BiLSTM
+families run on a CPU, while the Transformer and LLM grids run on the A40 GPU.
 
 \begin{table}[t]
 \centering
-\caption{Show the experiment grid; each row isolates one design choice or analysis.}
+\caption[The experiment registry]{The experiment registry. Each experiment isolates one design choice
+and writes its own leaderboard in the shared schema. ``HPC'' marks the GPU-only experiments.}
 \label{tab:grid}
-\small
-\begin{tabular}{@{}llp{8.0cm}@{}}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}llp{8.2cm}@{}}
 \toprule
-ID & Pillar / study & What it adds \\
+ID & Pillar / role & What it isolates \\
 \midrule
-exp01  & Classical    & TF-IDF cosine and RBF-SVR baselines \\
-exp02  & Classical    & Post-hoc threshold calibration (validation-selected) \\
-exp03  & Classical    & Max-score as an SVR feature \\
-exp03b & Neural       & Max-score feature for neural heads \\
-exp04  & Classical    & Per-max-score ``bucket'' SVR \\
-exp05  & RNN          & Character BiLSTM + attention grid \\
-exp06  & Transformer  & Dual / cross encoders $\times$ mBERT / XLM-R / GTE \\
-exp07  & Ensemble     & Weighted top-3 cells by validation QWK \\
-exp08  & LLM          & Qwen QLoRA fine-tuning (vs zero-shot base) \\
-exp09  & Explainability & LOO faithfulness + plausibility across families \\
-exp10  & Statistics   & Champion point metrics + question-leakage comparison \\
-exp11  & Ablation     & Old vs.\ refined cleaning (classical champion) \\
-exp12  & Tuning       & Classical SVR $C$ and TF-IDF max-features sweep \\
+\texttt{v01}  & Classical    & TF-IDF cosine and RBF-SVR baseline (12 cells per dataset). \\
+\texttt{v02}  & Classical    & Post-hoc threshold calibration: refit the four class cut-points on validation. \\
+\texttt{v03}  & Classical    & Add the question max-score as an SVR input feature. \\
+\texttt{v03b} & RNN/Transf.  & The max-score feature for the neural heads (BiLSTM CPU, Transformer HPC). \\
+\texttt{v04}  & Classical    & A separate TF-IDF+SVR per max-score bucket, routed at test time. \\
+\texttt{v05}  & RNN          & Full character BiLSTM + attention grid (12 cells per dataset). HPC. \\
+\texttt{v06}  & Transformer  & Full mBERT / XLM-R / GTE dual and cross encoder grid (36 cells). HPC. \\
+\texttt{v07}  & Ensemble     & Weighted mean of the top-3 cells across \texttt{v01}--\texttt{v06}. \\
+\texttt{v08}  & LLM          & QLoRA fine-tuning of the KhmerGrader family, plus a zero-shot base. HPC. \\
+\midrule
+\texttt{exp09} & Explainability & SHAP word attribution + plausibility for all four pillars. \\
+\texttt{exp10} & Deployment      & Champion point metrics: exact, adjacent, and raw-score error. \\
+\texttt{exp11} & Data quality   & The data-cleaning ablation across the two dataset variants. \\
+\texttt{exp12} & Tuning         & The classical hyperparameter sweep ($C$ and TF-IDF max features). \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\section{Before Training Phase}
+\label{sec:before}
+Before training, we fix the data and the experiment plan above. The classical baseline (\texttt{v01})
+runs first because every later experiment is measured against it. The classical enhancements
+(\texttt{v02}--\texttt{v04}) each add exactly one idea: calibration refits the class boundaries,
+\texttt{v03} hands the model the per-question scale, and \texttt{v04} trains one model per max-score
+bucket so that a 10-point and a 20-point question never share a regressor. The neural and Transformer
+grids (\texttt{v05}, \texttt{v06}) sweep the same text axes so they are comparable to the classical
+cells, and the ensemble (\texttt{v07}) reads the leaderboards of \texttt{v01}--\texttt{v06}, picks the
+top three cells by validation QWK, and averages their predictions. The LLM experiment (\texttt{v08}) is
+kept deliberately separate from the ensemble pool so that an expensive generative model never silently
+inflates the other numbers. Each experiment writes its own leaderboard, and no experiment edits another
+experiment's output.
 
 \section{Training Phase}
 \label{sec:training}
 For every cell, we train on the training split and select on the \emph{validation} split, then report
 the chosen configuration \emph{once} on the held-out test split, with no test-set peeking. The neural
 and Transformer models use early stopping on validation QWK, which saves compute and guards against
-over-fitting on the small corpus. Figure~\ref{fig:curves} shows representative training curves: the
-validation performance plateaus early, and early stopping selects the checkpoint we report.
+over-fitting on the small corpus.
+
+Figure~\ref{fig:curves} shows the training curves of all three iteratively-trained pillars, the BiLSTM
+(left), the GTE encoder (middle), and the fine-tuned LLM (right). In each panel the horizontal axis is
+the training epoch and the vertical axis is QWK. For the BiLSTM and the encoder both the training and
+validation splits are shown; for the LLM, where evaluating the training split every epoch would require
+a full generation pass over it, we track the validation curve only. Two things are visible: the
+training and validation lines stay close together where both are shown, so the models are not
+over-fitting, and the validation curve flattens after only a few epochs, so there is little to gain from
+training longer. Early stopping fires at the epoch where the validation QWK peaks, and that checkpoint,
+not the final-epoch one, is what we carry forward to the test set. This is the same selection rule for
+every trainable cell. The classical pillar has no such curve: it trains in a single fit, with no epochs.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.49\textwidth]{bilstm_curve.png}\hfill
-\includegraphics[width=0.49\textwidth]{encoder_curve.png}
-\caption{Show the training curves of the BiLSTM (left) and the GTE encoder (right).}
+\includegraphics[width=0.32\textwidth]{bilstm_curve.png}\hfill
+\includegraphics[width=0.32\textwidth]{encoder_curve.png}\hfill
+\IfFileExists{llm_curve.png}{\includegraphics[width=0.32\textwidth]{llm_curve.png}}%
+{\parbox[b]{0.32\textwidth}{\centering\vspace{2.2cm}\emph{LLM validation curve\\(pending re-run)}\vspace{2.2cm}}}
+\caption[Training curves of the three trainable pillars]{Training curves by epoch: the BiLSTM (left)
+and GTE encoder (middle) show train and validation QWK, while the fine-tuned LLM (right) shows the
+validation QWK curve. The lines track each other and plateau early, so early stopping selects the
+reported checkpoint without over-fitting. The classical pillar trains in a single fit and has no curve.}
 \label{fig:curves}
 \end{figure}
 
@@ -70,26 +111,43 @@ choices. For the neural, Transformer, and LLM pillars, we run the matching learn
 $\in\{1\mathrm{e}{-}5,2\mathrm{e}{-}5,5\mathrm{e}{-}5\}$; LLM QLoRA
 $\in\{1\mathrm{e}{-}4,2\mathrm{e}{-}4,3\mathrm{e}{-}4\}$) with the same selection rule on GPU hardware.
 
+Figure~\ref{fig:hparam} reads this off directly: for each of the two dataset variants on the
+horizontal axis, it places the test QWK of the default configuration next to the test QWK of the
+validation-tuned configuration. The two bars are almost the same height in every variant, which is the
+point: tuning the classical model's penalty and feature count moves the test QWK by at most a few
+thousandths, so the classical result does not depend on a lucky hyperparameter choice.
+
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.6\textwidth]{fig_hparam_tuning.png}
-\caption{Show the classical hyperparameter sweep: tuned vs default test QWK per dataset variant.}
+\caption[Classical hyperparameter sweep]{Classical hyperparameter sweep: default versus
+validation-tuned test QWK for each dataset variant. The near-equal bars show the classical model is
+robust to its penalty $C$ and TF-IDF feature count.}
 \label{fig:hparam}
 \end{figure}
 
 \section{Testing Phase}
 \label{sec:testing}
 In the testing phase we compute every metric from the saved test-set predictions
-(\S\ref{sec:metrics}). Because every number comes from saved predictions, we can reproduce every result
-in Chapter~\ref{ch:results} without re-training; we regenerate the figure suite from the result files
-with a single script that reads only CSVs and prediction files (no GPU, no network). We release all
-code, the dataset and its three variants, the seeds, the per-cell leaderboards, the champion prediction
-files, and the figures. Large model weights (LLM adapters and encoder checkpoints) are not tracked in
-the repository but are regenerable from the released scripts.
+(\S\ref{sec:metrics}). Each cell writes a self-contained run directory holding a \texttt{config.json}
+(exactly what was trained: the model, preprocessing mode, input format, and hyperparameters), a
+\texttt{metrics.json} (the train, validation, and test metrics plus the selected epoch), and three
+prediction files \texttt{predictions\_\{train,val,test\}.csv} with the per-answer true and predicted
+score, label, and raw mark. Every experiment also appends to a shared leaderboard in a common 24-column
+schema, so the cells of different experiments line up column-for-column and can be compared directly.
+
+Because every number comes from these saved predictions, we can reproduce every result in
+Chapter~\ref{ch:results} without re-training: the entire figure suite is regenerated by a single script
+that reads only the CSVs and prediction files (no GPU, no network). We release all code, the dataset and
+its two variants, the fixed seed, the per-cell leaderboards, the champion
+prediction files, and the figure script. Large model weights (the LLM adapters and encoder checkpoints)
+are not tracked in the repository, but are regenerable from the released scripts, and the KhmerGrader
+adapters are published separately. A reader with the repository can therefore both recompute every
+reported number and retrain any cell from scratch.
 
 \subsection{The Live Teacher-Facing Prototype}
 \label{sec:prototype}
-We realise the explainability feature as a working, hosted web application. The interaction mirrors
+We realise the explainability feature as a working web application. The interaction mirrors
 what a teacher already does:
 
 \begin{enumerate}[leftmargin=1.8em]
@@ -100,11 +158,13 @@ what a teacher already does:
   heatmap), and \textbf{written feedback}.
 \end{enumerate}
 
-The explanation the teacher sees is the same LOO word attribution that the faithfulness study
-validates, so the explainability study is the feature, not an add-on. The heatmap and feedback always
-use the readable display tokens (\S\ref{sec:preprocessing}), never the KCC-reordered internal text. We
+The explanation the teacher sees is the same SHAP word attribution that the explainability study
+reports, so the explainability study is the feature, not an add-on. The heatmap and feedback always
+use the readable segmented tokens (\S\ref{sec:preprocessing}). We
 position the tool as a \emph{teacher-assist}, human-in-the-loop system: it supports a teacher's
 judgement rather than replacing it. The written feedback comes from an open-source LLM served over an
 OpenAI-compatible endpoint, with a rule-based fallback when no model server is reachable, so the tool
-never depends on a proprietary grading service. The live application is hosted at
-\href{[demo URL]}{[demo URL to insert]}; example screenshots appear in Appendix~\ref{app:prototype}.
+never depends on a proprietary grading service. Because SHAP requires many re-scorings per answer, and
+for the LLM each one is a full generation, the explanation is offered as a \emph{toggle}: a teacher can
+switch it off for a fast score-only result or on for the word-attribution heatmap. The application runs
+locally and is not publicly hosted; example screenshots appear in Appendix~\ref{app:prototype}.

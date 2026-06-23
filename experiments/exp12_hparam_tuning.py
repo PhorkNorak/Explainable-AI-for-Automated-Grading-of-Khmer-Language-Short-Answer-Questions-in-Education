@@ -32,8 +32,7 @@ from models.classical import TFIDFSVR  # noqa: E402
 PREP, INP = "segment", "ra"
 C_GRID = [0.1, 1.0, 10.0]
 MAXFEAT_GRID = [5000, 15000, 30000]
-DATASETS = [("no10c_no0", "dataset_no_10c_biology.csv", True),
-            ("no10c", "dataset_no_10c_biology.csv", False),
+DATASETS = [("no10c", "dataset_no_10c_biology.csv", False),
             ("full", "dataset.csv", False)]
 
 

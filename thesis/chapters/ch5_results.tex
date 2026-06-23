@@ -3,14 +3,14 @@
 
 \textbf{How to read the numbers.} Two numbers matter most: \textbf{QWK} (how well a model's grades
 agree with the teacher overall) and \textbf{exact match} (how often it gives the same mark out of $N$).
-All headline values are \emph{uncalibrated}. The classical and BiLSTM champions share the 895 test set;
-the encoder and LLM were selected on different variants, so cross-pillar QWK is indicative, not a
-strict head-to-head.
+All headline values are \emph{uncalibrated}. The classical, BiLSTM, and LLM champions share the 909
+(\texttt{no10c}) test set; the encoder was selected on the \texttt{full} variant, so cross-pillar QWK
+is indicative, not a strict head-to-head.
 
 \section{Results}
 \label{sec:results}
 
-\subsection{Per-Pillar Performance}
+\subsection{Per-Pillar Accuracy (RQ1)}
 \label{sec:results-pillars}
 The four models agree with the teacher about equally well overall, but the LLM is clearly best at the
 exact mark. Table~\ref{tab:champs} gives the numbers, and Figures~\ref{fig:metrics}--\ref{fig:predvtrue}
@@ -18,69 +18,124 @@ show them.
 
 \begin{table}[t]
 \centering
-\caption{Show the per-pillar champion results (uncalibrated; random split; macro-averaged F1).}
+\caption[Per-pillar champion results on the test set]{Per-pillar champion results on the test set
+(uncalibrated, random split; macro-averaged F1). The four \emph{trained} pillars fall in a narrow QWK
+band; the final row is the untrained Qwen base graded \emph{zero-shot}, a reference that shows the
+fine-tuning lift, not a fifth pillar. Cells marked ``--'' are pending the zero-shot re-run.}
 \label{tab:champs}
 \small
 \begin{tabular}{@{}lccccc@{}}
 \toprule
 Pillar & QWK & Accuracy & macro-F1 & Exact & Adjacent ($\pm1$) \\
 \midrule
-Classical (SVR)   & 0.795 & 0.63 & 0.42 & 0.20 & 0.71 \\
-RNN (BiLSTM)      & \textbf{0.845} & 0.75 & 0.53 & 0.54 & 0.77 \\
-Transformer (GTE) & 0.820 & 0.73 & 0.54 & 0.57 & 0.77 \\
-LLM (Qwen)        & 0.843 & \textbf{0.80} & \textbf{0.78} & \textbf{0.66} & \textbf{0.83} \\
+Classical (SVR)            & 0.795 & 0.63 & 0.42 & 0.20 & 0.71 \\
+RNN (BiLSTM)               & \textbf{0.845} & 0.75 & 0.53 & 0.54 & 0.77 \\
+Transformer (GTE)          & 0.820 & 0.73 & 0.54 & 0.57 & 0.77 \\
+LLM (Qwen-KhmerGrader, FT) & 0.843 & \textbf{0.80} & \textbf{0.78} & \textbf{0.66} & \textbf{0.83} \\
+\midrule
+\emph{Qwen base, zero-shot (ref.)} & 0.500 & -- & -- & -- & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-We find that:
+Reading Table~\ref{tab:champs} model by model, ranked by QWK:
 \begin{itemize}[leftmargin=1.4em]
-  \item \textbf{QWK is comparable} across all four pillars (0.795 to 0.845, a narrow 0.05 band;
-  Table~\ref{tab:champs}), so there is no meaningful QWK ``winner''.
-  \item A \textbf{30-second CPU classical model} sits within 0.05 QWK of a fine-tuned LLM, so on this
-  real Khmer corpus the expensive model does \emph{not} win the research metric (RQ1).
-  \item The \textbf{LLM clearly wins the rest}: accuracy 0.80, macro-F1 0.78, exact 0.66, adjacent
-  0.83 (Table~\ref{tab:champs}).
-  \item \textbf{macro-F1 lags accuracy} for every model except the LLM (classical 0.42 vs 0.63),
-  because the data is skewed to full credit and the cheaper models handle the rare grades poorly.
-  \item \textbf{No hidden over-fitting} (Figure~\ref{fig:metrics}): the classical model has the widest
-  train-to-test gap (accuracy 0.79 vs 0.63), while the deep pillars stay tight (the LLM 0.83 vs 0.80).
-  \item \textbf{We do not chase the training score.} Training QWK does reach \textbf{0.90+} (up to 0.91
-  for the classical and RNN pillars); rather than tune for the highest training fit, we select every
-  model by validation QWK with early stopping and report the honest test numbers, deliberately
-  favouring a small train-to-test gap over a higher but over-fitted training score.
+  \item The \textbf{RNN (BiLSTM)} reaches the highest QWK at \textbf{0.845}, agreeing with the teacher
+  most closely overall, though its exact-mark rate (0.54) trails the LLM.
+  \item The \textbf{LLM (Qwen)} follows at QWK \textbf{0.843}, effectively level with the RNN, yet it
+  clearly leads every deployment metric: accuracy 0.80, macro-F1 0.78, exact 0.66, and adjacent 0.83.
+  \item The \textbf{Transformer (GTE)} scores QWK \textbf{0.820} with the second-best exact mark
+  (0.57), close behind on overall agreement.
+  \item The \textbf{Classical (SVR)} sits at QWK \textbf{0.795}, within 0.05 of the best model despite
+  training in about 30 seconds on a CPU, but its exact mark (0.20) and macro-F1 (0.42) are the weakest.
 \end{itemize}
+These results show the four pillars sit in a narrow 0.05 QWK band, so there is no meaningful research
+``winner''; the only clear separation is on the deployment metrics, where the fine-tuned LLM
+leads. The comparable-band claim concerns the four \emph{trained} pillars: the same Qwen base scores
+only \textbf{0.500} QWK zero-shot (Table~\ref{tab:champs}, last row), so the LLM pillar's standing is
+earned entirely by QLoRA fine-tuning (a $+0.34$ lift). Figure~\ref{fig:qwk} makes the band visible: the vertical axis is test QWK and each bar is one
+pillar, with the two dotted lines marking the lowest and highest score. The gap between those lines is
+only 0.050 QWK, so the four bars are nearly level; this is the visual form of the thesis's first
+finding, that on the research metric the expensive models do not pull ahead of the cheap ones.
+
+\noindent\textbf{Key insight (RQ1).} On the primary research metric the four trained pillars are
+comparable (a 0.05 QWK band), so a 30-second CPU model agrees with the teacher about as well as a
+fine-tuned LLM; the LLM's value, shown next, is in deployment, and the same base needs fine-tuning to
+reach the band at all.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.6\textwidth]{fig_qwk_pillars.png}
+\caption[Test QWK of the four pillars]{Test QWK of the four pillars. The dotted lines mark the minimum
+and maximum; the 0.050 band between them shows the pillars are comparable on the primary research
+metric, with no significant winner.}
+\label{fig:qwk}
+\end{figure}
+
+Two cross-cutting points hold across the table. First, macro-F1 lags accuracy for every model except
+the LLM (classical 0.42 versus 0.63), because the data is skewed to full credit and the cheaper models
+handle the rare grades poorly. Figure~\ref{fig:prf} shows this class-balance story directly: for each
+pillar it plots macro-averaged precision, recall, and F1 side by side, where ``macro'' means every grade
+counts equally regardless of how rare it is. The classical, RNN, and Transformer pillars all sit near
+0.4 to 0.55 on all three measures, while the LLM jumps to about 0.78 on each, confirming that the LLM is
+the only model that handles the rare partial-credit grades rather than defaulting to the common ones.
+Second, there is no hidden over-fitting (Figure~\ref{fig:metrics}): the
+classical model has the widest train-to-test gap (accuracy 0.79 versus 0.63), while the deep pillars
+stay tight (the LLM 0.83 versus 0.80). Training QWK does reach 0.90+ (up to 0.91 for the classical and
+RNN pillars), but rather than tune for the highest training fit, we select every model by validation QWK
+with early stopping and report the honest test numbers, deliberately favouring a small train-to-test gap
+over a higher but over-fitted training score.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.9\textwidth]{fig_metrics_grouped.png}
-\caption{Show the train vs test QWK and accuracy of the four models (generalization gap).}
+\caption[Train versus test generalisation gap]{Train versus test QWK (left) and accuracy (right) of the
+four pillars. Each pillar has a train bar and a test bar; the small gap between them, even for the
+classical model, shows the reported test numbers are not inflated by over-fitting.}
 \label{fig:metrics}
 \end{figure}
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.7\textwidth]{fig_prf_pillars.png}
+\caption[Macro precision, recall, and F1 by pillar]{Macro-averaged precision, recall, and F1 of each
+pillar. Macro-averaging weights every grade equally, so the LLM's jump to about 0.78 on all three shows
+it is the only pillar that scores the rare partial-credit grades well.}
+\label{fig:prf}
+\end{figure}
+
 The confusion matrices (Figure~\ref{fig:confusion}) and the predicted-versus-true scatter
-(Figure~\ref{fig:predvtrue}) tell the same story: every model clusters near the diagonal, but the
-off-diagonal mass is largest for the classical model and smallest for the LLM.
+(Figure~\ref{fig:predvtrue}) tell the same story from two angles. Each confusion matrix has the true
+grade on the vertical axis and the predicted grade on the horizontal axis, with the count in each cell;
+a perfect model would put all its mass on the diagonal. Every model does cluster near the diagonal, but
+the off-diagonal mass, the disagreements, is largest for the classical model and smallest for the LLM.
+The scatter plots make the same comparison on the raw points scale: each point is one answer, placed by
+its true mark (horizontal) and predicted mark (vertical), and the dashed identity line is perfect
+agreement. The LLM's cloud hugs that line most tightly, while the classical model's spreads furthest,
+especially by pulling high marks downward toward the middle.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.78\textwidth]{fig_confusion_all.png}
-\caption{Show the confusion matrix of each model (true vs predicted grade).}
+\caption[Confusion matrices of the four pillars]{Confusion matrices (true grade on the vertical axis,
+predicted grade on the horizontal axis; cell counts). Mass on the diagonal is agreement; the
+off-diagonal mass is largest for the classical model and smallest for the LLM.}
 \label{fig:confusion}
 \end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.78\textwidth]{fig_pred_vs_true.png}
-\caption{Show the predicted vs true raw score of each model (dashed line = perfect agreement).}
+\caption[Predicted versus true raw score of each model]{Predicted versus true raw score in points (one
+point per answer; the dashed line marks perfect agreement). The LLM's points hug the line most tightly;
+the classical model pulls high marks toward the middle.}
 \label{fig:predvtrue}
 \end{figure}
 
-\subsection{Research versus Deployment}
+\subsection{Research versus Deployment (RQ2)}
 \label{sec:results-deploy}
 The model that is best for research (QWK) is not what wins in the classroom. Because the four pillars
-are comparable on QWK, the decision lies elsewhere. On the metrics a teacher cares about, the LLM wins
-(RQ3):
+are comparable on QWK, the decision lies elsewhere. On the metrics a teacher cares about, the LLM wins:
 
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Exact mark:} LLM 0.66, ahead of the encoder (0.57) and the classical model (0.20).
@@ -88,66 +143,80 @@ are comparable on QWK, the decision lies elsewhere. On the metrics a teacher car
   \item \textbf{Lowest average point error} (MAE $\approx$ 0.93 points).
 \end{itemize}
 
-Figure~\ref{fig:deploy} shows the deployment gap, and Figure~\ref{fig:scoredist} shows that the LLM's
-predicted marks follow the human distribution instead of collapsing toward the mean. The practical
-guidance: pick the tool by the goal, the cheap self-explaining classical model for a quick check, the
-fine-tuned LLM when the exact mark matters.
+Figure~\ref{fig:deploy} shows the deployment gap. For each pillar it places two bars, the fraction of
+test answers scored \emph{exactly} right and the fraction scored within one point, both on the same
+0-to-1 vertical axis. The within-one-point bars are high for every model, but the exact-match bars fan
+out sharply: the LLM's reaches 0.66 while the classical model's sits at 0.20. A teacher reading these
+bars sees how often each tool would hand back a mark they could accept unchanged.
+
+Figure~\ref{fig:scoredist} explains \emph{why} the LLM wins here. It overlays two histograms on the
+points axis, the human marks and the LLM's predicted marks, on the same test answers. The two
+distributions have the same shape, including the spike at full credit, rather than the predicted one
+bunching up in the middle. The cheaper regression models, by minimising squared error, tend to hedge
+toward the common middle grades; the LLM instead reproduces the full spread of marks a teacher actually
+awards. The practical guidance follows: pick the tool by the goal, the cheap self-explaining classical
+model for a quick check, the fine-tuned LLM when the exact mark matters.
+
+\noindent\textbf{Key insight (RQ2).} Research agreement and deployment quality come apart: the pillars
+tie on QWK, but only the fine-tuned LLM reproduces the teacher's \emph{exact} mark often enough to hand
+back unchanged, so the two questions must be reported separately.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.62\textwidth]{fig_deployment.png}
-\caption{Show the deployment metrics (exact and within-one-point) of each model.}
+\caption[Deployment metrics by pillar]{Deployment metrics: the fraction of test answers scored exactly
+right and within one point. Within-one-point is high for all, but exact match separates the pillars,
+with the LLM clearly ahead.}
 \label{fig:deploy}
 \end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.6\textwidth]{fig_score_dist.png}
-\caption{Show the LLM predicted marks versus the human marks (test set).}
+\caption[LLM predicted marks versus human marks]{Distribution of human marks and LLM-predicted marks on
+the same test answers (points axis). The predicted distribution matches the human one, including the
+full-credit spike, instead of collapsing toward the mean.}
 \label{fig:scoredist}
 \end{figure}
 
-\subsection{Data Quality and Calibration}
-\label{sec:results-data}
-Cleaning the data helped as much as changing the model, and calibration is unreliable (RQ2, RQ4).
-Holding the model fixed (GTE dual encoder with the max-score feature), QWK rises
-$0.820 \to 0.842 \to 0.847$ across the \texttt{full}, \texttt{no10c}, and \texttt{no10c\_no0} variants,
-a $+0.027$ gain from \emph{data cleaning alone} (Figure~\ref{fig:cleaning}), larger than the gaps
-between architectures. The biggest single step is removing the inconsistently graded 10C subset
-(\S\ref{sec:noisy}); a later cleaning refinement changes the classical QWK by at most 0.004.
+\paragraph{Efficiency and real-time scoring.} Beyond agreement, a teacher-assist tool must score in
+real time, so we also report deployment \emph{cost} per pillar (Table~\ref{tab:efficiency}): the one-off
+training time and the per-answer inference latency, both for a bare score and for a score with the SHAP
+explanation. The classical model scores essentially instantly on a CPU, while the LLM is the slowest;
+the SHAP explanation adds the most for the LLM, where each attribution evaluation is a full generation,
+which is why the prototype offers the explanation as a toggle (\S\ref{sec:prototype}). Training times
+are summarised in Appendix~\ref{app:compute}.
 
-\begin{figure}[t]
+\begin{table}[t]
 \centering
-\includegraphics[width=0.6\textwidth]{fig_cleaning_ablation.png}
-\caption{Show how data cleaning changes the classical QWK on each dataset variant.}
-\label{fig:cleaning}
-\end{figure}
+\caption[Per-pillar efficiency]{Per-pillar efficiency: one-off training time and per-answer inference
+latency, for a bare score and for a score with the SHAP explanation. Latency is the deployment cost a
+teacher experiences; ``[pending]'' values are measured on the test set at run time.}
+\label{tab:efficiency}
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Pillar & Training time & Score only & Score $+$ SHAP \\
+\midrule
+Classical (SVR)        & $\sim$30 s (CPU)  & [pending] & [pending] \\
+RNN (BiLSTM)           & [pending] (CPU)   & [pending] & [pending] \\
+Transformer (GTE)      & [pending] (GPU)   & [pending] & [pending] \\
+LLM (Qwen-KhmerGrader) & $\sim$4 h (GPU)   & [pending] & [pending] \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-Post-hoc threshold calibration helps the \emph{classical} model (test QWK $0.795 \to 0.847$) but
-\emph{hurts} the BiLSTM (test QWK $0.845 \to 0.818$) using the same validation-selected rule
-(Figure~\ref{fig:calib}). The cut-points are fit on only $\sim$134 validation rows, so the gain does
-not transfer; this is why calibration is an ablation and the headline numbers are uncalibrated. The
-max-score feature, by contrast, gives consistent deployment gains (about $+4.5$ points of exact match
-for the neural heads on the 895 set) because it tells the model the per-question scale.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.6\textwidth]{fig_calibration.png}
-\caption{Show how calibration changes the QWK of each model.}
-\label{fig:calib}
-\end{figure}
-
-\subsection{The LLM Fine-Tuning Lift}
+\subsection{The LLM Pillar: Zero-Shot Bases vs the KhmerGrader Family}
 \label{sec:results-llm}
 The LLM pillar is the KhmerGrader family: three open base models fine-tuned identically with QLoRA, to
 test whether the base model matters once fine-tuned. We compare each with its own zero-shot base on the
 same 909 test set (Table~\ref{tab:llmfamily}, Figure~\ref{fig:llmgain}). This mirrors recent practice
-of comparing fine-tuned against prompted LLMs for grading~\citep{lachana2025dutch} and of fine-tuning
-open LLMs such as Qwen for scoring~\citep{xu2025qwenscore}.
+of comparing fine-tuned against prompted LLMs for grading~\citep{lachana2025dutch,latif2024finetuning}
+and of fine-tuning open LLMs such as Qwen for scoring~\citep{xu2025qwenscore}.
 
 \begin{table}[t]
 \centering
-\caption{Show the KhmerGrader family results: zero-shot base vs QLoRA fine-tuned (909 test set).}
+\caption[KhmerGrader family results: zero-shot vs.\ fine-tuned]{KhmerGrader family results: zero-shot base versus QLoRA fine-tuned (909 test set).}
 \label{tab:llmfamily}
 \small
 \begin{tabular}{@{}lccccc@{}}
@@ -155,140 +224,223 @@ open LLMs such as Qwen for scoring~\citep{xu2025qwenscore}.
 KhmerGrader model & Base size & Zero-shot QWK & Fine-tuned QWK & Lift & Exact \\
 \midrule
 Qwen-KhmerGrader-4B       & 4B   & 0.500    & \textbf{0.843} & $+0.34$ & 0.657 \\
-Gemma-KhmerGrader-4B      & 4B   & $-0.082$ & 0.763          & $+0.85$ & 0.657 \\
+Gemma-KhmerGrader-4B      & 4B   & [pending] & 0.763          & [pending] & 0.657 \\
 SEA-LION-KhmerGrader-E2B  & 2.3B & 0.541    & 0.802          & $+0.26$ & \textbf{0.693} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-We find that:
+Reading Table~\ref{tab:llmfamily} model by model, ranked by fine-tuned QWK:
 \begin{itemize}[leftmargin=1.4em]
-  \item \textbf{fine-tuning is decisive}: zero-shot Khmer grading is poor (the Gemma base is worse than
-  chance at QWK $-0.082$); QLoRA lifts all three bases into the 0.76 to 0.84 band;
-  \item \textbf{Qwen is the QWK champion} (0.843), but the much smaller, region-adapted SEA-LION base
-  (about 2.3B) gives the \emph{best} exact match (0.693);
-  \item \textbf{the worst starting base lifts most} (Gemma $+0.85$), so the fine-tuning data, not the
-  base's prior Khmer ability, drives the result;
-  \item within the Qwen champion, data cleaning matters again: QWK is 0.743, 0.843, 0.810 on
-  \texttt{full}, \texttt{no10c}, \texttt{no10c\_no0}.
+  \item \textbf{Qwen-KhmerGrader-4B} is the QWK champion at \textbf{0.843}, lifting its 0.500 zero-shot
+  base by $+0.34$.
+  \item \textbf{SEA-LION-KhmerGrader-E2B} follows at QWK \textbf{0.802} and, despite the smallest base
+  (about 2.3B), gives the \emph{best} exact match (0.693).
+  \item \textbf{Gemma-KhmerGrader-4B} reaches QWK \textbf{0.763} after fine-tuning its
+  instruction-tuned base.
 \end{itemize}
+All three bases are instruction-tuned (so each can follow the grading prompt zero-shot), and QLoRA
+fine-tuning lifts every one into the 0.76 to 0.84 band regardless of its zero-shot starting point, so
+the fine-tuning data, not the base's prior Khmer ability, drives the result. Each base is fine-tuned on
+the \texttt{no10c} variant in both input formats; the \texttt{qar} prompt (which gives the model the
+question) is selected over \texttt{ra} for the champion, consistent with the input-format ablation
+(\S\ref{sec:results-data}).
+
+Figure~\ref{fig:llmgain} visualises this lift. For each of the three KhmerGrader models it places the
+zero-shot base QWK next to the fine-tuned QWK, so the height of the jump is the gain from QLoRA. The
+three bases start at different heights but, after fine-tuning, land in the same 0.76 to 0.84 band, which
+makes the point clearly: it is the fine-tuning data, not the base model's prior Khmer ability, that does
+the work.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.8\textwidth]{fig_llm_finetune_gain.png}
-\caption{Show the QLoRA fine-tuning lift over the zero-shot base for the KhmerGrader family.}
+\caption[QLoRA fine-tuning lift for the KhmerGrader family]{Zero-shot base versus QLoRA-fine-tuned test
+QWK for each KhmerGrader model. Bases start at very different heights but converge into one band after
+fine-tuning, so the training data drives the result.}
 \label{fig:llmgain}
 \end{figure}
 
-\subsection{Explainability}
-\label{sec:results-xai}
-The word highlights are trustworthy for every model, strongest for the small BiLSTM and weakest (but
-still good) for the LLM (RQ5). The method is Leave-One-Out (LOO) word attribution. Unlike most prior
-scoring-XAI work, which relies on SHAP~\citep{kumar2020explainable,lachana2025dutch}, LOO is one
-model-agnostic method that also works on the non-differentiable classical model, and we \emph{measure}
-its faithfulness. Table~\ref{tab:xai} reports faithfulness on 135 test answers.
+\paragraph{Specialist versus frontier models.} A natural question is whether a 4B fine-tuned
+KhmerGrader can match much larger frontier models. Table~\ref{tab:frontier} compares the KhmerGrader
+champion against four frontier LLMs prompted zero-shot on the same \texttt{no10c} test set
+(\S\ref{sec:frontier}), each shown at its best of the bare-integer and reasoning-enabled variants
+(the full breakdown is in Appendix~\ref{app:frontier}). All frontier numbers are a dated API snapshot;
+the fine-tuned KhmerGrader, code, and data remain reproducible.
 
 \begin{table}[t]
 \centering
-\caption{Show the LOO faithfulness of each model ($n{=}135$); higher comprehensiveness and lower
-sufficiency are better. ``Gap'' beats a random baseline when $>0$; ``Plaus.'' is reference overlap.}
-\label{tab:xai}
+\caption[Fine-tuned KhmerGrader vs.\ frontier models]{Fine-tuned KhmerGrader champion vs.\ frontier
+LLMs prompted zero-shot (best of bare/reasoning) on the \texttt{no10c} test set. Frontier rows are a
+version-pinned, dated API snapshot; ``[API-pending]'' awaits the run.}
+\label{tab:frontier}
 \small
-\begin{tabular}{@{}lcccccc@{}}
+\begin{tabular}{@{}lccc@{}}
 \toprule
-Model $\cdot$ LOO & Comp & Suff & Gap & AOPC-C & AOPC-S & Plaus. \\
+Model (setting) & QWK & Exact & Within $\pm1$ \\
 \midrule
-Classical & 0.125 & 0.030 & $+$0.096 & 0.150 & 0.011 & 0.75 \\
-BiLSTM    & 0.270 & 0.120 & $+$0.257 & \textbf{0.289} & 0.064 & 0.69 \\
-Encoder   & 0.162 & 0.033 & $+$0.135 & 0.193 & 0.007 & 0.68 \\
-LLM       & 0.083 & 0.420 & $+$0.047 & 0.126 & 0.359 & 0.63 \\
+\textbf{Qwen-KhmerGrader-4B (fine-tuned)} & \textbf{0.843} & \textbf{0.657} & \textbf{0.832} \\
+\midrule
+GPT (zero-shot)      & [API-pending] & [API-pending] & [API-pending] \\
+Claude (zero-shot)   & [API-pending] & [API-pending] & [API-pending] \\
+Gemini (zero-shot)   & [API-pending] & [API-pending] & [API-pending] \\
+DeepSeek (zero-shot) & [API-pending] & [API-pending] & [API-pending] \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-We find that:
-\begin{itemize}[leftmargin=1.4em]
-  \item \textbf{LOO is faithful for every pillar}: the gap over random removal is positive in all four
-  cases (Figure~\ref{fig:faith});
-  \item it is \textbf{strongest for the BiLSTM} (gap $+0.257$) and \textbf{weakest for the LLM} (gap
-  $+0.047$); the LLM's high sufficiency (0.42) means its highlights are the least sharp;
-  \item the same method works on the non-differentiable SVR, the BiLSTM, the encoder, and the LLM, so
-  no gradients or model internals are needed;
-  \item all four are also reasonably \emph{plausible} (reference overlap 0.63 to 0.75,
-  Figure~\ref{fig:faithplaus}).
-\end{itemize}
+\subsection{Design-Choice Ablations}
+\label{sec:results-data}
+Each axis of the grid is studied one factor at a time, holding the others fixed; the full per-cell
+leaderboards for every combination are in Appendix~\ref{app:grid}.
+
+\paragraph{Data variant.} Cleaning the data helped as much as changing the model. Holding the model
+fixed (GTE dual encoder with the max-score feature), QWK rises $0.820 \to 0.842$ from \texttt{full} to
+\texttt{no10c}, a $+0.022$ gain from \emph{removing the inconsistently graded 10C subset alone}
+(\S\ref{sec:noisy}, Figure~\ref{fig:cleaning}), larger than the gaps between architectures. A separate
+cleaning refinement (stripping zero-width/format noise) changes the classical QWK by at most 0.004, so
+the gain comes from \emph{which data} is kept, not cosmetic text processing.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.49\textwidth]{fig_faithfulness.png}\hfill
-\includegraphics[width=0.49\textwidth]{fig_faithfulness_gap.png}
-\caption{Show the AOPC comprehensiveness (left) and the faithfulness gap (right) of each model.}
-\label{fig:faith}
+\includegraphics[width=0.6\textwidth]{fig_cleaning_ablation.png}
+\caption[Effect of cleaning refinement on classical QWK]{Classical QWK under the older versus refined
+cleaning recipe for each dataset variant, with the change labelled. The negligible movement shows
+cleaning refinements matter far less than which subset of data is kept.}
+\label{fig:cleaning}
 \end{figure}
+
+\paragraph{Preprocessing mode.} Across the \texttt{raw}/\texttt{clean}/\texttt{segment} ladder, each
+family's champion selects the representation that suits it: the classical char-$n$-gram model wins with
+\texttt{segment} (word boundaries help a bag-of-$n$-grams), while the BiLSTM, encoder, and LLM prefer
+\texttt{clean} and do not need the segmentation crutch.
+
+\paragraph{Input format.} Between \texttt{ra} (answer + reference) and \texttt{qar} (question + answer +
+reference), the surface models (classical, BiLSTM, encoder champions) win with \texttt{ra}: the question
+text is identical across a question's answers, so it adds no discriminative signal for a lexical model.
+The LLM benefits from \texttt{qar} because it can actually read and use the question.
+
+\paragraph{Max-score feature.} Concatenating the question's normalised maximum score gives consistent,
+near-free deployment gains (about $+4.5$ points of exact match for the neural heads on the 909 set)
+because it tells the model the per-question scale rather than refitting boundaries on a small
+validation set.
+
+\paragraph{Calibration.} Post-hoc threshold calibration helps the \emph{classical} model (test QWK
+$0.795 \to 0.847$) but \emph{hurts} the BiLSTM (test QWK $0.845 \to 0.818$) under the same
+validation-selected rule (Figure~\ref{fig:calib}). The cut-points are fit on only $\sim$134 validation
+rows, so the gain does not transfer reliably; calibration is therefore reported as an ablation and the
+headline numbers are uncalibrated.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.58\textwidth]{fig_faith_vs_plaus.png}
-\caption{Show the faithfulness vs plausibility of each model (upper-right is best).}
-\label{fig:faithplaus}
+\includegraphics[width=0.6\textwidth]{fig_calibration.png}
+\caption[Effect of calibration by pillar]{Uncalibrated versus calibrated test QWK per pillar, with the
+change labelled. Calibration helps the classical model but hurts the BiLSTM, so it is fragile and
+model-dependent rather than a reliable gain.}
+\label{fig:calib}
 \end{figure}
 
-Figure~\ref{fig:heatmap} shows an example heatmap on a real Khmer answer, using the readable display
-tokens. So for RQ5, LOO gives a faithful explanation for every pillar, there is no
-accuracy-versus-explainability trade-off, and the most faithful explanations come from the small
-BiLSTM, not the largest model.
+\paragraph{Hyperparameters.} The classical champion's test QWK moves by less than 0.002 across the SVR
+penalty and TF-IDF feature-count sweep (Chapter~\ref{ch:experiments}, Figure~\ref{fig:hparam}), so the
+result does not depend on a lucky hyperparameter choice.
+
+\noindent\textbf{Key insight.} On this corpus \emph{which data} is kept moves the needle as much as the
+architecture, and the cheap max-score feature is a reliable lever; the remaining factors (preprocessing,
+input format, calibration, hyperparameters) are second-order or model-dependent.
+
+\subsection{Explainability (RQ3)}
+\label{sec:results-xai}
+The word highlights point at the content a teacher looks for, and they do so for every model. The method
+is \emph{SHAP} word attribution (\S\ref{sec:xai}), following the explainable-scoring work of Kumar and
+Boulanger~\citep{kumar2020explainable}. SHAP is model-agnostic, so the same method explains all four
+pillars, including the non-differentiable classical SVR. We report what Kumar reports: a per-answer
+\emph{local} explanation (the heatmap), a \emph{global} ranking of the words that matter most across
+answers, and a plausibility check (the overlap of the highlighted words with the reference answer).
+The classical, BiLSTM, and encoder pillars run a full SHAP sweep; for the LLM, where each SHAP
+evaluation is a full generation, we run SHAP under a \emph{capped} evaluation budget so plausibility is
+still computed for every pillar, with illustrative LLM heatmaps in Appendix~\ref{app:heatmaps}.
+
+\begin{table}[t]
+\centering
+\caption[SHAP plausibility of each model]{SHAP plausibility of each model: the fraction of the top-20\%
+SHAP words that also appear in the reference answer (higher means the highlighted words are
+rubric-relevant).}
+\label{tab:xai}
+\small
+\begin{tabular}{@{}lc@{}}
+\toprule
+Model & SHAP plausibility \\
+\midrule
+Classical (SVR)   & \textbf{0.66} \\
+RNN (BiLSTM)      & 0.59 \\
+Transformer (GTE) & \textbf{[HPC-pending]} \\
+LLM (Qwen, capped) & \textbf{[HPC-pending]} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Reading Table~\ref{tab:xai}, the classical model is the most plausible of the computed pillars
+(0.66): its character $n$-gram features key on content words that also appear in the reference answer,
+so about two of every three highlighted words are rubric-relevant; the BiLSTM is close behind (0.59),
+and the encoder and LLM plausibilities are HPC-pending.
+The top SHAP words are mostly content words rather than function words, which is what makes the
+explanation a usable basis for teacher feedback.
+
+\paragraph{Globally important words.} Aggregating the SHAP values over the explained answers gives a
+global ranking of the words a model relies on (Kumar's global-importance view). For the classical model
+the highest-ranked words are mostly subject-content terms, for example \km{សេដ្ឋកិច្ច} (economy),
+\km{ការនេសាទ} (fishing), \km{ប្រទេស} (country), \km{ប្រជាជន} (people), and \km{កម្ពុជា} (Cambodia),
+confirming that the model grades largely on the content of the answer rather than on surface form.
+
+Figure~\ref{fig:heatmap} shows the local view: an example SHAP heatmap on a real Khmer answer from the
+classical model. The text is the student's answer in readable tokens, and each
+word is shaded by its SHAP value, the word's contribution to the predicted grade; darker means a larger
+contribution. The reader can see at a glance which words earned the score, which is the point of showing
+an explanation rather than a bare number, and is what lets the prototype turn the same attribution into
+formative feedback. The other pillars' SHAP heatmaps on real answers appear in
+Appendix~\ref{app:heatmaps}.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.95\textwidth]{heatmap_classical.png}
-\caption{Sample of a Khmer word-attribution heatmap (classical model, LOO); darker = higher attribution.}
+\caption[Khmer SHAP word-attribution heatmap (classical model)]{A SHAP word-attribution heatmap from the
+classical model on a real answer in readable display tokens. Each word is shaded by its SHAP value (its
+contribution to the predicted grade); darker means the word mattered more.}
 \label{fig:heatmap}
 \end{figure}
 
-\subsection{Robustness to Unseen Questions}
-\label{sec:leakage}
-Scores collapse on questions the model has not seen before (RQ6). The random split shares questions
-between train and test, because there are only 41 questions. Re-running the classical champion under a
-question-held-out split (no shared questions), over five seeds, QWK \textbf{falls from 0.759 to 0.354}
-(Table~\ref{tab:leakage}, Figure~\ref{fig:leakage}). Most of the seen-question performance was
-question-specific memorisation, not transferable grading skill. With about six questions per
-unseen-question test set the estimate is noisy ($\pm0.11$), but the drop is clear.
-
-\begin{table}[t]
-\centering
-\caption{Show the classical QWK under two split modes (mean $\pm$ s.d., 5 seeds).}
-\label{tab:leakage}
-\small
-\begin{tabular}{@{}lc@{}}
-\toprule
-Split & Classical QWK \\
-\midrule
-Random (seen questions)    & $0.759 \pm 0.041$ \\
-Question-held-out (unseen) & $0.354 \pm 0.106$ \\
-\midrule
-Leakage gap                & $\approx -0.40$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.55\textwidth]{fig_leakage.png}
-\caption{Show how the classical QWK drops on unseen questions.}
-\label{fig:leakage}
-\end{figure}
+\noindent\textbf{Key insight (RQ3).} One model-agnostic method, SHAP, gives a plausible word-level
+explanation for every pillar, including the non-differentiable classical model, so explainability is not
+traded against accuracy: the cheapest and the most expensive pillars are explained the same way.
 
 \section{Discussion}
 \label{sec:discussion}
-Putting the results together, the ``best model'' question is genuinely three-dimensional, and each axis
-behaves differently:
+Taking the models in turn, the results follow from how each one represents a Khmer answer.
 
-\begin{itemize}[leftmargin=1.4em]
-  \item \textbf{Research agreement (QWK):} the four pillars are comparable.
-  \item \textbf{Deployment (exact mark):} the fine-tuned LLM wins clearly.
-  \item \textbf{Explainability:} LOO is faithful for every model, and most faithful for the small
-  BiLSTM, not the largest model.
-\end{itemize}
+The \textbf{Classical} model (TF-IDF with RBF-SVR) stays within 0.05 QWK of the best pillar because
+character $n$-gram overlap is a strong signal for short factual answers, and the support-vector
+regressor is hard to over-fit on a small corpus. That same lexical nature explains its weak exact mark
+(0.20) and macro-F1 (0.42): regression on word overlap smooths predictions toward the common grades and
+cannot resolve the fine partial-credit distinctions a teacher makes.
+
+The \textbf{RNN (BiLSTM)} reaches the highest QWK (0.845) because additive attention over a character
+BiLSTM captures order and local context that bag-of-$n$-grams misses, while staying small enough to fit
+the roughly 600 training rows without over-fitting. It still trails the LLM on the exact mark, as it
+predicts a single normalised score rather than reasoning about the rubric.
+
+The \textbf{Transformer (GTE)} lands in the middle (QWK 0.820) because the multilingual encoder brings
+useful contextual representations but only thin Khmer pre-training, so it does not clearly beat the much
+cheaper pillars on this corpus, even though its exact mark (0.57) is strong.
+
+The \textbf{LLM (Qwen)} wins every deployment metric (exact 0.66, adjacent 0.83) because QLoRA
+fine-tuning lets a generative model learn the scoring rubric directly from the question, reference, and
+answer, producing marks that follow the human distribution instead of collapsing toward the mean. Its
+QWK (0.843) is only level with the others, so its advantage is in deployment accuracy, not overall
+agreement.
+
+Putting the three axes together, the ``best model'' question is genuinely three-dimensional: the four
+pillars are comparable on research agreement (QWK), the fine-tuned LLM wins deployment (the exact mark)
+clearly, and SHAP gives a plausible word-level explanation for every model.
 
 We can also place the numbers against the Arabic anchor~\citep{alaoui2024} in two careful ways. First,
 on the \emph{same} unweighted Cohen's $\kappa$, our models score 0.47 (classical), about 0.62 (encoder
@@ -299,8 +451,9 @@ are far tighter ($+1.4$ for the GTE encoder; $+3.0$ for Qwen, 83.3/80.3), and ev
 ($+15.6$, 78.6/63.0) stays under their transformer. There is no hidden over-fitting beneath our
 numbers.
 
-For a classroom, the implication is concrete: a cheap classical model that explains itself faithfully
+For a classroom, the implication is concrete: a cheap classical model that explains itself with SHAP
 is an attractive default; the LLM is the right choice when the exact mark matters; and in both cases
-the explanation shown to a teacher should be one that has been \emph{measured} faithful. The leakage
-result is the strongest caution: until a question-held-out benchmark exists, reported Khmer ASAG
-scores, including ours, should be read as seen-question performance.
+the explanation shown to a teacher should highlight words that are plausible, matching the reference content. The
+strongest caution is that every number here is agreement with a \emph{single} teacher rather than a
+measured human ceiling: reported Khmer ASAG scores, including ours, should be read as agreement with one
+grader on a small, four-subject corpus.

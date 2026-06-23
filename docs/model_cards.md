@@ -17,7 +17,7 @@ SEA-LION convention (`Gemma-SEA-LION-v3`, `Qwen-SEA-LION-v4`) and prior domain f
 | Released name | Base model (HF id) | Base license | Params | Notes |
 |---|---|---|---|---|
 | **Qwen-KhmerGrader-4B** | `Qwen/Qwen3.5-4B` | Apache 2.0 | 4B | general multilingual base |
-| **Gemma-KhmerGrader-4B** | `google/gemma-4-E4B` | Apache 2.0 | 4B effective | general multilingual base, reasoning model |
+| **Gemma-KhmerGrader-4B** | `google/gemma-4-E4B-it` | Apache 2.0 | 4B effective | general multilingual instruction-tuned base |
 | **SEA-LION-KhmerGrader-E2B** | `aisingapore/Gemma-SEA-LION-v4.5-E2B-IT` | MIT | 2.3B effective | Southeast-Asian-adapted base (Gemma 4 E2B underneath) |
 
 Lineage for SEA-LION-KhmerGrader-E2B is two layers deep: our fine-tune ← Gemma-SEA-LION-v4.5-E2B-IT
@@ -44,7 +44,7 @@ so the reported lift isolates the effect of fine-tuning (the standard, honest ba
 | Model | Base zero-shot QWK | Fine-tuned QWK | Lift | Exact |
 |---|---|---|---|---|
 | Qwen-KhmerGrader-4B | 0.500 | **0.843** | +0.34 | 0.657 |
-| Gemma-KhmerGrader-4B | -0.082 | 0.763 | +0.85 | 0.657 |
+| Gemma-KhmerGrader-4B | [pending] | 0.763 | [pending] | 0.657 |
 | SEA-LION-KhmerGrader-E2B | 0.541 | 0.802 | +0.26 | **0.693** |
 
 All values are the `no10c` (909) test set. Sourced from
@@ -59,9 +59,8 @@ numbers; they trace to the result files above.
   with a human in the loop. Research and educational use.
 - **Not for:** high-stakes automated grading without human review, or languages/domains outside the
   training corpus.
-- **Known limitation:** scores collapse on unseen questions (question-held-out QWK is far below the
-  random-split QWK), so deployment should keep a teacher in the loop. The corpus is small and skewed
-  toward full credit.
+- **Known limitation:** all labels reflect a single grader, and the corpus is small (41 questions,
+  4 subjects) and skewed toward full credit, so deployment should keep a teacher in the loop.
 
 ## Attribution and license notices
 

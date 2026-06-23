@@ -31,6 +31,15 @@ tokenisation, part-of-speech tagging, and search, but not grading~\citep{buoy202
 At the same time, AI in education is a growing priority for Cambodia~\citep{huot2025cambodia}, which
 makes a reliable, transparent Khmer grading tool both timely and useful.
 
+A grade is also a decision a teacher must be able to stand behind. A score with no justification is
+hard to trust and harder to defend to a student, so a grading tool for a real classroom needs to do
+more than output a number: it has to show \emph{why}. This study therefore treats a grading model as
+something to be judged on three axes at once: how well it agrees with the teacher (accuracy), how often
+it recovers the exact mark a teacher would write (deployment quality), and whether the explanation it
+offers actually reflects how it decided (explainability). A model can be strong on one axis and weak on
+another, so we measure all three and report them side by side rather than collapsing them into a single
+ranking.
+
 \section{Problem Statement}
 We want to grade Khmer short answers automatically and to \emph{honestly} describe what is achievable
 on a real classroom corpus. Three properties of the data make this hard:
@@ -49,64 +58,67 @@ on a real classroom corpus. Three properties of the data make this hard:
 A further problem, often blurred in ASAG papers, is that two different questions are usually reported
 together: \emph{research quality} (how well the model's grades agree with the teacher, measured by
 QWK) and \emph{deployment quality} (whether the model predicts the \emph{exact} mark in points). We
-keep the two apart, because a model can be good at one and weak at the other. Finally, with only 41
-distinct questions, a model can memorise question-specific patterns, so we must also test it on
-\emph{unseen} questions.
+keep the two apart, because a model can be good at one and weak at the other. A model whose grades
+\emph{correlate} well with the teacher's can still be the wrong tool for a classroom if it rarely hits
+the exact mark, and a teacher who has to re-check every score gains little.
+
+To make the task concrete, consider one real (translated) History item from the corpus. The
+\textbf{question} asks which factors caused Siam to break the citadel of Longvek; the
+\textbf{reference answer} lists several causes (the king's poor judgement, the loss of unity, and so
+on) and is worth a \textbf{maximum of 10 points}. One student wrote only ``the factors that made Siam
+break Longvek: the loss of solidarity'', naming a single correct cause. The teacher awarded
+\textbf{2 out of 10}. The grading system must read both texts, recognise that the answer is partially
+correct, and reproduce that partial mark. We turn the raw score into a scale-free target by dividing
+by the maximum, $y = 2/10 = 0.2$, and into a five-class grade by rounding, $\ell =
+\mathrm{round}(4 \times 0.2) = 1$. Every model in this study is trained to predict $y$ for inputs of
+exactly this form, and is judged both on the grade it implies and on the raw mark it recovers.
 
 \section{Aim and Objectives of the Study}
-The aim of this study is to build the first reproducible, \emph{explainable} ASAG benchmark for Khmer
-and to describe honestly what current models can and cannot do on it. To reach this aim, our
-objectives are:
+In this study, we aim to build the first reproducible, \emph{explainable} ASAG benchmark for Khmer and
+to describe honestly what current model families can and cannot do on a real classroom corpus. To
+achieve this aim, the objectives of this study are as the following:
 
-\begin{enumerate}[leftmargin=1.8em]
-  \item to build and document a Khmer short-answer corpus with three cleaning variants and a
-  Khmer-aware preprocessing pipeline;
-  \item to implement one shared training-and-evaluation pipeline that compares four model families
-  (classical, RNN, Transformer encoder, and a fine-tuned LLM) as bounded ordinal regression;
-  \item to design a model-agnostic explainability protocol that \emph{measures} explanation
-  faithfulness and plausibility, and to apply it to all four families;
-  \item to evaluate every model with field-standard metrics across three dataset variants, and to
-  measure the question-leakage effect;
-  \item to deliver the explainability feature as a live, teacher-facing web prototype.
-\end{enumerate}
+\begin{itemize}[leftmargin=1.4em]
+  \item To build and document a Khmer short-answer corpus with two cleaning variants and a
+  Khmer-aware preprocessing pipeline.
+  \item To implement one shared training-and-evaluation pipeline that compares four model families
+  (classical, RNN, Transformer encoder, and a fine-tuned LLM) as bounded ordinal regression.
+  \item To produce a model-agnostic SHAP word-attribution explanation and check its plausibility,
+  applied to all four families.
+  \item To evaluate every model with field-standard metrics across two dataset variants.
+  \item To deliver the explainability feature as a live, teacher-facing web prototype.
+\end{itemize}
 
-In meeting these objectives, the study answers six research questions:
+These objectives sharpen into three research questions that the rest of the thesis answers in order:
 
-\begin{description}[leftmargin=2.4em,style=nextline]
-  \item[RQ1.] Does the most expensive model (a fine-tuned LLM) actually beat a 30-second CPU baseline
-  on a real Khmer exam corpus?
-  \item[RQ2.] On small-data ASAG, does better \emph{data quality} help more than changing the learning
-  algorithm?
-  \item[RQ3.] Does the model that wins QWK also win the metrics a classroom cares about (the exact
-  mark, and agreement within one point)?
-  \item[RQ4.] Do two cheap additions help: giving the model each question's maximum score, and
-  post-hoc threshold calibration?
-  \item[RQ5.] Across the four families, which gives the most \emph{faithful} explanations, and is there
-  an accuracy-versus-explainability trade-off?
-  \item[RQ6.] How large is the \emph{question-leakage} effect, and how well do models grade genuinely
-  unseen questions?
-\end{description}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{RQ1 (accuracy).} How well do the four model families agree with the human grader on
+  Khmer short answers, measured by Quadratic Weighted Kappa, and does a more expensive model agree
+  more closely?
+  \item \textbf{RQ2 (deployment).} How often does each model reproduce the teacher's \emph{exact} mark
+  in points, and is the most accurate model on QWK also the best for classroom use?
+  \item \textbf{RQ3 (explainability).} Can one model-agnostic word-attribution method (SHAP) produce
+  plausible explanations across all four families, including the non-differentiable classical model?
+\end{itemize}
 
 \section{Rationale of the Study}
 This study is motivated by a clear gap: short-answer grading has advanced for high-resource languages
 but not for Khmer, and a grade is a high-stakes decision that a teacher will only trust if it can be
-\emph{audited}. An explanation is only useful if it is \emph{faithful}, that is, if it reflects what
-the model actually used rather than just looking reasonable; a plausible but unfaithful explanation is
-arguably worse than none, because it creates false confidence~\citep{lyu2024faithfulsurvey}. We
-therefore treat explainability as a first-class goal and measure whether explanations are faithful.
+\emph{audited}. An explanation is only useful if it points at the content that justified the grade, so
+a teacher can check it against the reference answer~\citep{lyu2024faithfulsurvey}. We therefore treat
+explainability as a first-class goal, using SHAP word attribution and checking that the words it
+highlights are plausible (they match the reference content).
 
 The study makes the following contributions:
 
 \begin{enumerate}[leftmargin=1.8em]
   \item \textbf{The first Khmer ASAG benchmark}: 1{,}184 real teacher-graded answers (41 questions,
-  203 students, four subjects, two schools), released with three cleaning variants.
+  203 students, four subjects, two schools), released with two cleaning variants.
   \item \textbf{A four-family comparison under one pipeline}: classical, RNN, Transformer, and a
   fine-tuned LLM (the KhmerGrader family).
-  \item \textbf{A cross-family faithfulness protocol}: one model-agnostic Leave-One-Out (LOO)
-  word-attribution method applied to all families and \emph{measured} for faithfulness.
-  \item \textbf{An honest question-leakage analysis} that measures how much small-question-pool scores
-  are inflated.
-  \item \textbf{A live teacher-facing prototype} that returns a score, a faithful word-attribution
+  \item \textbf{A cross-family SHAP explanation}: one model-agnostic SHAP word-attribution method
+  applied to all families, with a plausibility (reference-overlap) check.
+  \item \textbf{A live teacher-facing prototype} that returns a score, a SHAP word-attribution
   explanation, and written feedback.
 \end{enumerate}
 
@@ -120,7 +132,7 @@ This study covers short-answer questions in Khmer from four secondary-school sub
 History, Geography, Earth Science). We study \emph{content} scoring against a reference answer, not
 essay style or grammar. A single teacher graded every answer, so results are agreement \emph{with that
 grader}, not against a measured human ceiling. The heavier models (the Transformer encoders and the
-LLM) need a GPU and were run on dedicated hardware; the classical and RNN baselines run on a CPU. We
+LLM) need a GPU and were run on the MISTI-HPC cluster (an NVIDIA A40); the classical and RNN baselines run on the CPU. We
 revisit these limits in Chapter~\ref{ch:limitations}.
 
 \section{Structure of the Study}

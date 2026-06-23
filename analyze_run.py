@@ -8,7 +8,6 @@ Reads `results_<run_name>/runs/<run_id>/predictions_test.csv` and produces:
 
 Usage:
     python analyze_run.py <results_dir> <run_id>
-    python analyze_run.py results_no10c_no0 segment_qar_tfidf_svr
     python analyze_run.py results_no10c     clean_ra_tfidf_svr      --worst 15
 """
 
@@ -54,7 +53,7 @@ def per_max_score_table(df: pd.DataFrame) -> pd.DataFrame:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("results_dir", help="e.g. results_no10c or results_no10c_no0")
+    ap.add_argument("results_dir", help="e.g. results_no10c or results_full")
     ap.add_argument("run_id", help="e.g. clean_ra_tfidf_svr")
     ap.add_argument("--worst", type=int, default=10,
                     help="Number of worst-error rows to show")

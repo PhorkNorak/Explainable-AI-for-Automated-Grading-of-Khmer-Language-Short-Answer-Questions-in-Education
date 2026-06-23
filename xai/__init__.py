@@ -1,15 +1,12 @@
 """Explainable-AI module for Khmer ASAG.
 
-A model-agnostic explanation + faithfulness toolkit shared across all four model
-families (classical, RNN, encoder, LLM). The explanation method is Leave-One-Out
-(LOO) occlusion word attribution — the single unified method used throughout.
+A model-agnostic explanation toolkit shared across all four model families
+(classical, RNN, encoder, LLM). The explanation method is SHAP word attribution,
+the single unified method used throughout (following Kumar & Boulanger, 2020).
 
-  * explainers.py    — LOO occlusion importance over Khmer word units.
-  * attributions.py  — thin dispatch wrapper; calls occlusion_importance.
-  * faithfulness.py  — ERASER-style comprehensiveness & sufficiency, computed from
-                       any `predict_fn(answer, reference) -> score`. The same
-                       perturbation defines both the explanation and the metric, so
-                       explainer and evaluator are self-consistent.
+  * explainers.py    — SHAP word attribution (and occlusion, a fast special case)
+                       over Khmer word units.
+  * attributions.py  — thin dispatch wrapper over the occlusion explainer.
   * plausibility.py  — reference-overlap plausibility proxy (overlap of important
                        answer words with reference-answer content words).
   * render.py        — token-heatmap PNGs and rationale cards.
@@ -22,8 +19,8 @@ from .explainers import (
     tokenize_answer,
     detokenize,
     occlusion_importance,
+    shap_importance,
 )
-from .faithfulness import comprehensiveness, sufficiency, faithfulness_report
 from .plausibility import plausibility
 from .attributions import word_importance
 
@@ -31,9 +28,7 @@ __all__ = [
     "tokenize_answer",
     "detokenize",
     "occlusion_importance",
-    "comprehensiveness",
-    "sufficiency",
-    "faithfulness_report",
+    "shap_importance",
     "plausibility",
     "word_importance",
 ]

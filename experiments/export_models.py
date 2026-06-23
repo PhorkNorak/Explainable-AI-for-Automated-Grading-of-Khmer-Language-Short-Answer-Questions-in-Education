@@ -39,10 +39,10 @@ PUB = os.path.join(_ROOT, "publish")
 
 
 def _champ_split():
-    """The non-LLM champions live on no10c_no0 (895): classical=segment_ra,
+    """The non-LLM champions live on no10c (909): classical=segment_ra,
     bilstm=clean_ra, encoder=clean_ra. Deterministic (seed 42)."""
     C.RAW_CSV = os.path.join(C.PROJECT_ROOT, "data", "dataset_no_10c_biology.csv")
-    C.DROP_SCORE_ZERO = True
+    C.DROP_SCORE_ZERO = False
     importlib.reload(data)
     df = data.load_dataframe()
     return data.split_dataframe(df)
@@ -56,10 +56,10 @@ def _write_card(out, name, arch, license_, desc, deps, usage):
         f"- Architecture: {arch}\n- Task: Khmer short-answer grading "
         f"(predict a normalized score in [0,1]; raw points = round(score x max_score))\n"
         f"- Training data: a single-trained-teacher Khmer secondary-school corpus "
-        f"(no10c_no0 split, 895 answers)\n- {deps}\n\n"
+        f"(no10c split, 909 answers)\n- {deps}\n\n"
         f"## Usage\n\n```python\n{usage}\n```\n\n"
         f"Part of the **KhmerGrader** benchmark. Model class and full inference "
-        f"pipeline (Khmer preprocessing: NFC, strip invisibles, KCC reorder, "
+        f"pipeline (Khmer preprocessing: NFC, strip invisibles, strip punctuation, "
         f"khmernltk segmentation) are in the project repository. Intended for "
         f"assistive grading with a human in the loop, not high-stakes autonomous use.\n"
     )
@@ -117,7 +117,7 @@ def export_bilstm():
     name = "KhmerGrader-BiLSTM"
     out = os.path.join(PUB, name)
     os.makedirs(out, exist_ok=True)
-    champ = os.path.join(_ROOT, "results", "champions", "rnn_clean_ra_bilstm_895")
+    champ = os.path.join(_ROOT, "results", "champions", "rnn_clean_ra_bilstm_909")
     mode, fmt = "clean", "ra"
     tr, _, te = _champ_split()
     trp = data.apply_preprocess(tr, mode)

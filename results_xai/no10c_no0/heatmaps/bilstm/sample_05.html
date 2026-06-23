@@ -1,54 +1,39 @@
 <!doctype html><html lang="km"><head><meta charset="utf-8">
-<title>bilstm | true=4 pred=4 | word attribution on original answer</title>
+<title>bilstm | true=4 pred=4 | SHAP word attribution on original answer</title>
 <style>body{font-family:'Khmer OS', 'Khmer OS System', 'Noto Sans Khmer', 'Leelawadee UI', 'Khmer UI', sans-serif;margin:24px;background:#fff;color:#1a202c}
 h3{font-size:16px;color:#2c5282;font-family:sans-serif}
 .legend{font-family:sans-serif;font-size:12px;color:#555;margin-top:14px}
 .bar{display:inline-block;width:120px;height:12px;vertical-align:middle;
 background:linear-gradient(to right,#fff,rgb(255,85,85));border:1px solid #ccc}</style>
 </head><body>
-<h3>bilstm | true=4 pred=4 | word attribution on original answer</h3>
-<div><span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">អាណាចក្រ</span>
+<h3>bilstm | true=4 pred=4 | SHAP word attribution on original answer</h3>
+<div><span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,238,238);font-size:20px;line-height:1.6">អាណាចក្រ</span>
 <span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ភ្នំ</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">មាន</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,156,156);font-size:20px;line-height:1.6">ព្រំប្រទល់</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ខាងជើង</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,238,238);font-size:20px;line-height:1.6">ជាប់</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">នឹង</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,249,249);font-size:20px;line-height:1.6">ប្រទេស</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,211,211);font-size:20px;line-height:1.6">ចិន</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,152,152);font-size:20px;line-height:1.6">(</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">រដ្ឋ</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ណាន</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ឆាវ</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">និង</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,223,223);font-size:20px;line-height:1.6">តុង</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,226,226);font-size:20px;line-height:1.6">តឹង</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,166,166);font-size:20px;line-height:1.6">)</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ខាងកើត</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,212,212);font-size:20px;line-height:1.6">ជាប់</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">រដ្ឋ</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,101,101);font-size:20px;line-height:1.6">ចម្ប៉ា</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,170,170);font-size:20px;line-height:1.6">(</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ឈូង</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">សមុទ្រ</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,215,215);font-size:20px;line-height:1.6">ចិន</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,147,147);font-size:20px;line-height:1.6">)</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">និង</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,117,117);font-size:20px;line-height:1.6">ខាងត្បូង</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,253,253);font-size:20px;line-height:1.6">មាន</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,254,254);font-size:20px;line-height:1.6">ព្រំប្រទល់</span>
 <span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ជាប់</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">និង</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,254,254);font-size:20px;line-height:1.6">ប្រទេស</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ដូចជា</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">-</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,252,252);font-size:20px;line-height:1.6">ខាងជើង</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,254,254);font-size:20px;line-height:1.6">ជាប់</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,156,156);font-size:20px;line-height:1.6">ចិន</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">-</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,228,228);font-size:20px;line-height:1.6">ខាងត្បូង</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ជា</span>
 <span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ឈូង</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">សមុទ្រ</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,242,242);font-size:20px;line-height:1.6">ខ្មែរ</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,147,147);font-size:20px;line-height:1.6">(</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">នគរ</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ភ្នំ</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,153,153);font-size:20px;line-height:1.6">)</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">និង</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,85,85);font-size:20px;line-height:1.6">ខាងលិច</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,238,238);font-size:20px;line-height:1.6">ជាប់</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,254,254);font-size:20px;line-height:1.6">សមុទ្រ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,85,85);font-size:20px;line-height:1.6">ខ្មែរ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,149,149);font-size:20px;line-height:1.6">-</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ខាងកើត</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,253,253);font-size:20px;line-height:1.6">ជាប់</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">រដ្ឋ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,241,241);font-size:20px;line-height:1.6">ចម្ប៉ា</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">-</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,185,185);font-size:20px;line-height:1.6">ខាងលិច</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ជាប់</span>
 <span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">រដ្ឋមន</span>
-<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,247,247);font-size:20px;line-height:1.6">ឬ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ឬ</span>
 <span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ភូមា</span>
 <span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">។</span></div>
 <div class="legend">word importance (occlusion): low <span class="bar"></span> high &nbsp;|&nbsp;

@@ -1,6 +1,9 @@
-# Prototype (Gradio) — CPU deployment (e.g. a free Hugging Face Space).
-# The Classical + RNN pillars run on CPU; the Transformer/LLM pillars need a GPU Space
-# and the extra deps in the project requirements.txt (transformers / peft / unsloth).
+# Prototype (Gradio). The base install below is CPU-only and runs the demo pillars:
+#   * Classical (TF-IDF + RBF-SVR): trains at startup
+#   * RNN (BiLSTM + attention): loads the shipped champion checkpoint
+#   * LLM grading via an OpenAI-compatible *endpoint* (needs only `requests`, below)
+#   * AI feedback via an OpenAI-compatible *endpoint*
+# The encoder pillar and the in-process LLM path need the optional extras at the bottom.
 
 gradio>=4.0
 scikit-learn>=1.3.0
@@ -10,10 +13,26 @@ pandas>=2.0.0
 khmer-nltk>=1.6
 torch>=2.0.0          # CPU build is fine; needed by the RNN (BiLSTM) pillar
 
-# Word attribution in the prototype uses occlusion (leave-one-out), which needs nothing extra.
-# `shap` is optional and only used by the offline method-robustness cross-check (experiments/exp13).
-# shap
+# Word attribution in the prototype uses SHAP. Installing `shap` (optional, below) enables the
+# Permutation explainer; without it a built-in Monte-Carlo Shapley estimator runs, so it works with
+# nothing extra. It is model-agnostic, covering the non-differentiable classical model too.
+# shap>=0.44.0        # optional: exact/faster SHAP; a built-in fallback runs without it
 
-# AI feedback talks to an open-source LLM over an OpenAI-compatible HTTP endpoint
-# (Ollama / vLLM / llama.cpp / LM Studio / OpenRouter ...). Only `requests` is needed.
+# Both the LLM *grader* (endpoint backend) and the AI *feedback* talk to an open-source LLM
+# over an OpenAI-compatible HTTP endpoint (Ollama / vLLM / llama.cpp / LM Studio / OpenRouter ...).
+# Only `requests` is needed for either.
 requests>=2.31.0
+
+# ─── Optional extras ─────────────────────────────────────────────────────────────
+# Transformer (GTE dual-encoder) pillar: needs `transformers` to load the backbone.
+# It is CPU-capable (slow), and only activates when a fine-tuned checkpoint is present
+# (results/champions/encoder_*/best.pt or ENCODER_CKPT). Uncomment to enable:
+# transformers>=4.40.0
+#
+# LLM in-process path (GRADER_LLM_INPROCESS=1, GPU only): loads the base model + LoRA
+# adapter locally instead of calling an endpoint. Add on a GPU Space:
+# transformers>=4.40.0
+# accelerate>=0.30.0
+# peft>=0.11.0
+# bitsandbytes>=0.43.0     # 4-bit base; CUDA only
+# unsloth                  # optional, faster QLoRA loading

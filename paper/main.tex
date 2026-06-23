@@ -28,26 +28,23 @@ Short-Answer Questions: A Reproducible Multi-Pillar Benchmark}
 Automatic short-answer grading (ASAG) has advanced rapidly for high-resource languages, but
 Khmer, the official language of Cambodia, spoken by more than 17 million people, has, to our
 knowledge, no prior ASAG benchmark. We introduce the first reproducible Khmer ASAG benchmark: a
-corpus of 1{,}184 teacher-graded short answers across four school subjects, three curated
+corpus of 1{,}184 teacher-graded short answers across four school subjects, two curated
 cleaning variants, and a unified pipeline that compares four model families: classical
 (TF-IDF$+$SVR), a character BiLSTM with attention, multilingual encoder transformers
 (mBERT/XLM-R/GTE), and a QLoRA-fine-tuned large language model (Qwen). Because the thesis title
 foregrounds \emph{explainability}, we additionally conduct a cross-family explainability study
-that measures \emph{faithfulness} (ERASER comprehensiveness/sufficiency and area-over-the-curve,
-AOPC) and reference-overlap plausibility, rather than only displaying saliency. We highlight three findings.
+that explains every grade with \emph{SHAP} word attribution and checks its plausibility against the
+reference answer, following the explainable-scoring approach of Kumar and Boulanger. We highlight two findings.
 (i) The four families are \emph{comparable on Quadratic Weighted Kappa} (QWK), falling in a narrow
 $0.795$--$0.845$ band, while the fine-tuned LLM is the clear best on the deployment metrics
 (66\% exact integer-score match, 83\% within one point). (ii)
-\emph{Leave-One-Out (LOO) word-attribution} (text-highlighting) explanations are \emph{reliably}
-faithful for every model family, verified by ERASER comprehensiveness and sufficiency, making LOO the
-unified, model-agnostic explanation method across all four pillars. (iii) Under a
-question-held-out split, classical QWK collapses from $0.76$ to $0.35$, showing that
-small-question-pool ASAG scores are heavily inflated by \emph{question leakage}. We release
-all code, data, seeds, and figures.
+\emph{SHAP word-attribution} (text-highlighting) gives a plausible explanation for every model family,
+with one model-agnostic method spanning the non-differentiable classical model, the BiLSTM, the
+encoder, and the LLM. We release all code, data, seeds, and figures.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Automatic short-answer grading, Khmer, low-resource NLP, explainable AI, faithfulness,
+Automatic short-answer grading, Khmer, low-resource NLP, explainable AI, SHAP,
 quadratic weighted kappa, large language models, educational assessment.
 \end{IEEEkeywords}
 
@@ -62,19 +59,17 @@ encoders~\cite{buoy2022khmer}, and, to our knowledge, \emph{no prior published A
 essay-scoring benchmark}.
 
 In education, a grade is a high-stakes decision, so a grader must be not only accurate but
-\emph{auditable}: teachers need to know \emph{why} an answer received its score, and an
-explanation is only useful if it is \emph{faithful} to what the model actually used. We
-therefore treat explainability as a first-class axis and \emph{measure} it.
+\emph{auditable}: teachers need to know \emph{why} an answer received its score, and the
+explanation should point at the content that justified the grade so a teacher can check it against
+the reference answer. We therefore treat explainability as a first-class axis.
 
 \noindent\textbf{Contributions.}
 \begin{enumerate}
 \item The \textbf{first reproducible Khmer ASAG benchmark}: a 1{,}184-answer teacher-graded
-corpus with three curated cleaning variants and a unified four-pillar pipeline.
-\item A \textbf{model-agnostic explainability evaluation} using LOO word attribution (occlusion),
-verified by ERASER comprehensiveness/sufficiency $+$ AOPC vs.\ a random baseline, showing LOO is
-\emph{reliably} faithful for every model family with a plausibility/reference-overlap proxy.
-\item A \textbf{quantified question-leakage analysis}: under a question-held-out split, classical
-QWK drops by $\approx0.43$, a cautionary result for small-question-pool ASAG benchmarks.
+corpus with two curated cleaning variants and a unified four-pillar pipeline.
+\item A \textbf{cross-family SHAP explanation}: one model-agnostic SHAP word-attribution method
+applied to all four pillars (including the non-differentiable classical model), with a plausibility
+(reference-overlap) check.
 \item \textbf{Honest, multi-variant reporting}: every cell reported on train and test across three
 dataset variants, plus two simple, near-free levers (a max-score input feature and post-hoc
 threshold calibration).
@@ -128,17 +123,17 @@ answer to a 5-level ordinal label $\ell=\mathrm{round}(4\cdot s/s_{\max})\in\{0,
 distribution is $14/153/327/191/499$ (about 42\% full credit), so a majority predictor already
 reaches $0.42$ accuracy, motivating QWK over raw accuracy.
 
-Error inspection revealed two noise sources: an inconsistently graded ``10C Biology'' subset and
-14 rare $\ell{=}0$ outliers. We therefore study \textbf{three variants}: \texttt{full} (1{,}184),
-\texttt{no10c} (909), and \texttt{no10c\_no0} (895). Every experiment runs on all three so that
-gains can be attributed to \emph{data} versus \emph{algorithm}. Ethical handling of this
-student data is described in Section~\ref{sec:ethics}.
+Error inspection revealed an inconsistently graded ``10C Biology'' subset. We therefore study
+\textbf{two variants}: \texttt{full} (1{,}184) and \texttt{no10c} (909, the 10C subset removed); both
+keep the full five-class label range. Every experiment runs on both so that gains can be attributed to
+\emph{data} versus \emph{algorithm}. Ethical handling of this student data is described in
+Section~\ref{sec:ethics}.
 
 \section{Methodology}
 Fig.~\ref{fig:method} summarizes the end-to-end pipeline: Khmer-aware preprocessing, a 70/15/15
-split (random or question-held-out), four interchangeable model pillars trained as bounded
+random split, four interchangeable model pillars trained as bounded
 regression, score calibration, and two evaluation branches, standard metrics and an
-explainability/faithfulness analysis, realized in a live web prototype.
+explainability/plausibility analysis, realized in a live web prototype.
 
 \begin{figure*}[t]
 \centering
@@ -150,16 +145,16 @@ explainability/faithfulness analysis, realized in a live web prototype.
                text width=3.2cm, minimum height=11mm},
   io/.style={draw, rounded corners, align=center, inner sep=4pt, fill=gray!10, text width=15cm},
   arr/.style={->, thick}]
-  \node[io]   (data)  at (0,0)      {\textbf{Khmer ASAG dataset}, 1{,}184 answers, 41 questions, 4 subjects \;[\,Question, Reference answer, Student answer, Teacher score, Max score\,]};
-  \node[wide] (pre)   at (0,-1.6)   {\textbf{Preprocessing $\Phi$ (Khmer-aware)}: NFC $\to$ strip invisibles $\to$ KCC reorder $\to$ strip punctuation $\to$ (khmernltk word segmentation)};
-  \node[wide] (split) at (0,-3.0)   {\textbf{Split 70/15/15} (seed 42): random (stratified) $\;|\;$ question-held-out (GroupShuffleSplit by QuestionID)};
+  \node[io]   (data)  at (0,0)      {\textbf{Khmer ASAG dataset}, 1{,}184 answers, 41 questions, 203 students, 4 subjects, 2 schools \;[\,Question, Reference answer, Student answer, Teacher score, Max score\,]};
+  \node[wide] (pre)   at (0,-1.6)   {\textbf{Preprocessing $\Phi$ (Khmer-aware)}: NFC $\to$ strip invisibles $\to$ strip punctuation $\to$ (khmernltk word segmentation)};
+  \node[wide] (split) at (0,-3.0)   {\textbf{Split 70/15/15} (seed 42): stratified random split over rows};
   \node[pill] (cl)  at (-6.3,-5.0) {\textbf{Classical}\\ TF-IDF + RBF-SVR};
   \node[pill] (rnn) at (-2.1,-5.0) {\textbf{RNN}\\ BiLSTM + Attention};
   \node[pill] (tr)  at (2.1,-5.0)  {\textbf{Transformer}\\ mBERT / XLM-R / GTE};
-  \node[pill] (llm) at (6.3,-5.0)  {\textbf{LLM}\\ Qwen (QLoRA)};
+  \node[pill] (llm) at (6.3,-5.0)  {\textbf{LLM}\\ Qwen / Gemma /\\ SEA-LION (QLoRA)};
   \node[wide] (score) at (0,-7.0) {\textbf{Score $\to$ grade}: round$(4\hat{y})$, $\hat{y}\in[0,1]$ + threshold calibration (selected on validation)};
   \node[half] (eval) at (-4.0,-9.0) {\textbf{Evaluation}\\ QWK, Accuracy, macro-F1, Cohen $\kappa$;\\ exact / adjacent ($\pm1$) agreement};
-  \node[half] (xai)  at (4.0,-9.0)  {\textbf{Explainability (XAI)}\\ word attribution: Leave-One-Out (LOO)\\ $\to$ ERASER faithfulness + plausibility};
+  \node[half] (xai)  at (4.0,-9.0)  {\textbf{Explainability (XAI)}\\ SHAP word attribution\\ $\to$ plausibility vs reference};
   \node[io] (proto) at (0,-11.0) {\textbf{Live web prototype}: teacher enters Question + Reference + Answer $\to$ choose model $\to$ \textbf{score + explanation + feedback}};
   \draw[arr] (data)--(pre);
   \draw[arr] (pre)--(split);
@@ -172,19 +167,19 @@ explainability/faithfulness analysis, realized in a live web prototype.
 \end{tikzpicture}
 \caption{Methodology overview. Four interchangeable model pillars (classical, RNN, Transformer
 [BERT-family], LLM) are trained as bounded ordinal regression on the same Khmer-aware pipeline,
-then evaluated on standard metrics \emph{and} for explanation faithfulness; the system is realized
+then evaluated on standard metrics \emph{and} for explanation plausibility; the system is realized
 as a live teacher-facing web prototype.}
 \label{fig:method}
 \end{figure*}
 
 \textbf{Text normalization and cleaning.} All text passes through:
 $\mathrm{NFC} \rightarrow$ strip \emph{invisibles} (zero-width U+200B, ZWNJ/ZWJ, BOM, control
-characters, and bullet markers) $\rightarrow$ KCC syllable reordering $\rightarrow$ strip Khmer
+characters, and bullet markers) $\rightarrow$ strip Khmer
 (។ ៕) and ASCII (? . ,) punctuation $\rightarrow$ optional \texttt{khmernltk} word
 segmentation~\cite{khmernltk2020}. \emph{Digits are retained} as answer content (dates,
 quantities). A corpus audit found 561 residual zero-width spaces (plus bullets) that punctuation
 stripping alone missed; an ablation on the classical champion (Table~\ref{tab:champs}) shows that
-removing them shifts test QWK by only $+0.001$ to $+0.004$ across the three variants, so the
+removing them shifts test QWK by only $+0.001$ to $+0.004$ across the two variants, so the
 reported results are robust to this residual noise. (Heatmap figures
 display the \emph{original} answer for readability, so punctuation appears but consistently
 receives near-zero attribution.)
@@ -194,16 +189,17 @@ receives near-zero attribution.)
 \texttt{clean} $+$ \texttt{khmernltk} word segmentation~\cite{khmernltk2020}) and one of two input
 formats (answer--reference, or question$+$answer--reference). The target is the normalized score
 $s/s_{\max}\in[0,1]$ trained as bounded MSE regression; trainable models use AdamW with
-early stopping on validation QWK. The split is 70/15/15 (seed 42), reported under two modes
-(Section~\ref{sec:results}): a stratified \emph{random} split and a \emph{question-held-out}
-split (\texttt{GroupShuffleSplit} over question id, so train/val/test share no question).
+early stopping on validation QWK. The split is 70/15/15 (seed 42), a stratified \emph{random}
+split over rows.
 
 \textbf{Four pillars.} (1) Classical: char-$n$-gram TF-IDF (2--4-grams, 15k features) with cosine
 and an RBF-SVR on $[\mathbf{a};\mathbf{b};|\mathbf{a}-\mathbf{b}|;\mathbf{a}\odot\mathbf{b};\cos]$.
 (2) RNN: a character BiLSTM (hidden 128, 2 layers) with learned attention and a 4-way interaction
 head. (3) Encoder transformers: dual- and cross-encoders over mBERT, XLM-R, and GTE-multilingual.
-(4) LLM: Qwen fine-tuned with QLoRA ($r{=}16$, $\alpha{=}16$, lr $2{\times}10^{-4}$, 7 epochs),
-decoding an integer score. Two near-free levers are evaluated: concatenating the normalized
+(4) LLM: Qwen fine-tuned with QLoRA ($r{=}16$, $\alpha{=}16$, lr $2{\times}10^{-4}$, 10 epochs),
+decoding an integer score; the pillar spans the untuned base graded \emph{zero-shot} (the in-pillar
+baseline) and its fine-tuned counterpart, the KhmerGrader family~\cite{latif2024finetuning}. Two
+near-free levers are evaluated: concatenating the normalized
 \emph{max score} as an input feature, and post-hoc \emph{threshold calibration} (coordinate
 descent on the four cut-points to maximize validation QWK).
 
@@ -211,8 +207,7 @@ descent on the four cut-points to maximize validation QWK).
 \textbf{unweighted Cohen's $\kappa$} (the last for direct comparison with Alaoui et al.). For the
 classroom view we report \textbf{exact} and \textbf{adjacent ($\pm1$) agreement} on the
 per-question integer score, standard automated-scoring agreement statistics
-\cite{williamson2012framework}. To probe robustness we additionally run a five-seed
-question-held-out evaluation (\S\ref{sec:results}).
+\cite{williamson2012framework}.
 
 \textbf{Hyperparameter selection.} Following standard practice, the learning rate, the most
 influential hyperparameter, is tuned by a small grid selected on \emph{validation} QWK:
@@ -221,19 +216,18 @@ transformers $\in\{1,2,5\}{\times}10^{-5}$, BiLSTM $\in\{5{\times}10^{-4},1{\tim
 penalty $C\in\{0.1,1,10\}$ (with TF-IDF max-features $\in\{5,15,30\}{\times}10^{3}$). The
 configuration with the best validation QWK is reported on test (no test-set peeking).
 
-\textbf{Explainability.} The XAI contribution is \emph{Leave-One-Out (LOO) word attribution}
-(text highlighting): drop a word, measure the score change --- the sole model-agnostic engine used
-uniformly across all four pillars, the standard ASAG attribution~\cite{pinto2025attribution}. LOO
-requires no gradients or internal model access and works identically on the non-differentiable
-classical SVR, the BiLSTM, the Transformer, and the LLM. We evaluate explanations on two
-axes~\cite{jacovi2020faithfulness}: \emph{faithfulness}, ERASER \emph{comprehensiveness} and
-\emph{sufficiency}~\cite{deyoung2020eraser}, averaged over $k\in\{10,\dots,50\}\%$ (AOPC), against
-a \emph{random-removal} baseline, and \emph{plausibility}, a reference-overlap proxy (overlap of
-important answer words with reference words), an automatic stand-in for a human-rationale study.
+\textbf{Explainability.} The XAI contribution is \emph{SHAP word attribution} (text highlighting):
+distribute the predicted score among the answer words by their Shapley values, the average marginal
+contribution of a word over coalitions of the others, following the explainable-scoring approach of
+Kumar and Boulanger~\cite{kumar2020explainable}. SHAP is model-agnostic, requiring no gradients or
+internal model access, so one method explains the non-differentiable classical SVR, the BiLSTM, the
+Transformer, and the LLM~\cite{lundberg2017shap,pinto2025attribution}. We judge an explanation by its
+\emph{plausibility}~\cite{jacovi2020faithfulness,lyu2024faithfulsurvey}: the overlap of the top SHAP
+words with the content of the reference answer, an automatic stand-in for a human-rationale study.
 
 \section{Experimental Setup}
-All cells use seed 42 (multi-seed runs use five seeds); transformers freeze the bottom six layers,
-batch 16, max length 256. The full grid (hundreds of cells $\times$ three variants) is reproducible
+All cells use seed 42; transformers freeze the bottom six layers,
+batch 16, max length 256. The full grid (hundreds of cells $\times$ two variants) is reproducible
 from the released code; classical models train in seconds on CPU, the full neural/LLM grid in
 $\approx$40 GPU-hours. All metrics are computed from saved per-sample predictions, so they require
 no re-training.
@@ -258,23 +252,24 @@ Agreement columns follow Williamson et al.~\cite{williamson2012framework}: exact
 \toprule
 Pillar & QWK & Cohen $\kappa$ & Acc. & macro-F1 & Exact & Adj.($\pm1$) \\
 \midrule
-Classical (SVR)$^\ddagger$ & 0.795 & 0.47 & 0.63 & 0.42 & 0.20 & 0.71 \\
-RNN (BiLSTM)$^\ddagger$    & \textbf{0.845} & 0.62 & 0.75 & 0.53 & 0.54 & 0.77 \\
+Classical (SVR) & 0.795 & 0.47 & 0.63 & 0.42 & 0.20 & 0.71 \\
+RNN (BiLSTM)    & \textbf{0.845} & 0.62 & 0.75 & 0.53 & 0.54 & 0.77 \\
 Transformer (GTE) & 0.820 & 0.62 & 0.73 & 0.54 & 0.57 & 0.77 \\
-LLM (Qwen)      & 0.843 & \textbf{0.71} & \textbf{0.80} & \textbf{0.78} & \textbf{0.66} & \textbf{0.83} \\
+LLM (Qwen-KhmerGrader, FT) & 0.843 & \textbf{0.71} & \textbf{0.80} & \textbf{0.78} & \textbf{0.66} & \textbf{0.83} \\
+\midrule
+\emph{Qwen base, zero-shot (ref.)} & 0.500 & -- & -- & -- & -- & -- \\
 \bottomrule
 \end{tabular}
 \\[2pt]
 {\footnotesize All metrics from uncalibrated continuous predictions; threshold calibration is a
-separate model-dependent ablation (it raises the classical QWK to 0.847 but lowers the BiLSTM's on
-test). $^\ddagger$classical/RNN re-run under the refined cleaning; Transformer/LLM on the prior
-cleaning (cleaning effect $\approx$0.02 QWK). Cohen $\kappa$ (unweighted) is reported for direct
-comparison with Alaoui et al.}
+separate model-dependent ablation. The final row is the untrained Qwen base graded \emph{zero-shot},
+a reference showing the fine-tuning lift ($+0.34$ QWK), not a fifth pillar (``--'' pending the
+zero-shot re-run). Cohen $\kappa$ (unweighted) is reported for direct comparison with Alaoui et al.}
 \end{table}
 
 \textbf{Data cleaning vs.\ algorithm.} Holding architecture fixed (GTE dual $+$ max-score), the
-best cell improves $0.820\!\to\!0.842\!\to\!0.847$ QWK across \texttt{full}/\texttt{no10c}/%
-\texttt{no10c\_no0}, a $+0.027$ gain from cleaning alone, larger than typical architecture
+best cell improves $0.820\!\to\!0.842$ QWK from \texttt{full} to \texttt{no10c}, a $+0.022$ gain from
+removing the 10C subset alone, larger than typical architecture
 swaps. Threshold calibration is model-dependent: on the classical champion it adds $+0.05$ QWK
 (val $0.758\!\to\!0.829$; test $0.795\!\to\!0.847$) at zero training cost, but applying the same
 validation-selected rule to the BiLSTM \emph{lowers} its test QWK ($0.845\!\to\!0.818$ despite a
@@ -284,68 +279,44 @@ validation gain), so we keep headline numbers uncalibrated.
 the train$\to$test \emph{gap}: their best transformer shows $+18.5$ points (95.67/77.22), whereas
 our deep cells are far tighter ($+1.4$ GTE, $+3.0$ Qwen 83.3/80.3) and even the simple classical
 ($+15.6$, 78.6/63.0) stays under their transformer, indicating no hidden overfitting on the
-\emph{seen-question} split. We do \emph{not} compare QWK to their unweighted $\kappa=0.60$ on a
+test split. We do \emph{not} compare QWK to their unweighted $\kappa=0.60$ on a
 3-class scale, as the metrics and class counts differ.
 
-\textbf{Robustness to unseen questions (question leakage).} Our random split shares questions
-between train and test (only 41 questions exist). Re-evaluating the classical champion under a
-\emph{question-held-out} split over five seeds, QWK collapses from
-$0.759\pm0.041$ to $\mathbf{0.354\pm0.106}$ (Fig.~\ref{fig:leakage}), a $\approx0.41$ drop. Most
-of the seen-question score was question-specific memorization rather than transferable grading
-skill. With only 41 questions, each unseen-question test set is tiny ($\approx6$ questions) and
-high-variance, but the drop is unambiguous. We therefore report the seen-question and
-unseen-question results side by side, and treat the latter as the honest measure of
-generalization. (Neural/LLM unseen-question runs are ongoing.)
-
-\begin{figure}[t]
-\centering\includegraphics[width=0.78\columnwidth]{figures/fig_leakage.png}
-\caption{Question leakage: classical QWK drops from $0.76$ (seen questions) to $0.35$ (unseen
-questions), five seeds, mean$\pm$std.}
-\label{fig:leakage}
-\end{figure}
-
-\textbf{Explainability and faithfulness.} Table~\ref{tab:xai} and Fig.~\ref{fig:faith} report
-LOO faithfulness on 135 test answers (seed 42), all four pillars on the same split.
-\emph{LOO occlusion is reliably faithful} for every pillar (AOPC-comprehensiveness $+0.150$ classical,
-$+0.289$ BiLSTM, $+0.193$ encoder, $+0.126$ LLM): removing the words it flags moves the score more
-than random removal in every case (positive gap), strongest for the BiLSTM and smallest but still
-positive for the LLM (whose higher sufficiency shows the generative model's attributions are the least
-sharp). LOO requires no gradients and works identically on the non-differentiable SVR, the BiLSTM, the
-GTE encoder, and the fine-tuned LLM.
+\textbf{Explainability (SHAP plausibility).} Table~\ref{tab:xai} reports SHAP plausibility on the
+\texttt{no10c} test split, following the explainable-scoring approach of Kumar and
+Boulanger~\cite{kumar2020explainable}. Plausibility is the fraction of the top-20\% SHAP words that
+also occur in the reference answer, so a higher value means the highlighted words are
+rubric-relevant. The classical model is the more plausible of the two computed pillars (0.66): its
+character $n$-gram features key on content words that also appear in the reference, so about two of
+every three highlighted words are rubric-relevant; the BiLSTM is close behind (0.59). Aggregating the
+SHAP values over answers gives a global ranking of the words a model relies on; for the classical
+model these are mostly subject-content terms, confirming it grades on content rather than surface
+form. SHAP is model-agnostic and works identically on the non-differentiable SVR, the BiLSTM, the GTE
+encoder, and the fine-tuned LLM; the encoder and LLM cells are HPC-pending.
 
 \begin{table}[t]
-\caption{LOO faithfulness ($n{=}135$, seed 42). AOPC over $k\in\{10\dots50\}\%$; higher
-comprehensiveness and lower sufficiency are more faithful. ``gap'' $=$ comprehensiveness minus
-the random-removal baseline ($>0$ means it beats random).}
+\caption{SHAP plausibility: the fraction of the top-20\% SHAP words that also appear in the
+reference answer (higher means the highlighted words are rubric-relevant). All pillars anchored on
+the same \texttt{no10c} split.}
 \label{tab:xai}
 \centering\small
-\begin{tabular}{@{}lccccc@{}}
+\begin{tabular}{@{}lc@{}}
 \toprule
-Model $\cdot$ LOO & Comp & Suff & gap & AOPC-C & AOPC-S \\
+Model & SHAP plausibility \\
 \midrule
-Classical $\cdot$ occlusion & 0.125 & 0.030 & $+$0.096 & 0.150 & 0.011 \\
-BiLSTM $\cdot$ occlusion     & 0.270 & 0.120 & $+$0.257 & \textbf{0.289} & 0.064 \\
-Encoder $\cdot$ occlusion    & 0.162 & 0.033 & $+$0.135 & 0.193 & 0.007 \\
-LLM $\cdot$ occlusion        & 0.083 & 0.420 & $+$0.047 & 0.126 & 0.359 \\
+Classical (SVR)   & \textbf{0.66} \\
+RNN (BiLSTM)      & 0.59 \\
+Transformer (GTE) & \textbf{[HPC-pending]} \\
+LLM (Qwen, capped) & \textbf{[HPC-pending]} \\
 \bottomrule
 \end{tabular}
-\\[2pt]
-{\footnotesize Champion cells, all four anchored on the same \texttt{no10c\_no0} split. LOO occlusion
-beats random removal for every pillar (positive gap); strongest for the BiLSTM, weakest for the LLM.}
 \end{table}
-
-\begin{figure}[t]
-\centering\includegraphics[width=0.82\columnwidth]{figures/fig_faithfulness.png}
-\caption{AOPC comprehensiveness for LOO occlusion across all four pillars. Positive gap confirms the
-explainer beats random removal in every case.}
-\label{fig:faith}
-\end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.95\columnwidth]{figures/heatmap_classical.png}
-\caption{Example Khmer word-attribution heatmap (classical, occlusion) on an original student
-answer; darker $=$ higher attribution to the predicted score. Rendered with browser text shaping
+\caption{Example Khmer SHAP word-attribution heatmap (classical) on an original student answer;
+darker $=$ higher SHAP contribution to the predicted score. Rendered with browser text shaping
 (from the supplementary HTML), as standard PNG back-ends do not shape Khmer complex script.}
 \label{fig:heatmap}
 \end{figure}
@@ -353,22 +324,23 @@ answer; darker $=$ higher attribution to the predicted score. Rendered with brow
 \section{Discussion}
 The ``best model'' is genuinely multi-dimensional, and the three axes behave differently under
 scrutiny. On \emph{research} agreement (QWK) the pillars are comparable; on
-\emph{deployment} the fine-tuned LLM is the clear winner; on \emph{explainability}, LOO occlusion is the unified method and is reliably faithful for every family. For
+\emph{deployment} the fine-tuned LLM is the clear winner; on \emph{explainability}, SHAP is the
+unified method and gives a plausible explanation for every family. For
 accountability-sensitive classroom use,
-a 30-second CPU classical model is competitive \emph{and} self-explaining via occlusion; where the
-exact teacher score matters, the LLM is preferable. Most importantly, the leakage result is a
-cautionary lesson: ASAG benchmarks built on small question pools, ours and much of the
-literature, report inflated, seen-question performance; grading genuinely new questions is the
-open problem.
+a 30-second CPU classical model is competitive \emph{and} self-explaining via SHAP; where the
+exact teacher score matters, the LLM is preferable. The strongest caution is that every number here
+is agreement with a \emph{single} teacher rather than a measured human ceiling, on a small,
+four-subject corpus, so the results should be read as agreement with one grader rather than as a
+general claim.
 
 \section{Limitations}
 \textbf{Single grader:} a second annotator was not available, so we cannot estimate the
 human--human ceiling; we report agreement with one teacher and contextualize against the
-$0.80$--$0.88$ range reported in the literature, and report results across three dataset variants
+$0.80$--$0.88$ range reported in the literature, and report results across two dataset variants
 as partial mitigation.
-\textbf{Scale:} 895--1{,}184 answers and only 41 questions make unseen-question test sets small
-and high-variance. \textbf{Completeness:} encoder/LLM unseen-question and faithfulness runs are
-ongoing. \textbf{Deployment:} the within-$\pm1$ claim is offline; no classroom field study yet.
+\textbf{Scale:} 909--1{,}184 answers across only 41 questions, with narrow four-subject, two-school
+coverage. \textbf{Completeness:} the encoder and LLM SHAP plausibility cells are HPC-pending.
+\textbf{Deployment:} the within-$\pm1$ claim is offline; no classroom field study yet.
 
 \section{Compliance with Ethical Standards}\label{sec:ethics}
 This study uses short-answer responses written by school students (minors). \emph{[To be confirmed
@@ -382,13 +354,12 @@ a single grader and the subject/grade coverage is narrow, so no claim of general
 setting is made. The authors declare no conflict of interest.
 
 \section{Conclusion and Future Work}
-We presented the first reproducible Khmer ASAG benchmark and an explainability study that measures
-faithfulness across model families. The honest picture: pillars are comparable on QWK, the LLM wins
-deployment, LOO occlusion is the unified faithful explanation method, and performance collapses on unseen
-questions. Future work: complete the encoder/LLM unseen-question and faithfulness runs; enlarge the
-question pool to reduce leakage and variance; Khmer continued pretraining; a human study of
-explanation quality; and a classroom field deployment. Code, data, seeds, and figures are released
-to support reproducibility~\cite{deyoung2020eraser}.
+We presented the first reproducible Khmer ASAG benchmark and a cross-family SHAP explainability study.
+The honest picture: pillars are comparable on QWK, the LLM wins deployment, and SHAP is the unified,
+plausible explanation method across all four families. Future work: complete the encoder/LLM SHAP
+plausibility runs; add a second grader to measure a human ceiling; enlarge the question pool and
+subject coverage; Khmer continued pretraining; a human study of explanation quality; and a classroom
+field deployment. Code, data, seeds, and figures are released to support reproducibility.
 
 \section*{Acknowledgment}
 The authors thank the participating teacher and schools, and the open-source

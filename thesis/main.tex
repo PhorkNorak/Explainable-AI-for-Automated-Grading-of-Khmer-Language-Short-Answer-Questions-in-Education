@@ -51,7 +51,17 @@
 \usepackage{fancyhdr}
 \usepackage[numbers,sort&compress]{natbib}   % IEEE-style numbered citations [1], [2]-[4]
 \setlength{\bibsep}{6pt}                      % space between reference entries
+% List of Figures/Tables entries read "Figure N: caption" / "Table N: caption"
+% (matching the senior report) instead of the class default of a bare number.
+\usepackage[titles]{tocloft}
+\renewcommand{\cftfigpresnum}{Figure\ }
+\renewcommand{\cftfigaftersnum}{:}
+\renewcommand{\cfttabpresnum}{Table\ }
+\renewcommand{\cfttabaftersnum}{:}
+\settowidth{\cftfignumwidth}{Figure 99:\ \ }
+\settowidth{\cfttabnumwidth}{Table 99:\ \ }
 \usepackage[nottoc]{tocbibind}               % add List of Figures/Tables + References to the ToC
+\usepackage[protrusion=true,expansion=false]{microtype} % reduce over/underfull boxes (XeLaTeX protrusion)
 \usepackage[hidelinks]{hyperref}
 
 % ---- Citation style (IEEE numbered, matching the senior report) ----
@@ -65,6 +75,19 @@
 \setlength{\parindent}{0pt}           % block paragraphs (no first-line indent), matches template
 \graphicspath{{figures/}}
 \renewcommand{\arraystretch}{1.2}
+
+% ---- No word-breaking across lines ----
+% Never split a word with a hyphen at a line end (e.g. never "Ph-nom Penh"): a word
+% that does not fit moves whole to the next line. hyphenpenalty blocks normal
+% hyphenation, exhyphenpenalty blocks breaking at explicit hyphens too. The high
+% tolerance + emergencystretch let justified lines stretch instead of overflowing
+% the margin now that hyphenation can no longer tighten them.
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+\tolerance=9999
+\setlength{\emergencystretch}{4em}    % absorb slack so no-hyphen lines stay inside the margin
+% Belt-and-braces for the proper nouns the policy most matters for (no break points).
+\hyphenation{Phnom Penh Cambodia Cambodian Khmer KhmerGrader}
 
 % Sequential figure/table numbering across the whole thesis (Figure 1, 2, 3 ...;
 % Table 1, 2, 3 ...), matching the senior report rather than per-chapter (5.1) numbering.

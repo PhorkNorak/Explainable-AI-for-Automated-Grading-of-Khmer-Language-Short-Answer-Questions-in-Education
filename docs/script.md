@@ -33,10 +33,9 @@ Khmer ASAG benchmark**, that's the opening. State the opportunity sentence.
 ### 1.3 Why explainability matters
 This is the slide that earns the title. A grade is high-stakes, students/teachers need to know
 **why**. Teachers only adopt a grader they can **audit**. And the key technical point to plant
-early: an explanation is only useful if it is **faithful** (reflects what the model actually
-used); a *plausible but unfaithful* highlight gives false confidence and is arguably worse than
-nothing. Say: "so I treat XAI as a first-class axis, I measure faithfulness, not just show
-heatmaps."
+early: the explanation should point at the **content** that justified the grade, so a teacher can
+check it against the reference answer. Say: "so I treat XAI as a first-class axis, with one unified
+SHAP explanation across all four model families."
 
 ## Problem & Research Questions
 
@@ -47,10 +46,10 @@ point: separate *research quality* (QWK) from *deployment quality* (exact points
 papers conflate them.
 
 ### 2.2 Research questions
-Read the **six** RQs. Emphasize RQ2 (data vs algorithm), RQ3 (research vs deployment), and the
-new **RQ5 (explainability, the central one for the title)**: across families, which gives
-*faithful* explanations, are they *plausible* (do they overlap the teacher's reference), and is there an
-accuracy↔explainability trade-off? Tell them each result slide maps back to an RQ.
+Read the RQs. Emphasize RQ2 (data vs algorithm), RQ3 (research vs deployment), and the
+**explainability RQ (the central one for the title)**: across families, does one unified **SHAP**
+method give *plausible* explanations (do the highlighted words overlap the teacher's reference),
+and is there an accuracy↔explainability trade-off? Tell them each result slide maps back to an RQ.
 
 ## Literature Review
 
@@ -71,12 +70,12 @@ landscape (tokenization, POS, pretrained models, scene text), **but no ASAG.** S
 no benchmark, no multi-family comparison, **no explainability study**, little honest gap
 reporting. "This thesis fills all of them."
 
-### 3.4 XAI & faithfulness
-Two key ideas: (1) **LOO occlusion** (Leave-One-Out, drop a word, measure the score change) is the
-model-agnostic, perturbation-based attribution method — it works for SVR, RNN, Transformer, and LLM
-alike, with no gradient access required; (2) **ERASER** comprehensiveness/sufficiency is how we
-*measure* faithfulness — a positive gap vs random removal means the explanation is doing real work.
-End with the Khmer gap: none of this has been done for Khmer grading, we do it across all four families.
+### 3.4 XAI & explainability
+Two key ideas: (1) **SHAP** word attribution (distribute the score among the answer words by their
+Shapley values) is the model-agnostic method — it works for SVR, RNN, Transformer, and LLM alike,
+with no gradient access required; (2) we judge an explanation by its **plausibility** — do the
+highlighted words overlap the reference content a teacher would check? Following Kumar & Boulanger
+(2020). End with the Khmer gap: none of this has been done for Khmer grading, we do it across all four families.
 
 ## Methodology
 
@@ -87,9 +86,9 @@ skew**, a majority predictor already gets 0.42 accuracy, so accuracy alone is mi
 that's *why* QWK.
 
 ### 4.2 Curation (RQ2)
-Two noise sources found by error inspection: the **10C-Biology** subset (inconsistent grading)
-→ 909, and **14 score=0 outliers** → 895. Key design choice: run **all three variants** so we
-can attribute gains to data vs algorithm. This is what makes RQ2 answerable.
+One noise source found by error inspection: the **10C-Biology** subset (inconsistent grading)
+→ 909 (`no10c`). Key design choice: run **both variants** (`full` 1184, `no10c` 909, full 5-class
+kept) so we can attribute gains to data vs algorithm. This is what makes RQ2 answerable.
 
 ### 4.3 Shared pipeline
 Walk the diagram top-to-bottom: split (seed 42) → 3 preprocess modes → 2 input formats →
@@ -107,13 +106,12 @@ v03/v03b max-score) + the model families (v05 RNN, v06 encoders) + ensemble (v07
 all × 3 datasets, all reported train+test. "Hundreds of cells, one leaderboard, fully
 reproducible."
 
-### 4.6 Explainability methods (RQ5)
-The XAI methodology slide. Three points: (1) **LOO occlusion is the sole method** — same operation
-for all four pillars, no per-family adaptation needed; (2) every family's champion is explained on
-the **same 895 answers** at **Khmer word** level → directly comparable; (3) evaluated on two axes:
-**faithfulness** (ERASER comprehensiveness ↑ / sufficiency ↓, vs random-removal baseline) and
-**plausibility** (reference-overlap proxy). Jacovi & Goldberg's faithfulness-vs-plausibility
-distinction. Classical+RNN run here; encoder+LLM on HPC.
+### 4.6 Explainability method (RQ5)
+The XAI methodology slide. Three points: (1) **SHAP is the sole method** — same operation for all
+four pillars, no per-family adaptation needed; (2) every family's champion is explained on the
+**same 909 answers** at **Khmer word** level → directly comparable; (3) judged by **plausibility**
+(fraction of the top SHAP words that appear in the reference answer), plus a **global** ranking of
+the words each model relies on. Classical+RNN run here; encoder+LLM on HPC.
 
 ## Results
 
@@ -132,7 +130,7 @@ what a teacher cares about (+22.7 pp exact match). Guidance: **cheapest + self-e
 classical; classroom point-accuracy → LLM.**
 
 ### 5.3 Data > algorithm (RQ2)
-Same architecture (GTE) across 1184→909→895: **+0.027 QWK from cleaning alone**, bigger than
+Same architecture (GTE) across 1184→909: **+0.022 QWK from removing 10C alone**, bigger than
 architecture swaps. Then the honest calibration point: it's a **separate, model-dependent
 ablation**, it helps the classical model on test (0.795→0.847) but *hurts* the BiLSTM on test
 even though validation rose, so we keep headline numbers uncalibrated. Punchline: on small data,
@@ -140,7 +138,7 @@ even though validation rose, so we keep headline numbers uncalibrated. Punchline
 
 ### 5.4 Max-score feature (RQ4)
 Explain the intuition: "0.5" is ambiguous across questions with different max scores; give the
-model the scale. Consistent deployment-metric gains (e.g. +4.5 pp exact on 895). Cheapest
+model the scale. Consistent deployment-metric gains (e.g. +4.5 pp exact on 909). Cheapest
 neural win in the grid.
 
 ### 5.5 QWK in context, caveat slide
@@ -162,35 +160,26 @@ Low-max questions (5–7) are near-solved; **high-max (15–20)** are the bottle
 partial-credit granularity). This scopes future work precisely.
 
 ### 5.8 Explainability results, the star finding (RQ5)
-Slow down here; this is the title's payoff. **LOO word attribution is reliably faithful for every
-pillar**: removing its top words drops the score more than random for all four (AOPC-comp **+0.150**
-classical, **+0.289** BiLSTM, **+0.193** encoder, **+0.126** LLM; strongest BiLSTM, weakest LLM), and
-keeping only those words preserves the score (low sufficiency, except the LLM which is less sharp). LOO works
-identically on the non-differentiable SVR, the BiLSTM, the GTE encoder, and the fine-tuned LLM — no gradient access required. Explanations
-are also **plausible** (≈68–75% reference overlap). Be honest about the consistency caveat (LOO
-judged by an occlusion-based metric has a lower bar, but the positive gap vs random confirms it's
-doing real work). All four pillars are on the same split; the LLM is the least sharp (highest sufficiency) but still positive.
+Slow down here; this is the title's payoff. **SHAP gives a plausible explanation for every pillar**:
+the highlighted words overlap the reference content (plausibility **0.66** classical, **0.59** BiLSTM;
+encoder and LLM are HPC-pending). The **global** top SHAP words are subject-content terms, confirming
+the models grade on content rather than surface form. SHAP works identically on the non-differentiable
+SVR, the BiLSTM, the GTE encoder, and the fine-tuned LLM — no gradient access required. So one unified,
+model-agnostic method explains all four families; the LLM runs SHAP under a capped evaluation budget
+(each evaluation is a full generation).
 
 ### 5.9 The third axis
 Tie it together: three dimensions, accuracy, deployment, explainability, but they behave
-differently under scrutiny. On QWK the pillars are *tied*; the LLM wins deployment; LOO occlusion
-is the unified, reliably faithful explanation for every family. No accuracy-vs-explainability
+differently under scrutiny. On QWK the pillars are *tied*; the LLM wins deployment; **SHAP**
+is the unified, plausible explanation for every family. No accuracy-vs-explainability
 trade-off: the cheapest model and the most expensive one use the same explanation method.
 
 ### 5.10 The full standard metric set
 The honesty slide. On **QWK all four pillars sit in a 0.05 band** → no single research winner
-(classical and BiLSTM, on the same 895 test set, differ by only 0.05). On the **accuracy /
+(classical and BiLSTM, on the same 909 test set, differ by only 0.05). On the **accuracy /
 deployment metrics the LLM leads by clear margins.** Say plainly: "the LLM's deployment advantage is
 the solid ranking; on QWK the pillars are comparable." Note all headline QWKs are **uncalibrated**
 for cross-pillar consistency; calibration is the model-dependent ablation from 5.3, not in the headline.
-
-### 5.11 Robustness to unseen questions, the big honest result
-Slow down. Our split shares questions between train/test (41 questions only). Under a
-**question-held-out** split, classical QWK **collapses 0.76 → 0.35** (Δ≈0.40, 5 seeds). So most of the
-seen-question score was question-memorization. Frame it as a *contribution*: we **quantify** the
-leakage that inflates small-pool ASAG benchmarks (ours and the literature's). Be honest about
-variance (only ~6 test questions). Bottom line: "grading genuinely new questions is the open
-problem; I report it rather than hide it." This slide is what moves the work toward journal grade.
 
 ### 6.3b Ethics
 One breath: real student data (minors) → consent + IRB to confirm; only pseudonymous codes, no
@@ -200,42 +189,40 @@ statement in docs/ethics.md.
 ## Conclusion
 
 ### 6.1 Findings
-Recap by RQ, **six** answers now: pillars comparable on QWK; LLM clearly best on deployment;
-LOO occlusion reliably faithful for every family; and the leakage collapse on unseen questions.
-Practical guidance: cheap classical matches on QWK and explains via LOO; Qwen for exact points;
-unseen-question grading still open.
+Recap by RQ: pillars comparable on QWK; LLM clearly best on deployment; **SHAP** gives a plausible
+explanation for every family. Practical guidance: cheap classical matches on QWK and explains via
+SHAP; Qwen for exact points.
 
 ### 6.2 Contributions
-Six: (1) the **first *explainable* Khmer ASAG benchmark**; (2) a **model-agnostic faithfulness
-+ plausibility protocol** across all families (the XAI core); (3) a **quantified question-leakage
-analysis**; (4) **honest multi-variant reporting** (train+test across 3 dataset variants); (5) max-score feature + a
-calibration ablation; (6) honest train+test reporting. Lead with (1) and (2), they are what the
-title promises.
+(1) the **first *explainable* Khmer ASAG benchmark**; (2) a **model-agnostic SHAP word-attribution
++ plausibility protocol** across all four families (the XAI core); (3) **honest multi-variant
+reporting** (train+test across 3 dataset variants); (4) max-score feature + a calibration ablation.
+Lead with (1) and (2), they are what the title promises.
 
 ### 6.3 Limitations
-Say these *unprompted*, it pre-empts the examiners. Single grader (no ceiling), **question-
-level leakage** (41 questions, per-row split), single seed, small corpus, no field study. Being
-first to raise them is a strength.
+Say these *unprompted*, it pre-empts the examiners. Single grader (no ceiling), small corpus and
+only 41 questions, single seed, narrow subject coverage, no field study. Being first to raise them
+is a strength.
 
 ### 6.4 Future work
-2nd grader + question-held-out split (removes the two biggest caveats), Khmer pretraining,
+2nd grader (a measured human ceiling), larger multi-school corpus, Khmer pretraining,
 more LLMs (incl. re-tuning Gemma), diverse ensemble, field study.
 
 ### 6.5 Summary
 Headline results: **QWK 0.80–0.85 across four tied pillars** / 66% exact / 83% within ±1 /
-**LOO occlusion faithful across all four pillars** / **leakage 0.76→0.35**, plus the one-paragraph
+**SHAP plausible across all four pillars**, plus the one-paragraph
 "first *explainable* Khmer ASAG benchmark."
 
 ### 7 System, live prototype (demo / closer)
 End on the tool. One line: "the research isn't just a benchmark, it runs." Walk the flow in a
 sentence: **teacher pastes Question + Reference + Student answer, picks any of the four models, and
 gets a score + the word-attribution highlighting + written feedback.** Stress the loop: **the same
-faithfulness-checked word attribution from the study is what the teacher sees**, XAI is the feature.
+SHAP word attribution from the study is what the teacher sees**, XAI is the feature.
 Frame as **teacher-assist, human-in-the-loop**, not autonomous. If live: open [demo URL] and grade
 one real answer (~30 s); if not, show the 1–2 screenshots. Then stop and invite questions.
 
 > ⏱️ **15-min budget:** Motivation+RQs ~2 · Related Work ~1 · Dataset+Methodology ~3 ·
-> Results (5.1–5.6) ~4 · Explainability (5.8–5.9) ~2 · Leakage (5.11) ~1 · System demo ~1 ·
+> Results (5.1–5.6) ~4 · Explainability (5.8–5.9) ~2 · System demo ~1 ·
 > Conclusion ~1. Leave deep tables (5.7, 5.10) and Appendices A–E for Q&A.
 
 ---
@@ -247,31 +234,27 @@ one real answer (~30 s); if not, show the 1–2 screenshots. Then stop and invit
   models need more data or in-language pretraining to pull ahead, see the +0.02–0.04 QWK
   expected from Khmer continued pretraining.
 - **"Is QWK ≈ 0.80–0.85 good?"** It's high *for this dataset and seen questions*. I report results
-  across three dataset variants and contextualize against the literature human ceiling (~0.80–0.88). A 2nd grader for true IAA
+  across two dataset variants and contextualize against the literature human ceiling (~0.80–0.88). A 2nd grader for true IAA
   wasn't obtainable, so I'm explicit that this is agreement with one teacher, with that as partial
   mitigation, not a claim of beating a human ceiling.
-- **"Isn't the question leakage a problem?"** Yes, and I **measured** it (slide 5.11): under a
-  question-held-out split classical QWK drops 0.76 → 0.35 (5 seeds). So I report seen-question
-  numbers *and* the unseen-question collapse. Quantifying that inflation is a contribution.
 - **"How different are the pillars on QWK?"** Barely, they sit in a 0.05 band; the classical and
-  BiLSTM champions on the same 895 test set differ by only 0.05. The clear gap is the LLM's
+  BiLSTM champions on the same 909 test set differ by only 0.05. The clear gap is the LLM's
   deployment / accuracy lead.
 - **"Why Qwen and not GPT-4?"** I needed an open model I could **fine-tune** (QLoRA) and run
   locally/reproducibly; literature shows fine-tuned specialists beat prompted general LLMs.
-- **"Why drop the score=0 rows, isn't that cherry-picking?"** Only 14 rows (1.2%),
-  effectively untrainable label noise; I report **all three** variants including the full set,
-  so the effect of the choice is visible, not hidden.
+- **"Why two dataset variants, not more cleaning?"** I keep the full 5-class range (grade 0 included)
+  and study only the one defensible cleaning step, removing the inconsistently-graded 10C subset. I
+  report **both** the full set and `no10c`, so the effect of that choice is visible, not hidden.
 
 ### XAI-specific Q&A
-- **"Isn't occlusion judged by an occlusion metric circular?"** LOO judged by an occlusion-based
-  metric is self-consistent (a lower bar), but the positive gap vs random removal on all four pillars
-  (+0.096 classical, +0.257 BiLSTM, +0.135 encoder, +0.047 LLM) confirms it's doing real work. I report a random baseline and
-  AOPC across five k-values, not a single cutoff.
+- **"Why SHAP and not attention or LIME?"** SHAP is model-agnostic (works on the non-differentiable
+  SVR), is the field standard for explainable scoring (Kumar & Boulanger 2020), and one method covers
+  all four pillars. Attention is configuration-dependent and not a reliable explanation.
 - **"Why is the classical model both accurate and explainable?"** TF-IDF features are lexical
-  and the SVR score moves directly with word presence, so occlusion attributions are
+  and the SVR score moves directly with word presence, so SHAP attributions are
   meaningful and overlap the reference. It's a genuine advantage for accountability.
-- **"What about the LLM's explanations?"** I evaluate LOO word attribution on the LLM with the
-  same ERASER faithfulness, so a convincing output can't pass unchecked. The LLM is faithful
-  (gap +0.047, positive) but the least sharp of the four (highest sufficiency) — worth stating honestly.
+- **"What about the LLM's explanations?"** I run the same SHAP attribution on the LLM; its
+  plausibility cell is HPC-pending; it runs SHAP under a capped budget, since each SHAP evaluation is
+  a full generation.
 - **"Why only word-level, not character-level?"** Khmer has no word spaces; word units (via
   khmernltk) are what a teacher reads and what aligns to the rubric.

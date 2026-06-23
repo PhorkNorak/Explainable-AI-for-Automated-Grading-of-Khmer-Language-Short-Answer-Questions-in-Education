@@ -38,8 +38,8 @@ Khmer** (subscripts/vowels are misplaced). The correct, browser-shaped version i
 `figures/heatmap_examples.html` (and `results_xai/.../heatmaps/*_gallery.html`). **Before final
 build:** open `figures/heatmap_examples.html` in a browser and **export/screenshot it to
 `figures/heatmap_classical.png`** (overwriting the placeholder). The figure caption already notes
-it is browser-shaped. All numeric figures (`fig_cis`, `fig_leakage`, `fig_faithfulness`) contain
-no Khmer and are correct as generated.
+it is browser-shaped. All numeric figures (e.g. `fig_qwk_pillars`, `fig_deployment`,
+`fig_cleaning_ablation`) contain no Khmer and are correct as generated.
 
 ## Note
 This draft reports only computed numbers. Items that depend on GPU runs not done locally are

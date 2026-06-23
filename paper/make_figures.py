@@ -7,11 +7,10 @@ Groups:
   A dataset        data/dataset.csv                          (label/subject/max-score/length)
   B accuracy       results_stats/champion_metrics.csv        (QWK + multi-metric)
   C deployment     results/champions/*/predictions_test.csv  (exact/within-1, confusion, scatter)
-  D explainability results_xai/no10c_no0/faithfulness_leaderboard.csv  (LOO occlusion only)
-  E robustness     split_compare / cleaning_ablation / hparam_tuning / leaderboards
+  D explainability SHAP plausibility is a table, not a figure; heatmaps screenshotted separately
+  E ablations      cleaning_ablation / hparam_tuning / calibration
 
-Every value traces to a result file; nothing is hardcoded. Encoder/LLM faithfulness
-rows are HPC-pending, so Group D plots whatever occlusion rows exist and skips the rest.
+Every value traces to a result file; nothing is hardcoded.
 
 Run:  python paper/make_figures.py
 """
@@ -40,8 +39,8 @@ PILLAR_COLORS = {"classical": "#4c72b0", "rnn": "#dd8452", "encoder": "#55a868",
 
 # The four pillar champions and their test-set prediction files.
 CHAMP_PREDS = {
-    "classical": "results/champions/classical_segment_ra_tfidf_svr_cal_895/predictions_test.csv",
-    "rnn":       "results/champions/rnn_clean_ra_bilstm_895/predictions_test.csv",
+    "classical": "results/champions/classical_segment_ra_tfidf_svr_909/predictions_test.csv",
+    "rnn":       "results/champions/rnn_clean_ra_bilstm_909/predictions_test.csv",
     "encoder":   "results/champions/encoder_clean_qar_dual_gte_maxfeat_1184/predictions_test.csv",
     "llm":       "results/champions/llm_clean_qar_qwen35_4b_909/predictions_test.csv",
 }
@@ -50,12 +49,7 @@ CHAMP_PREDS = {
 LLM_KEYS = [("qwen35_4b", "Qwen-\nKhmerGrader-4B"),
             ("gemma4_e4b", "Gemma-\nKhmerGrader-4B"),
             ("sealion_v45_e2b", "SEA-LION-\nKhmerGrader-E2B")]
-LLM_DATASETS = ["no10c_no0", "no10c", "full"]   # preference order for a fair pairing
-
-# Faithfulness leaderboard family keys (note: it uses "bilstm", not "rnn").
-FAITH_ORDER = ["classical", "bilstm", "encoder", "llm"]
-FAITH_LABELS = {"classical": "Classical", "bilstm": "RNN\n(BiLSTM)",
-                "encoder": "Transformer", "llm": "LLM"}
+LLM_DATASETS = ["no10c", "full"]   # preference order for a fair pairing
 
 GREEN = "#2f855a"
 RED = "#c53030"
@@ -181,6 +175,17 @@ def _champion_metrics():
     return df.reindex(PILLAR_ORDER)
 
 
+def _zeroshot_qwk():
+    """QWK of the Qwen zero-shot base from champion_metrics.csv (None if absent),
+    used to draw the fine-tuning-lift reference line on fig_qwk_pillars."""
+    try:
+        df = _rd("results_stats/champion_metrics.csv")
+        row = df[df["family"] == "llm_zeroshot"]
+        return float(row["qwk"].iloc[0]) if len(row) else None
+    except Exception:
+        return None
+
+
 def fig_qwk_pillars():
     df = _champion_metrics()
     vals = df["qwk"].values.astype(float)
@@ -193,6 +198,12 @@ def fig_qwk_pillars():
     ax.axhline(lo, color="gray", ls=":", lw=0.9)
     ax.axhline(hi, color="gray", ls=":", lw=0.9)
     ax.text(-0.4, 0.93, f"QWK band {hi - lo:.3f}", ha="left", fontsize=9, color="gray")
+    # Qwen zero-shot reference line: the fine-tuning lift, visible in the headline figure.
+    zs = _zeroshot_qwk()
+    if zs is not None:
+        ax.axhline(zs, color=RED, ls="--", lw=1.1)
+        ax.text(len(vals) - 0.55, zs + 0.012, f"Qwen zero-shot {zs:.2f}",
+                ha="right", fontsize=8, color=RED)
     ax.set_xticks(range(len(vals)))
     ax.set_xticklabels([PILLAR_LABELS[p] for p in PILLAR_ORDER])
     ax.set_ylabel("Test QWK")
@@ -208,15 +219,15 @@ def _train_qwk_acc(fam):
     leaderboard row (segment_ra) for classical, since its champion dir is calibrated."""
     import json
     mj = {
-        "rnn":     "results/champions/rnn_clean_ra_bilstm_895/metrics.json",
+        "rnn":     "results/champions/rnn_clean_ra_bilstm_909/metrics.json",
         "encoder": "results/champions/encoder_clean_qar_dual_gte_maxfeat_1184/metrics.json",
         "llm":     "results/champions/llm_clean_qar_qwen35_4b_909/metrics.json",
     }
     if fam in mj:
         d = json.load(open(os.path.join(_ROOT, mj[fam]), encoding="utf-8"))
         return float(d["train"]["qwk"]), float(d["train"]["accuracy"])
-    # classical: uncalibrated champion = segment_ra in v03_maxfeat (test_qwk 0.7946 = 0.795)
-    df = _rd("results/leaderboards/no10c_no0_v03_maxfeat.csv")
+    # classical: uncalibrated champion = segment_ra in v03_maxfeat
+    df = _rd("results/leaderboards/no10c_v03_maxfeat.csv")
     row = df[df["run_id"] == "segment_ra_tfidf_svr_maxfeat"].iloc[0]
     return float(row["train_qwk"]), float(row["train_accuracy"])
 
@@ -250,6 +261,32 @@ def fig_metrics_grouped():
     fig.suptitle("Train vs test by pillar (generalization gap)", fontsize=11)
     fig.tight_layout(rect=[0, 0, 1, 0.95])
     _save(fig, "fig_metrics_grouped.png")
+
+
+def fig_prf_pillars():
+    """Macro precision / recall / F1 per pillar (champion_metrics.csv). These three
+    are otherwise table-only; the figure shows the LLM's class-balance advantage."""
+    df = _champion_metrics()
+    cols = [("precision_macro", "Precision"), ("recall_macro", "Recall"),
+            ("f1_macro", "macro-F1")]
+    x = np.arange(len(PILLAR_ORDER))
+    w = 0.26
+    colors = [SERIES_A, SERIES_B, "#55a868"]
+    fig, ax = plt.subplots(figsize=(6.4, 3.8))
+    for j, (col, lab) in enumerate(cols):
+        vals = df[col].values.astype(float)
+        bars = ax.bar(x + (j - 1) * w, vals, w, label=lab, color=colors[j])
+        for b, v in zip(bars, vals):
+            ax.text(b.get_x() + b.get_width() / 2, v + 0.012, f"{v:.2f}",
+                    ha="center", fontsize=7)
+    ax.set_xticks(x)
+    ax.set_xticklabels([PILLAR_LABELS[p] for p in PILLAR_ORDER])
+    ax.set_ylabel("Macro-averaged score")
+    ax.set_ylim(0, 1.0)
+    ax.set_title("Macro precision / recall / F1 by pillar (LLM leads on rare grades)")
+    ax.legend(fontsize=8, ncol=3, loc="upper left")
+    ax.grid(alpha=0.3, axis="y")
+    _save(fig, "fig_prf_pillars.png")
 
 
 # ============================================================== Group C: deployment
@@ -406,97 +443,13 @@ def fig_llm_finetune_gain():
     _save(fig, "fig_llm_finetune_gain.png")
 
 
-# ============================================================== Group D: explainability (LOO only)
-def _occlusion_rows():
-    df = _rd("results_xai/no10c_no0/faithfulness_leaderboard.csv")
-    df = df[df["explainer"] == "occlusion"].copy()
-    df["__ord"] = df["family"].apply(lambda f: FAITH_ORDER.index(f) if f in FAITH_ORDER else 99)
-    return df.sort_values("__ord")
+# ============================================================== Group D: explainability
+# SHAP plausibility is reported as a table (thesis/paper tab:xai), not a generated figure, and the
+# heatmaps are browser-screenshotted separately. The faithfulness (ERASER) and question-leakage
+# figures were removed in the SHAP-only / no-leakage pivot.
 
 
-def fig_faithfulness():
-    df = _occlusion_rows()
-    if df.empty:
-        print("  [skip] fig_faithfulness: no occlusion rows yet")
-        return
-    fams = df["family"].tolist()
-    vals = df["aopc_comprehensiveness"].astype(float).tolist()
-    rand = float(df["comprehensiveness_random"].iloc[0])
-    pending = [f for f in FAITH_ORDER if f not in fams]
-    if pending:
-        print("  [skip] faithfulness families pending (HPC):", ", ".join(pending))
-    fig, ax = plt.subplots(figsize=(5.4, 3.6))
-    ax.bar(range(len(vals)), vals, color=GREEN, width=0.6)
-    ax.axhline(rand, color="gray", ls="--", label=f"random baseline ({rand:.3f})")
-    ax.axhline(0, color="black", lw=0.8)
-    ax.set_xticks(range(len(fams)))
-    ax.set_xticklabels([FAITH_LABELS.get(f, f) for f in fams], fontsize=9)
-    ax.set_ylabel("AOPC comprehensiveness (higher = faithful)")
-    ax.set_title("LOO word attribution is faithful across families")
-    ax.legend(fontsize=8)
-    ax.grid(alpha=0.3, axis="y")
-    _save(fig, "fig_faithfulness.png")
-
-
-def fig_faithfulness_gap():
-    df = _occlusion_rows()
-    if df.empty:
-        print("  [skip] fig_faithfulness_gap: no occlusion rows yet")
-        return
-    fams = df["family"].tolist()
-    gaps = df["faithfulness_gap"].astype(float).tolist()
-    fig, ax = plt.subplots(figsize=(5.4, 3.6))
-    bars = ax.bar(range(len(gaps)), gaps, color=GREEN, width=0.6)
-    for b, v in zip(bars, gaps):
-        ax.text(b.get_x() + b.get_width() / 2, v + 0.005, f"{v:.3f}", ha="center", fontsize=9)
-    ax.axhline(0, color="black", lw=0.8)
-    ax.set_xticks(range(len(fams)))
-    ax.set_xticklabels([FAITH_LABELS.get(f, f) for f in fams], fontsize=9)
-    ax.set_ylabel("Faithfulness gap (LOO minus random)")
-    ax.set_title("LOO beats random word removal (gap > 0 = faithful)")
-    ax.grid(alpha=0.3, axis="y")
-    _save(fig, "fig_faithfulness_gap.png")
-
-
-def fig_faith_vs_plaus():
-    df = _occlusion_rows()
-    if df.empty:
-        print("  [skip] fig_faith_vs_plaus: no occlusion rows yet")
-        return
-    fig, ax = plt.subplots(figsize=(5.4, 3.8))
-    for _, r in df.iterrows():
-        fam = r["family"]
-        x = float(r["aopc_comprehensiveness"]); y = float(r["plausibility"])
-        ax.scatter(x, y, s=80, color=GREEN, zorder=3)
-        ax.annotate(FAITH_LABELS.get(fam, fam).replace("\n", " "),
-                    (x, y), textcoords="offset points", xytext=(8, 4), fontsize=9)
-    ax.set_xlabel("AOPC comprehensiveness (faithfulness)")
-    ax.set_ylabel("Plausibility (reference overlap)")
-    ax.set_title("Faithful and plausible (upper right is best)")
-    ax.grid(alpha=0.3)
-    _save(fig, "fig_faith_vs_plaus.png")
-
-
-# ============================================================== Group E: robustness
-def fig_leakage():
-    df = _rd("results_stats/split_compare.csv").set_index("split")
-    cats = [("random", "Random split\n(seen questions)"),
-            ("question", "Question-held-out\n(unseen questions)")]
-    means = [float(df.loc[k, "mean_qwk"]) for k, _ in cats]
-    stds = [float(df.loc[k, "std_qwk"]) for k, _ in cats]
-    fig, ax = plt.subplots(figsize=(4.6, 3.6))
-    bars = ax.bar([0, 1], means, yerr=stds, capsize=6, color=[GREEN, RED], width=0.55)
-    ax.set_xticks([0, 1]); ax.set_xticklabels([c[1] for c in cats], fontsize=9)
-    ax.set_ylabel("Classical QWK (mean +/- std, 5 seeds)")
-    ax.set_ylim(0, 1.0); ax.grid(alpha=0.3, axis="y")
-    ax.set_title("Question leakage: QWK collapses on unseen questions")
-    for b, m in zip(bars, means):
-        ax.text(b.get_x() + b.get_width() / 2, m + 0.02, f"{m:.2f}", ha="center", fontsize=10)
-    ax.annotate(f"-{means[0] - means[1]:.2f} QWK", xy=(0.5, max(means) - 0.1),
-                ha="center", fontsize=11, color=RED, fontweight="bold")
-    _save(fig, "fig_leakage.png")
-
-
+# ============================================================== Group E: ablations
 def fig_cleaning_ablation():
     df = _rd("results_stats/cleaning_ablation.csv")
     x = np.arange(len(df))
@@ -535,11 +488,11 @@ def fig_hparam_tuning():
 
 def fig_calibration():
     """Per-pillar uncalibrated vs calibrated test QWK, joined on champion run_id
-    between each base leaderboard and its *_calibrated counterpart (no10c_no0)."""
+    between each base leaderboard and its *_calibrated counterpart (no10c)."""
     pairs = {
-        "classical": ("no10c_no0_v01_tfidf.csv", "no10c_no0_v02_calibrated.csv"),
-        "rnn":       ("no10c_no0_v05_bilstm.csv", "no10c_no0_v05_bilstm_calibrated.csv"),
-        "encoder":   ("no10c_no0_v06_transformer.csv", "no10c_no0_v06_transformer_calibrated.csv"),
+        "classical": ("no10c_v01_tfidf.csv", "no10c_v02_calibrated.csv"),
+        "rnn":       ("no10c_v05_bilstm.csv", "no10c_v05_bilstm_calibrated.csv"),
+        "encoder":   ("no10c_v06_transformer.csv", "no10c_v06_transformer_calibrated.csv"),
     }
     fams, uncal, cal = [], [], []
     for fam, (base_f, cal_f) in pairs.items():
@@ -581,8 +534,8 @@ def fig_calibration():
 # ============================================================== index + sync
 def write_index():
     galleries = [
-        ("Classical LOO heatmaps", "../../results_xai/no10c_no0/heatmaps/classical/classical_gallery.html"),
-        ("BiLSTM LOO heatmaps", "../../results_xai/no10c_no0/heatmaps/bilstm/bilstm_gallery.html"),
+        ("Classical SHAP heatmaps", "../../results_xai/no10c/heatmaps/classical/classical_gallery.html"),
+        ("BiLSTM SHAP heatmaps", "../../results_xai/no10c/heatmaps/bilstm/bilstm_gallery.html"),
     ]
     parts = ["<!doctype html><meta charset='utf-8'>",
              "<title>Khmer ASAG figure suite</title>",
@@ -595,13 +548,29 @@ def write_index():
              f"<p>{len(_written)} figures generated from result files.</p>"]
     for name in sorted(_written):
         parts.append(f"<figure><img src='{name}'><figcaption>{name}</figcaption></figure>")
-    parts.append("<h1>Khmer LOO heatmap galleries</h1><ul>")
+    parts.append("<h1>Khmer SHAP heatmap galleries</h1><ul>")
     for label, href in galleries:
         parts.append(f"<li><a href='{href}'>{label}</a></li>")
     parts.append("</ul>")
     with open(os.path.join(FIG, "figures_index.html"), "w", encoding="utf-8") as f:
         f.write("\n".join(parts))
     print("  wrote figures_index.html")
+
+
+def copy_curves():
+    """Copy each iteratively-trained champion's train_history.png -> <fam>_curve.png
+    (BiLSTM, encoder, LLM). The classical pillar trains in a single fit and has no curve."""
+    srcs = {
+        "bilstm_curve.png":  "results/champions/rnn_clean_ra_bilstm_909/train_history.png",
+        "encoder_curve.png": "results/champions/encoder_clean_qar_dual_gte_maxfeat_1184/train_history.png",
+        "llm_curve.png":     "results/champions/llm_clean_qar_qwen35_4b_909/train_history.png",
+    }
+    for name, src in srcs.items():
+        p = os.path.join(_ROOT, src)
+        if os.path.exists(p):
+            shutil.copy(p, os.path.join(FIG, name)); _written.append(name)
+        else:
+            print(f"  [skip] {name}: {src} not found yet")
 
 
 def sync_to_thesis():
@@ -614,11 +583,11 @@ def sync_to_thesis():
 FIGURES = [
     fig_label_dist, fig_subject_dist, fig_maxscore_dist, fig_answer_length,
     write_dataset_descriptive,
-    fig_qwk_pillars, fig_metrics_grouped,
+    fig_qwk_pillars, fig_metrics_grouped, fig_prf_pillars,
     fig_deployment, fig_confusion_all, fig_pred_vs_true, fig_score_dist,
     fig_llm_finetune_gain,
-    fig_faithfulness, fig_faithfulness_gap, fig_faith_vs_plaus,
-    fig_leakage, fig_cleaning_ablation, fig_hparam_tuning, fig_calibration,
+    fig_cleaning_ablation, fig_hparam_tuning, fig_calibration,
+    copy_curves,
 ]
 
 

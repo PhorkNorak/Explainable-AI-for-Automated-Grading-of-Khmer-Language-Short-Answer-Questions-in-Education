@@ -14,7 +14,7 @@ Approach:
 
 CLI:
   python experiments/exp08_llm_finetune.py --models qwen35_4b
-  python experiments/exp08_llm_finetune.py --models both --datasets full --epochs 7
+  python experiments/exp08_llm_finetune.py --models both --datasets full --epochs 10
   python experiments/exp08_llm_finetune.py --smoke   # 1 cell, 1 epoch, 50 train samples
 """
 
@@ -62,7 +62,7 @@ import torch
 
 
 LLM_BACKBONES = {
-    "gemma4_e4b":       "google/gemma-4-E4B",
+    "gemma4_e4b":       "google/gemma-4-E4B-it",   # instruction-tuned (uniform with the others)
     "qwen35_4b":        "Qwen/Qwen3.5-4B",
     "sealion_v45_e2b":  "aisingapore/Gemma-SEA-LION-v4.5-E2B-IT",
 }
@@ -76,13 +76,26 @@ KHMERGRADER_NAMES = {
 }
 
 
+# Input format for the prompt, set per run from --input. "qar" includes the
+# question; "ra" omits it (answer + reference only). Single-threaded, so a module
+# global is safe and avoids threading the flag through every prompt helper.
+_INPUT_FMT = "qar"
+
+
+def _set_input_fmt(inp: str):
+    global _INPUT_FMT
+    _INPUT_FMT = inp
+
+
 def format_prompt(row, include_score: bool) -> str:
     """Construct the SFT prompt (completion-only loss masks everything before
-    the integer score)."""
+    the integer score). Honours _INPUT_FMT: 'qar' includes the question line,
+    'ra' omits it (answer + reference only)."""
+    q_line = "" if _INPUT_FMT == "ra" else f"Question: {row['Question_proc']}\n\n"
     prompt = (
         f"Below is a Khmer short-answer grading task. Score the student's answer "
         f"on a scale from 0 to {int(row['Max Score'])}.\n\n"
-        f"Question: {row['Question_proc']}\n\n"
+        f"{q_line}"
         f"Reference answer: {row['Reference_proc']}\n\n"
         f"Student answer: {row['Answer_proc']}\n\n"
         f"The score (integer from 0 to {int(row['Max Score'])}):"
@@ -95,10 +108,10 @@ def format_prompt(row, include_score: bool) -> str:
 def _chat_renderer(tokenizer):
     """Return the object that can render a chat template, or None.
 
-    Instruction-tuned reasoning models (Gemma 4 E4B/E2B, SEA-LION v4.5, Qwen 3.5)
+    The instruction-tuned bases (Gemma 4 E4B-it, SEA-LION v4.5-E2B-IT, Qwen 3.5)
     carry a chat_template; rendering the grading task as a proper user turn (with
-    thinking disabled) is what makes them emit a bare integer instead of a chain
-    of reasoning tokens. Falls back to None for a plain base LM.
+    thinking disabled, which only matters for the reasoning-capable Qwen) is what
+    makes them emit a bare integer. Falls back to None for a plain base LM.
     """
     text_tok = get_text_tokenizer(tokenizer)
     for cand in (text_tok, tokenizer):
@@ -551,7 +564,7 @@ def main():
     ap.add_argument("--models", nargs="+",
                     choices=list(LLM_BACKBONES.keys()) + ["both"],
                     default=["both"])
-    ap.add_argument("--epochs", type=int, default=7)
+    ap.add_argument("--epochs", type=int, default=10)
     ap.add_argument("--batch_size", type=int, default=4)
     ap.add_argument("--lr", type=float, default=2e-4)
     ap.add_argument("--max_seq_length", type=int, default=1024)
@@ -559,16 +572,20 @@ def main():
                     help="1 cell, 1 epoch, 50 train samples")
     ap.add_argument("--zeroshot", action="store_true",
                     help="evaluate the UNTUNED base model (no training) for the baseline")
+    ap.add_argument("--input", choices=["qar", "ra"], default="qar",
+                    help="prompt input format: qar (question+answer+reference) or ra "
+                         "(answer+reference, no question). Run once per format to sweep both.")
     add_datasets_flag(ap)
     add_resume_flag(ap)
     args = ap.parse_args()
 
+    _set_input_fmt(args.input)
     models_to_run = (list(LLM_BACKBONES.keys()) if "both" in args.models
                      else args.models)
 
     if args.smoke:
         args.epochs = 1
-        args.datasets = args.datasets or ["no10c_no0"]
+        args.datasets = args.datasets or ["no10c"]
         models_to_run = models_to_run[:1]
         print(f"[smoke] datasets={args.datasets} models={models_to_run} epochs=1")
 
@@ -596,7 +613,7 @@ def main():
             print(f"  rows={len(df)} train={len(train_df)} "
                   f"val={len(val_df)} test={len(test_df)}")
 
-            prep, inp = "clean", "qar"
+            prep, inp = "clean", args.input
             run_id = (f"zeroshot_{inp}_{model_key}" if zs
                       else f"{prep}_{inp}_{model_key}")
 

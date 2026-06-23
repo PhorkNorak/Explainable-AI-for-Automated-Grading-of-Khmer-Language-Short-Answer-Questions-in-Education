@@ -1,10 +1,9 @@
 """exp09 — Explainable-AI study across the four model families.
 
 For each family it (1) fits/loads that family's champion model on a common dataset,
-(2) builds a uniform ``predict_fn(answer, reference) -> score``, (3) produces LOO
-(Leave-One-Out occlusion) word attribution as the single unified explanation, and
-(4) scores the explanation with model-agnostic faithfulness (ERASER comprehensiveness
-& sufficiency, vs a random-removal baseline) and a reference-overlap plausibility proxy.
+(2) builds a uniform ``predict_fn(answer, reference) -> score``, (3) produces SHAP
+word attribution as the single unified explanation, and (4) scores the explanation by
+its plausibility (overlap of the top SHAP words with the reference answer).
 
 All families are anchored on the SAME dataset/split so their explanations are
 directly comparable (RQ5: the accuracy–explainability trade-off).
@@ -13,7 +12,8 @@ Local (CPU, no extra deps):   --families classical bilstm
 HPC   (GPU):                  --families encoder llm     (needs transformers+GPU / unsloth+peft)
 
 Outputs (under results_xai/<dataset>/):
-    faithfulness_leaderboard.csv   one row per family (comp, suff, gap, plausibility, qwk, acc)
+    faithfulness_leaderboard.csv   one row per family (plausibility, qwk, acc)
+    shap_global/<family>.csv       Kumar-style global most-important words
     heatmaps/<family>/*.png        word-importance pictures for sampled answers
     rationales/<family>/*.json     LLM rationale cards (llm family only)
 """
@@ -25,6 +25,7 @@ import csv
 import os
 import sys
 import time
+from collections import defaultdict
 
 import numpy as np
 
@@ -40,7 +41,6 @@ import data                   # noqa: E402
 import preprocess             # noqa: E402
 from evaluate import metrics  # noqa: E402
 from xai.explainers import tokenize_answer, occlusion_importance, shap_importance  # noqa: E402
-from xai.faithfulness import faithfulness_report  # noqa: E402
 from xai.plausibility import plausibility        # noqa: E402
 from xai.render import render_word_heatmap         # noqa: E402
 from xai.render_html import render_word_heatmap_html, render_gallery_html  # noqa: E402
@@ -49,9 +49,8 @@ from xai.render_html import render_word_heatmap_html, render_gallery_html  # noq
 DATASET_CSV = {
     "full": "dataset.csv",
     "no10c": "dataset_no_10c_biology.csv",
-    "no10c_no0": "dataset_no_10c_biology.csv",
 }
-DATASET_DROP0 = {"full": False, "no10c": False, "no10c_no0": True}
+DATASET_DROP0 = {"full": False, "no10c": False}
 
 # Champion config per family (the best cell of each pillar).
 CHAMPIONS = {
@@ -62,12 +61,12 @@ CHAMPIONS = {
     "llm":       {"preprocess": "clean",   "input": "qar", "model": "qwen35_4b"},
 }
 
+# SHAP-only leaderboard: plausibility is the single quantitative anchor (ERASER
+# faithfulness removed). Global most-important words are written separately to
+# results_xai/<dataset>/shap_global/<family>.csv (Kumar-style global importance).
 LEADERBOARD_HEADER = [
     "family", "champion", "dataset", "test_qwk", "test_accuracy",
-    "explainer", "n_explained", "fraction",
-    "comprehensiveness", "sufficiency", "comprehensiveness_random",
-    "faithfulness_gap", "aopc_comprehensiveness", "aopc_sufficiency",
-    "plausibility", "seconds",
+    "explainer", "n_explained", "fraction", "plausibility", "seconds",
 ]
 
 
@@ -109,6 +108,22 @@ def _qwk_acc(predict_fn, test_p, input_fmt):
                 max_scores=test_p["Max Score"].values,
                 true_raw=test_p["Student Score"].values)
     return m["qwk"], m["accuracy"]
+
+
+def _write_global_topwords(word_abs_imp, out_root, family, top=30):
+    """Kumar-style global importance: rank answer words by summed |SHAP| across the
+    explained answers and write results_xai/<dataset>/shap_global/<family>.csv."""
+    out_dir = os.path.join(out_root, "shap_global")
+    os.makedirs(out_dir, exist_ok=True)
+    ranked = sorted(word_abs_imp.items(), key=lambda kv: kv[1], reverse=True)[:top]
+    path = os.path.join(out_dir, f"{family}.csv")
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["rank", "word", "sum_abs_shap"])
+        for r, (word, val) in enumerate(ranked, 1):
+            w.writerow([r, word, round(float(val), 5)])
+    print(f"[exp09] {family}: wrote global top-words -> {path}")
+    return path
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -403,11 +418,9 @@ def run_llm_family(family, dataset, test_df, cfg, sample_n, fraction, out_root,
     so unlike the regressor pillars its score depends on max_score. We therefore
     occlude only the STUDENT ANSWER, hold the question/reference/max fixed, and
     build a per-instance predict_fn (capturing that row's question + max_score)
-    that returns a normalized score in [0, 1]. Aggregation matches faithfulness.py
-    (ERASER comprehensiveness/sufficiency + AOPC vs a random-removal baseline).
+    that returns a normalized score in [0, 1]. SHAP attribution + plausibility only
+    (ERASER faithfulness removed); the LLM answer is occluded, Q/R/Max held fixed.
     """
-    from xai.faithfulness import (comprehensiveness, sufficiency,
-                                  comprehensiveness_random, DEFAULT_KGRID)
     t0 = time.time()
     model_key = cfg.get("model", "qwen35_4b")
     mode = cfg["preprocess"]
@@ -440,12 +453,13 @@ def run_llm_family(family, dataset, test_df, cfg, sample_n, fraction, out_root,
     idxs = _sample_test(test_p, sample_n)
     heat_dir = os.path.join(out_root, "heatmaps", family)
 
-    def _faith_for(imp_name):
-        """One faithfulness row for the LLM under explainer ``imp_name``
-        (``occlusion`` or ``shap``). Heatmaps are rendered for occlusion only."""
-        comp, suff, comp_rand, aopc_c, aopc_s, plaus = [], [], [], [], [], []
-        gallery_items, rendered = [], 0
-        do_heat = (imp_name == "occlusion")
+    def _explain_for(imp_name):
+        """One SHAP-only row for the LLM under explainer ``imp_name`` (``shap`` is the
+        headline; ``occlusion`` kept only as a debug option). Renders SHAP heatmaps +
+        global top-words; plausibility is the single quantitative metric (ERASER removed)."""
+        plaus = []
+        gabs = defaultdict(float)
+        gallery_items, rendered, n_ok = [], 0, 0
         print(f"[exp09] llm [{imp_name}]: explaining {len(idxs)} answers ...")
         for idx in idxs:
             row = test_p.loc[idx]
@@ -461,14 +475,12 @@ def run_llm_family(family, dataset, test_df, cfg, sample_n, fraction, out_root,
                 words, imp = occlusion_importance(pf, str(row["Answer_proc"]), R, mode)
             if len(words) == 0:
                 continue
-            comp.append(comprehensiveness(pf, words, imp, R, mode, fraction))
-            suff.append(sufficiency(pf, words, imp, R, mode, fraction))
-            comp_rand.append(comprehensiveness_random(pf, words, R, mode, fraction))
-            aopc_c.append(float(np.mean([comprehensiveness(pf, words, imp, R, mode, k) for k in DEFAULT_KGRID])))
-            aopc_s.append(float(np.mean([sufficiency(pf, words, imp, R, mode, k) for k in DEFAULT_KGRID])))
+            n_ok += 1
             plaus.append(plausibility(words, imp, R, mode, fraction))
+            for w_, v_ in zip(words, imp):
+                gabs[w_.strip()] += abs(float(v_))
 
-            if do_heat and rendered < 8:  # heatmap over the ORIGINAL Khmer answer
+            if rendered < 8:  # heatmap over the ORIGINAL Khmer answer (SHAP-coloured)
                 qraw = str(row["Question"])
 
                 def raw_pf(ans_text, ref_text, _q=qraw, _M=M):
@@ -476,22 +488,24 @@ def run_llm_family(family, dataset, test_df, cfg, sample_n, fraction, out_root,
                                       preprocess.preprocess(ref_text, mode),
                                       preprocess.preprocess(ans_text, mode), _M)
 
-                rw, ri = occlusion_importance(raw_pf, str(row["Answer"]), str(row["Reference"]), "raw")
+                rw, ri = shap_importance(raw_pf, str(row["Answer"]), str(row["Reference"]),
+                                         "raw", max_evals=shap_max_evals)
                 if len(rw) > 0:
                     title = (f"{family} | true={int(row['score_label'])} "
                              f"pred={int(round(pf(str(row['Answer_proc']), R) * 4))} "
-                             f"| word attribution on original answer")
+                             f"| SHAP word attribution on original answer")
                     render_word_heatmap(rw, ri, os.path.join(heat_dir, f"sample_{rendered:02d}.png"), title)
                     render_word_heatmap_html(rw, ri, os.path.join(heat_dir, f"sample_{rendered:02d}.html"), title)
                     gallery_items.append({"words": rw, "importance": ri, "caption": title})
                     rendered += 1
 
-        if do_heat and gallery_items:
+        if gallery_items:
             render_gallery_html(gallery_items, os.path.join(heat_dir, f"{family}_gallery.html"),
-                                f"{family} — Khmer word-importance (occlusion, browser-shaped)")
-        if not comp:
+                                f"{family} — Khmer word-importance (SHAP, browser-shaped)")
+        if n_ok == 0:
             return None
-        comp_m, rand_m = float(np.mean(comp)), float(np.mean(comp_rand))
+        if imp_name == "shap":
+            _write_global_topwords(gabs, out_root, family)
         return {
             "family": family,
             "champion": "_".join(str(v) for v in cfg.values()),
@@ -499,19 +513,13 @@ def run_llm_family(family, dataset, test_df, cfg, sample_n, fraction, out_root,
             "test_qwk": round(qwk, 4),
             "test_accuracy": round(acc, 4),
             "explainer": imp_name,
-            "n_explained": len(comp),
+            "n_explained": n_ok,
             "fraction": fraction,
-            "comprehensiveness": round(comp_m, 4),
-            "sufficiency": round(float(np.mean(suff)), 4),
-            "comprehensiveness_random": round(rand_m, 4),
-            "faithfulness_gap": round(comp_m - rand_m, 4),
-            "aopc_comprehensiveness": round(float(np.mean(aopc_c)), 4),
-            "aopc_sufficiency": round(float(np.mean(aopc_s)), 4),
             "plausibility": round(float(np.mean(plaus)) if plaus else 0.0, 4),
             "seconds": round(time.time() - t0, 1),
         }
 
-    rows = [r for r in (_faith_for(name) for name in explainers) if r]
+    rows = [r for r in (_explain_for(name) for name in explainers) if r]
     return rows or None
 
 
@@ -557,7 +565,7 @@ def run_family(family, dataset, sample_n, fraction, out_root, adapter_path=None,
             ans = str(row["Question_proc"]) + " " + ans
         inst.append((row, ans, str(row["Reference_proc"])))
 
-    # Heatmaps (once, native model): ORIGINAL Khmer answer coloured by occlusion importance.
+    # Heatmaps (once, native model): ORIGINAL Khmer answer coloured by SHAP importance.
     # We emit BOTH a PNG (matplotlib; quick preview, but matplotlib does NOT shape Khmer) and
     # an HTML file (browser-shaped → correct Khmer). Use the HTML/gallery for the deck & paper.
     heat_dir = os.path.join(out_root, "heatmaps", family)
@@ -574,11 +582,12 @@ def run_family(family, dataset, sample_n, fraction, out_root, adapter_path=None,
                 a_proc = preprocess.preprocess(_q, _m) + " " + a_proc
             return predict_fn(a_proc, preprocess.preprocess(ref_text, _m))
 
-        rw, ri = occlusion_importance(raw_predict, str(row["Answer"]), str(row["Reference"]), "raw")
+        rw, ri = shap_importance(raw_predict, str(row["Answer"]), str(row["Reference"]),
+                                 "raw", max_evals=shap_max_evals)
         if len(rw) > 0:
             title = (f"{family} | true={int(row['score_label'])} "
                      f"pred={int(round(float(predict_fn(ans, ref)) * 4))} "
-                     f"| word attribution on original answer")
+                     f"| SHAP word attribution on original answer")
             render_word_heatmap(rw, ri, os.path.join(heat_dir, f"sample_{j:02d}.png"), title)
             render_word_heatmap_html(rw, ri, os.path.join(heat_dir, f"sample_{j:02d}.html"), title)
             gallery_items.append({"words": rw, "importance": ri, "caption": title})
@@ -586,7 +595,7 @@ def run_family(family, dataset, sample_n, fraction, out_root, adapter_path=None,
     if gallery_items:
         render_gallery_html(gallery_items,
                             os.path.join(heat_dir, f"{family}_gallery.html"),
-                            f"{family} — Khmer word-importance (occlusion, browser-shaped)")
+                            f"{family} — Khmer word-importance (SHAP, browser-shaped)")
 
     imp_fns = {
         "occlusion": explain,
@@ -597,14 +606,19 @@ def run_family(family, dataset, sample_n, fraction, out_root, adapter_path=None,
     out_rows = []
     for vname, vfn in variants:
         print(f"[exp09] {family} [{vname}]: explaining {len(inst)} answers ...")
-        per_instance, plaus = [], []
+        plaus = []
+        gabs = defaultdict(float)   # global sum(|attribution|) per answer word
+        n_ok = 0
         for row, ans, ref in inst:
             words, imp = vfn(ans, ref)
             if len(words) == 0:
                 continue
-            per_instance.append((words, imp, ref))
+            n_ok += 1
             plaus.append(plausibility(words, imp, ref, mode, fraction))
-        fr = faithfulness_report(predict_fn, per_instance, mode, fraction)
+            for w_, v_ in zip(words, imp):
+                gabs[w_.strip()] += abs(float(v_))
+        if vname == "shap":
+            _write_global_topwords(gabs, out_root, family)
         out_rows.append({
             "family": family,
             "champion": "_".join(str(v) for v in cfg.values()),
@@ -612,14 +626,8 @@ def run_family(family, dataset, sample_n, fraction, out_root, adapter_path=None,
             "test_qwk": round(qwk, 4),
             "test_accuracy": round(acc, 4),
             "explainer": vname,
-            "n_explained": fr.get("n", 0),
+            "n_explained": n_ok,
             "fraction": fraction,
-            "comprehensiveness": round(fr.get("comprehensiveness", 0.0), 4),
-            "sufficiency": round(fr.get("sufficiency", 0.0), 4),
-            "comprehensiveness_random": round(fr.get("comprehensiveness_random", 0.0), 4),
-            "faithfulness_gap": round(fr.get("faithfulness_gap", 0.0), 4),
-            "aopc_comprehensiveness": round(fr.get("aopc_comprehensiveness", 0.0), 4),
-            "aopc_sufficiency": round(fr.get("aopc_sufficiency", 0.0), 4),
             "plausibility": round(float(np.mean(plaus)) if plaus else 0.0, 4),
             "seconds": round(time.time() - t0, 1),
         })
@@ -631,16 +639,16 @@ def main():
     ap.add_argument("--families", nargs="+",
                     default=["classical", "bilstm"],
                     choices=["classical", "bilstm", "encoder", "llm"])
-    ap.add_argument("--dataset", default="no10c_no0",
-                    choices=["full", "no10c", "no10c_no0"])
+    ap.add_argument("--dataset", default="no10c",
+                    choices=["full", "no10c"])
     ap.add_argument("--sample", type=int, default=80,
                     help="number of test answers to explain (balanced by score)")
     ap.add_argument("--fraction", type=float, default=0.2,
                     help="top-k fraction of words for faithfulness/plausibility")
-    ap.add_argument("--explainers", nargs="+", default=["occlusion"],
+    ap.add_argument("--explainers", nargs="+", default=["shap"],
                     choices=["occlusion", "shap"],
-                    help="attribution method(s); LOO occlusion is the headline, "
-                         "shap is the comparison (slower, esp. for the LLM)")
+                    help="attribution method(s); SHAP is the headline (Kumar 2020). "
+                         "occlusion is kept only as the internal mechanism / a debug option")
     ap.add_argument("--shap-max-evals", type=int, default=None,
                     help="cap SHAP evaluations per answer (lower = faster; for the "
                          "LLM try ~2*num_words). Default: max(2*words+1, 100).")
@@ -675,7 +683,9 @@ def main():
                 existing = [r for r in csv.DictReader(f)
                             if (r["family"], r["explainer"]) not in new_keys]
         with open(lb, "w", newline="", encoding="utf-8") as f:
-            w = csv.DictWriter(f, fieldnames=LEADERBOARD_HEADER)
+            # extrasaction="ignore" so any legacy rows (old ERASER columns) re-serialise
+            # cleanly under the new plausibility-only header.
+            w = csv.DictWriter(f, fieldnames=LEADERBOARD_HEADER, extrasaction="ignore")
             w.writeheader()
             for r in existing:
                 w.writerow(r)
@@ -684,8 +694,7 @@ def main():
         print(f"\n[exp09] wrote {lb}")
         for r in rows:
             print(f"  {r['family']:8s} [{r['explainer']:9s}] n={r['n_explained']:>3} "
-                  f"gap={r['faithfulness_gap']:+.3f} AOPC-comp={r['aopc_comprehensiveness']:+.3f} "
-                  f"AOPC-suff={r['aopc_sufficiency']:+.3f} plaus={r['plausibility']:.3f}")
+                  f"qwk={float(r['test_qwk']):.3f} plausibility={float(r['plausibility']):.3f}")
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ We use a quantitative, experiment-driven design. We frame all four model familie
 pipeline, so that differences in results come from the models rather than from inconsistent
 preprocessing or evaluation. Each model predicts a continuous normalised score $\hat{y}\in[0,1]$, which
 we map to an integer grade for reporting. We then judge every model on two axes: standard agreement
-metrics \emph{and} the faithfulness of its explanations. Figure~\ref{fig:method} shows the overall
+metrics \emph{and} the plausibility of its explanations. Figure~\ref{fig:method} shows the overall
 research pipeline.
 
 \begin{figure}[t]
@@ -21,16 +21,16 @@ research pipeline.
                text width=2.7cm, minimum height=10mm},
   io/.style={draw, rounded corners, align=center, inner sep=3pt, fill=gray!10, text width=12.8cm},
   arr/.style={->, thick}]
-  \node[io]   (data)  at (0,0)      {\textbf{Khmer ASAG dataset}, 1{,}184 answers, 41 questions, 4 subjects \;[\,Question, Reference, Student answer, Teacher score, Max score\,]};
-  \node[wide] (pre)   at (0,-1.5)   {\textbf{Preprocessing $\Phi$ (Khmer-aware)}: NFC $\to$ strip invisibles $\to$ KCC reorder $\to$ strip punctuation $\to$ (khmernltk segmentation)};
-  \node[wide] (split) at (0,-2.9)   {\textbf{Split 70/15/15} (seed 42): random (stratified) $\;|\;$ question-held-out (GroupShuffleSplit by QuestionID)};
+  \node[io]   (data)  at (0,0)      {\textbf{Khmer ASAG dataset}, 1{,}184 answers, 41 questions, 203 students, 4 subjects, 2 schools \;[\,Question, Reference, Student answer, Teacher score, Max score\,]};
+  \node[wide] (pre)   at (0,-1.5)   {\textbf{Preprocessing $\Phi$ (Khmer-aware)}: NFC $\to$ strip invisibles $\to$ strip punctuation $\to$ (khmernltk segmentation)};
+  \node[wide] (split) at (0,-2.9)   {\textbf{Split 70/15/15} (seed 42): stratified random split over rows};
   \node[pill] (cl)  at (-5.4,-4.7) {\textbf{Classical}\\ TF-IDF + RBF-SVR};
   \node[pill] (rnn) at (-1.8,-4.7) {\textbf{RNN}\\ BiLSTM + Attn};
   \node[pill] (tr)  at (1.8,-4.7)  {\textbf{Transformer}\\ mBERT/XLM-R/GTE};
-  \node[pill] (llm) at (5.4,-4.7)  {\textbf{LLM}\\ Qwen (QLoRA)};
+  \node[pill] (llm) at (5.4,-4.7)  {\textbf{LLM}\\ Qwen/Gemma/\\ SEA-LION (QLoRA)};
   \node[wide] (score) at (0,-6.5) {\textbf{Score $\to$ grade}: round$(4\hat{y})$, $\hat{y}\in[0,1]$ \;(+ optional threshold calibration, selected on validation)};
   \node[half] (eval) at (-3.4,-8.4) {\textbf{Evaluation}\\ QWK, Accuracy, macro-F1;\\ exact / adjacent ($\pm1$) agreement};
-  \node[half] (xai)  at (3.4,-8.4)  {\textbf{Explainability}\\ word attribution: Leave-One-Out (LOO)\\ $\to$ ERASER faithfulness + plausibility};
+  \node[half] (xai)  at (3.4,-8.4)  {\textbf{Explainability}\\ word attribution: SHAP\\ $\to$ plausibility (reference overlap)};
   \node[io] (proto) at (0,-10.2) {\textbf{Live web prototype}: teacher enters Question + Reference + Answer $\to$ choose model $\to$ \textbf{score + explanation + feedback}};
   \draw[arr] (data)--(pre);
   \draw[arr] (pre)--(split);
@@ -41,7 +41,7 @@ research pipeline.
   \draw[arr] (eval)--(proto);
   \draw[arr] (xai)--(proto);
 \end{tikzpicture}
-\caption{Show the overall research pipeline of this study.}
+\caption{Overall research pipeline of this study.}
 \label{fig:method}
 \end{figure}
 
@@ -67,15 +67,15 @@ Figures~\ref{fig:data-a} and~\ref{fig:data-b} show its main distributions.
 
 \begin{table}[t]
 \centering
-\caption{Show the Khmer ASAG corpus statistics at a glance.}
+\caption{Khmer ASAG corpus statistics at a glance.}
 \label{tab:descriptive}
 \small
-\begin{tabular}{@{}lll@{}}
+\begin{tabular}{@{}ll>{\raggedright\arraybackslash}p{6cm}@{}}
 \toprule
 Property & Value & Notes \\
 \midrule
 Answers              & 1{,}184                       & one incomplete row dropped \\
-Questions            & 41                            & small question pool (see leakage, \S\ref{sec:leakage}) \\
+Questions            & 41                            & small question pool \\
 Students             & 203                           & two schools (province + city) \\
 Subjects             & 4                             & Biology 435, History 433, Geography 307, Earth Sci.\ 9 \\
 Max scores           & $\{5,6,7,8,10,12,15,20\}$     & most common: 10 (404), 15 (306), 8 (135), 5 (130) \\
@@ -98,11 +98,22 @@ Table~\ref{tab:descriptive} shows, the labels are heavily skewed toward full cre
 contributes only nine answers; it is a minor subject with little data, kept for coverage but
 acknowledged as imbalanced.
 
+The four panels in Figures~\ref{fig:data-a} and~\ref{fig:data-b} make the corpus's shape concrete, and
+each one carries a fact that matters later. The subject panel (Figure~\ref{fig:data-a}, left) shows that
+Biology, History, and Geography are well represented while Earth Science is a thin sliver, which is why
+we treat Earth Science cautiously. The max-score panel (right) shows that 10- and 15-point questions
+dominate, so the per-question scale really does vary and normalisation is necessary. The grade-label
+panel (Figure~\ref{fig:data-b}, left) shows the heavy skew toward full credit (label 4), which is why we
+report macro-F1 alongside accuracy. The answer-length panel (right) shows most answers are short, with a
+median near 193 characters and a long thin tail of a few very long answers.
+
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.49\textwidth]{fig_subject_dist.png}\hfill
 \includegraphics[width=0.49\textwidth]{fig_maxscore_dist.png}
-\caption{Show the number of answers per subject (left) and per question maximum score (right).}
+\caption[Answers per subject and per max score]{Number of answers per subject (left) and per question
+maximum score (right). Biology, History, and Geography dominate; Earth Science is small; and the
+10- and 15-point questions are the most common, so the scoring scale genuinely varies.}
 \label{fig:data-a}
 \end{figure}
 
@@ -110,18 +121,20 @@ acknowledged as imbalanced.
 \centering
 \includegraphics[width=0.49\textwidth]{fig_label_dist.png}\hfill
 \includegraphics[width=0.49\textwidth]{fig_answer_length.png}
-\caption{Show the grade-label distribution (left) and the answer-length distribution (right).}
+\caption[Grade-label and answer-length distributions]{Grade-label distribution (left) and answer-length
+distribution (right). Labels are heavily skewed toward full credit (label 4), and most answers are
+short (median near 193 characters) with a long thin tail.}
 \label{fig:data-b}
 \end{figure}
 
-We use three curated \emph{variants} of the corpus so that we can measure the effect of data quality
-(Table~\ref{tab:variants}): the full set; a version with the noisy ``10C Biology'' subset removed; and
-a version that also drops 14 answers whose grade label is $0$ (about 1.2\,\% of the data, effectively
-untrainable noise). We report all three.
+We use two curated \emph{variants} of the corpus so that we can measure the effect of data quality
+(Table~\ref{tab:variants}): the full set, and a version with the noisy ``10C Biology'' subset removed.
+Both keep the full five-class label range (grades $0$--$4$), and we report both. The default for the
+detailed analyses is \texttt{no10c}.
 
 \begin{table}[t]
 \centering
-\caption{Show the three curated dataset variants.}
+\caption{Two curated dataset variants.}
 \label{tab:variants}
 \begin{tabular}{@{}llr@{}}
 \toprule
@@ -129,20 +142,17 @@ Variant & Definition & Rows \\
 \midrule
 \texttt{full}        & Original corpus                                  & 1{,}184 \\
 \texttt{no10c}       & Drop the noisy ``10C Biology'' subset            & 909 \\
-\texttt{no10c\_no0}  & Also drop the 14 grade-$0$ outliers              & 895 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Unless stated otherwise, we split the data 70/15/15 into training, validation, and test sets with a
-fixed seed (42). We use two split modes: a \emph{stratified random} split over rows (the default) and
-a stricter \emph{question-held-out} split (\texttt{GroupShuffleSplit} by question identifier), in which
-no question is shared between train, validation, and test (\S\ref{sec:metrics}).
+fixed seed (42), using a \emph{stratified random} split over rows.
 
 \subsection{A Real Case of Label Noise: Class 10C Biology}
 \label{sec:noisy}
 The \texttt{no10c} variant is not an arbitrary deletion; it removes a subset with demonstrable grader
-inconsistency. Looking at class~10C, Biology, Question~1 (maximum score~8), the 55 student records
+inconsistency. Looking at class~10C, Biology, Question~2 (maximum score~8), the 55 student records
 reduce to only \textbf{seven distinct answer texts}, yet \emph{identical} answer texts received scores
 spanning almost the whole range (Table~\ref{tab:noise10c}). One and the same answer text was scored 3,
 4, 5, 6, 7, and 8. When the same input maps to six different labels, no model can learn a consistent
@@ -150,7 +160,7 @@ rule from it, which is why removing this subset lifts every model (\S\ref{sec:re
 
 \begin{table}[t]
 \centering
-\caption{Show the grader inconsistency in class 10C Biology, Question~1 (55 students, 7 distinct answer
+\caption[Grader inconsistency in class 10C Biology, Question~2]{Grader inconsistency in class 10C Biology, Question~2 (55 students, 7 distinct answer
 texts, max score 8).}
 \label{tab:noise10c}
 \small
@@ -169,8 +179,16 @@ G & 3, 4, 5, 6, 7 \\
 \end{tabular}
 \end{table}
 
-\emph{[Insert here a screenshot of the raw 10C Biology Question~1 records to document the inconsistency
-directly from the source spreadsheet.]}
+Figure~\ref{fig:noise-raw} shows these records directly from the source spreadsheet.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{class10C-bio.png}
+\caption[Raw records showing grader inconsistency]{Sample of the raw spreadsheet records (Class~10C
+Biology, Question~2): near-identical answers to the same question receive different scores, documenting
+the grader inconsistency.}
+\label{fig:noise-raw}
+\end{figure}
 
 \subsection{Data Governance}
 The corpus contains real student work by minors. We obtained access by approaching each school and
@@ -178,18 +196,16 @@ getting permission directly from the school Director; no formal IRB process appl
 this setting. We store only pseudonymous identifiers (no names), and use the data solely for research
 into a teacher-assist tool, not an autonomous grader. Because one teacher graded all answers, the
 system reflects that grader's judgements; we report agreement \emph{with this grader} and use the
-three dataset variants as partial mitigation.
+two dataset variants as partial mitigation.
 
 \section{Data Preprocessing}
 \label{sec:preprocessing}
-Khmer text needs careful normalisation because the script encodes a syllable as an ordered cluster of
-a base consonant, optional subscript consonants, vowels, and signs, and the same visible syllable can
-be stored as different byte sequences. We apply the steps in Figure~\ref{fig:preproc}, in order: NFC
-normalisation; removal of \emph{invisible} characters (zero-width spaces, control and format
-characters, and bullet markers such as $\bullet$ and $\circ$); \emph{KCC} (Khmer Character Cluster) reordering,
-which canonicalises the internal order of base consonants, subscripts (\km{ជើង}), vowels, and signs;
-punctuation stripping; and finally word segmentation with \texttt{khmer-nltk}. We keep digits and
-letters as answer content.
+Khmer is written without spaces between words, and the same word can be encoded as different byte
+sequences (for example stacked versus unstacked syllables), so the text needs careful cleaning before a
+model sees it. We apply the steps in Figure~\ref{fig:preproc}, in order: NFC normalisation; removal of
+\emph{invisible} characters (zero-width spaces, control and format characters, and bullet markers such
+as $\bullet$ and $\circ$); punctuation stripping; and finally word segmentation with \texttt{khmer-nltk}.
+We keep digits and letters as answer content.
 
 \begin{figure}[t]
 \centering
@@ -198,21 +214,53 @@ letters as answer content.
                minimum height=11mm}]
   \node[ppbox] (a) {NFC \\ normalisation};
   \node[ppbox,right=of a] (b) {strip \\ invisibles};
-  \node[ppbox,right=of b] (c) {KCC \\ reorder};
-  \node[ppbox,right=of c] (d) {strip \\ punctuation};
+  \node[ppbox,right=of b] (d) {strip \\ punctuation};
   \node[ppbox,right=of d] (e) {khmer-nltk \\ segmentation};
-  \draw[->,thick] (a)--(b); \draw[->,thick] (b)--(c); \draw[->,thick] (c)--(d); \draw[->,thick] (d)--(e);
+  \draw[->,thick] (a)--(b); \draw[->,thick] (b)--(d); \draw[->,thick] (d)--(e);
 \end{tikzpicture}
-\caption{Show the Khmer-aware data preprocessing steps.}
+\caption{Khmer-aware data preprocessing steps.}
 \label{fig:preproc}
 \end{figure}
 
-KCC reordering is essential for the model but produces text that is \emph{unreadable} to a human. For
-example, a syllable a person reads as \km{ស៊ី} may be reordered internally to a form that renders as
-\km{សី៊}: identical for the model but visibly wrong to a teacher. We therefore separate
-\emph{model-internal} text (with KCC reorder) from \emph{display} text (the readable original tokens,
-with no KCC reorder). Every heatmap and every piece of feedback shown to a teacher uses the readable
-display tokens.
+Khmer can write the same word in stacked or unstacked form, giving one word several byte sequences; we
+rely on the segmenter to identify word boundaries and do not add a separate character-normalisation
+step. This keeps the preprocessed text human-readable, so every heatmap and every piece of feedback
+shown to a teacher uses these readable tokens directly.
+
+\subsection{Preprocessing Modes and Input Formats}
+\label{sec:axes}
+Rather than fix one preprocessing recipe, we expose it as an experimental axis with three cumulative
+\emph{modes}, so we can measure how much cleaning each model actually needs (Table~\ref{tab:axes}):
+\texttt{raw} strips invisible characters and whitespace only; \texttt{clean} adds
+punctuation stripping; \texttt{segment} adds \texttt{khmer-nltk} word segmentation on top of
+\texttt{clean}. Each mode is a strict superset of the previous one, so a model that improves from
+\texttt{raw} to \texttt{segment} is benefiting from the extra Khmer-aware processing.
+
+We also vary how the question, reference, and answer are assembled into the model input, through two
+\emph{input formats}: \texttt{ra} feeds the pair (answer, reference), and \texttt{qar} prepends the
+question, feeding (question + answer, reference). The \texttt{qar} format gives the model the question
+context at the cost of a longer input. Every modelling experiment sweeps these two axes (three
+preprocessing modes $\times$ two input formats) together with its model choices, so that each reported
+champion is the configuration selected on the validation set rather than a single hand-picked recipe.
+
+\begin{table}[t]
+\centering
+\caption{Preprocessing modes and input formats swept by every experiment.}
+\label{tab:axes}
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Axis / value & Definition \\
+\midrule
+\texttt{raw}     & strip invisibles + strip whitespace \\
+\texttt{clean}   & \texttt{raw} + strip punctuation \\
+\texttt{segment} & \texttt{clean} + \texttt{khmer-nltk} word segmentation \\
+\midrule
+\texttt{ra}  & input pair (answer, reference) \\
+\texttt{qar} & input pair (question + answer, reference) \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{Models Used}
 \label{sec:pillars}
@@ -230,7 +278,14 @@ the interaction vector
 \end{equation}
 where $;$ is concatenation, $|\mathbf{a}-\mathbf{b}|$ the element-wise absolute difference, $\odot$ the
 element-wise product, and $\cos$ the cosine similarity. We feed this vector to a support-vector
-regressor with an RBF kernel. This model trains in seconds on a CPU.
+regressor with an RBF kernel and penalty $C=1$. This model trains in seconds on a CPU.
+
+Within the classical family we also run two simpler reference points: a parameter-free
+\texttt{tfidf\_cos} scorer that predicts the cosine similarity between the answer and reference TF-IDF
+vectors directly (no training), and a \texttt{fasttext\_cos} scorer that does the same over
+100-dimensional fastText embeddings. These bracket the support-vector regressor from below and confirm
+that the learned regression, not the TF-IDF representation alone, is what carries the classical result;
+the RBF-SVR is the classical champion reported throughout.
 
 \subsection{RNN: Character BiLSTM with Attention}
 We embed each text at the character level and encode it with a bidirectional LSTM. An additive
@@ -241,32 +296,89 @@ attention layer pools the per-position hidden states $\mathbf{h}_t$ into one vec
 \end{equation}
 where $W$ and $\mathbf{w}$ are learned, $\alpha_t$ is the weight for position $t$, and $\mathbf{e}$ is
 the pooled encoding. We encode the answer and reference separately and combine them through the same
-four-way interaction before a small MLP head with a sigmoid output. The attention is part of the
-architecture; we do \emph{not} use it as an explanation (we use LOO, \S\ref{sec:xai}).
+four-way interaction before a small MLP head with a sigmoid output. Concretely, we cap the character
+vocabulary at the 5{,}000 most frequent characters, use 128-dimensional character embeddings, two
+bidirectional LSTM layers with 128 hidden units per direction, and dropout 0.3, and train with the Adam
+optimiser at learning rate $1\mathrm{e}{-}3$, batch size 64, for up to 20 epochs with early stopping
+(patience 4) on validation QWK. The attention is part of the architecture; we do \emph{not} use it as an
+explanation (we use SHAP, \S\ref{sec:xai}).
 
 \subsection{Transformer: Multilingual Encoders}
 We fine-tune multilingual encoders, mBERT, XLM-R, and GTE-multilingual~\citep{devlin2019bert}, in two
-configurations: a \emph{dual} encoder that embeds answer and reference separately, and a \emph{cross}
-encoder that feeds both into one sequence. We freeze the bottom six layers and truncate inputs to 256
-tokens. (GTE-multilingual ships an unstable rotary position cache; we rebuild it in full precision on
-load to avoid NaN outputs.)
+configurations: a \emph{dual} encoder that embeds the answer and reference separately and then combines
+them with the four-way interaction above, and a \emph{cross} encoder that feeds both texts into one
+sequence so that self-attention can compare them token by token. We freeze the bottom six Transformer
+layers (the lower layers carry generic, language-agnostic features and freezing them guards against
+over-fitting on a small corpus), truncate inputs to 256 tokens, and fine-tune the remaining layers and
+a regression head with the AdamW optimiser at learning rate $2\mathrm{e}{-}5$, weight decay 0.01,
+dropout 0.2, and batch size 16, for up to 20 epochs with early stopping (patience 4) on validation QWK.
+GTE-multilingual ships an unstable rotary position cache that yields NaN outputs; we rebuild the cosine
+cache in full (fp32) precision on load to fix this.
 
 \subsection{LLM: Qwen 3.5 4B with QLoRA}
 We fine-tune the Qwen 3.5 4B large language model with QLoRA~\citep{dettmers2023qlora}, which trains a
-small set of low-rank adapter weights on top of a frozen, 4-bit-quantised base model, making
-billion-parameter fine-tuning feasible on one GPU. We prompt the model with the question, reference,
-and student answer, and train it to emit the score. The fine-tuned checkpoints form the KhmerGrader
-family, each compared against its own zero-shot base (Chapter~\ref{ch:results}).
+small set of low-rank adapter weights on top of a frozen, 4-bit-quantised (NF4, double-quantised) base
+model, making billion-parameter fine-tuning feasible on one GPU. The adapters use rank 16, $\alpha=16$,
+no adapter dropout, and target the attention and MLP projections
+($q,k,v,o,\mathrm{gate},\mathrm{up},\mathrm{down}$). We frame grading as instruction-following with a
+fixed prompt that states the scale, the question, the reference, and the student answer, and asks for a
+single integer; the model is trained with completion-only loss (the prompt tokens are masked, so the
+loss falls only on the score token):
+
+\begin{quote}\small\ttfamily
+Below is a Khmer short-answer grading task. Score the student's answer on a scale from 0 to \{Max\}.\\[2pt]
+Question: \{question\}\\
+Reference answer: \{reference\}\\
+Student answer: \{answer\}\\
+The score (integer from 0 to \{Max\}): \{score\}
+\end{quote}
+
+\noindent The prompt above is the \texttt{qar} format; in the \texttt{ra} format the \emph{Question}
+line is dropped, so the model sees only the student answer and the reference. For instruction-tuned
+bases we render this through the model's chat template with reasoning
+disabled, so the model emits a bare integer rather than a chain of thought. At inference we greedily
+decode, parse the first integer from the output, and clip it to $[0,\text{Max}]$. We fine-tune each base
+on the \texttt{no10c} variant in both input formats, for up to
+10 epochs at batch size 4 with gradient accumulation to an effective batch of 16, a 5\,\% warm-up, and a
+validation-selected learning rate in $\{1,2,3\}\times10^{-4}$, keeping the epoch with the best
+validation QWK. The LLM pillar therefore spans two conditions: the \emph{untuned base} prompted
+zero-shot (the in-pillar baseline) and its \emph{QLoRA-fine-tuned} counterpart, the KhmerGrader
+family. Comparing the two isolates the value of fine-tuning, following the fine-tuning-for-scoring
+approach of Latif and Zhai~\citep{latif2024finetuning}; the comparison is reported in
+Chapter~\ref{ch:results}.
+
+\subsection{Frontier-Model Baselines}
+\label{sec:frontier}
+To test whether a small fine-tuned specialist can match much larger general models on Khmer, we add a
+\emph{frontier baseline}: four proprietary or open frontier LLMs (a GPT, a Claude, a Gemini, and a
+DeepSeek model) prompted on the same test answers with the \emph{same} grading prompt as the
+KhmerGrader. Each is run \emph{zero-shot} in two variants: a direct integer answer and a
+reasoning-enabled answer whose final integer is parsed, so the frontier models are also given their
+strongest setting. The score is parsed and clipped exactly as for our own LLM. We grant the frontier
+models the reasoning variant precisely because we cannot fine-tune them; our own models are scored
+without reasoning, since the fine-tuned KhmerGrader emits a bare integer by design and, of the three
+open bases, only Qwen exposes a reasoning mode (the Gemma and the Gemma-based SEA-LION bases do not).
+This is also consistent with prior work, where chain-of-thought has not reliably improved ordinal
+scoring and adds latency. Few-shot prompting of all models is left to future work (\S\ref{sec:future}).
+
+Using closed APIs as a baseline is a deliberate, scoped choice: it is a one-off \emph{evaluation}
+measurement, not a runtime dependency of the prototype, whose feedback always uses an open model. Closed
+services are continuously updated, so we \textbf{pin each model version and record the evaluation date},
+release the exact prompt and parser, and \textbf{cache every raw API response}; the cached snapshot makes
+these numbers reproducible even if a provider later revises the model. We state plainly that closed-model
+scores are a dated snapshot, whereas the KhmerGrader weights, code, and data remain fully reproducible.
 
 \subsection{From Score to Grade}
 We map the continuous prediction to an integer grade by rounding $4\hat{y}$ (for the five-class label)
-or $\hat{y}\times\text{Max Score}$ (for the raw integer score). We study two cheap levers (RQ4). First,
-because ``0.5'' means 5/10 on one question but 10/20 on another, we give the model the question's
-maximum score as an extra input feature; this gives consistent deployment gains. Second, \emph{post-hoc
-threshold calibration} fits the four cut-points that map $\hat{y}$ to the five classes by maximising QWK
-on the validation set. We treat calibration as an ablation, not part of the headline, because (as
-Chapter~\ref{ch:results} shows) it helps the classical model but hurts the BiLSTM, so all headline
-numbers are uncalibrated.
+or $\hat{y}\times\text{Max Score}$ (for the raw integer score). For example, a prediction
+$\hat{y}=0.72$ on a question worth 10 points becomes raw score $\mathrm{round}(0.72\times10)=7$ and grade
+label $\mathrm{round}(4\times0.72)=3$. We study two cheap levers. First, because ``0.5'' means 5/10 on
+one question but 10/20 on another, we give the model the question's maximum score as an extra input
+feature, normalised by the largest observed maximum (20) so it lands in $(0,1]$; this gives consistent
+deployment gains. Second, \emph{post-hoc threshold calibration} fits the four cut-points that map
+$\hat{y}$ to the five classes by maximising QWK on the validation set. We treat calibration as an
+ablation, not part of the headline, because (as Chapter~\ref{ch:results} shows) it helps the classical
+model but hurts the BiLSTM, so all headline numbers are uncalibrated.
 
 \section{Tools and Technologies}
 \label{sec:tools}
@@ -288,13 +400,15 @@ All work is carried out in Python.
 \end{itemize}
 
 \subsection{Tools}
-We develop in Visual Studio Code and Jupyter notebooks, and store the corpus and result files in the
-project repository so that every number can be recomputed.
+We run all experiments as Python scripts inside \texttt{tmux} sessions on the MISTI-HPC cluster (the
+Ministry of Industry, Science, Technology and Innovation High-Performance Computing facility), and store
+the corpus and result files in the project repository so that every number can be recomputed.
 
 \subsection{Hardware}
-The classical and BiLSTM pillars run on a \textbf{CPU}. The Transformer encoders and the QLoRA LLM run
-on a \textbf{GPU} (dedicated/HPC). All metrics are computed afterwards from saved predictions and need
-no GPU.
+All experiments run on a node of the \textbf{MISTI-HPC} cluster: a virtualised host with 32 CPU cores,
+64\,GiB of RAM, an \textbf{NVIDIA A40} GPU (48\,GB GDDR6 VRAM), and 536\,GB of disk. The classical and
+BiLSTM pillars use the \textbf{CPU}; the Transformer encoders and the QLoRA LLM use the \textbf{A40
+GPU}. All metrics are computed afterwards from saved predictions and need no GPU.
 
 \section{Model Evaluation Metrics}
 \label{sec:metrics}
@@ -326,48 +440,27 @@ where $r_n$ and $\hat{r}_n$ are the true and predicted raw integer scores in poi
 \subsection{Explainability Protocol}
 \label{sec:xai}
 Our explanation is \emph{word attribution}: we highlight which words in the student's answer drove the
-predicted grade. The engine is \emph{occlusion} (leave-one-out, LOO), an attribution shown to be
-reliable for ASAG~\citep{pinto2025attribution}. As Figure~\ref{fig:loo} shows, we drop one word and
-measure the change in score; the importance of word $i$ is
+predicted grade. Following the explainable-scoring approach of Kumar and
+Boulanger~\citep{kumar2020explainable}, the engine is \emph{SHAP} (SHapley Additive
+exPlanations)~\citep{lundberg2017shap}. The attribution of a word is its Shapley value, the average
+marginal change in the predicted score as that word is added to the answer over all coalitions of the
+other words,
 \begin{equation}
-\mathrm{imp}(i) \;=\; s(\text{answer}) \;-\; s(\text{answer without word } i),
+\phi_i \;=\; \sum_{S \subseteq W\setminus\{i\}} \frac{|S|!\,(|W|-|S|-1)!}{|W|!}\,
+\big[\,s(S\cup\{i\}) - s(S)\,\big],
 \end{equation}
-where $s(\cdot)$ is the predicted score, so a positive value means the word supported the grade. We use
-LOO as the single method because it works for every model, including the non-differentiable classical
-SVR, needs no gradients or model internals, and is deterministic.
+where $W$ is the set of answer words, $S$ a coalition (a subset of the kept words), and $s(\cdot)$ the
+score predicted on the answer restricted to those words; a positive $\phi_i$ means the word raised the
+grade. We estimate the Shapley values with a permutation explainer (with a Monte-Carlo permutation
+fallback), holding the reference side fixed. SHAP is the field-standard attribution and is
+\emph{model-agnostic}: it calls only $s(\cdot)$, so it works for every pillar including the
+non-differentiable classical SVR, with no gradients or model internals. Beyond the per-answer
+attribution, we rank the \emph{globally} most-important words by their mean absolute SHAP value across
+answers, mirroring Kumar's global-importance view.
 
-\begin{figure}[t]
-\centering
-\begin{tikzpicture}[font=\footnotesize, >={Latex[length=2mm]}, node distance=5mm,
-  b/.style={draw, rounded corners, fill=blue!6, align=center, inner sep=4pt, text width=3.3cm,
-            minimum height=10mm}]
-  \node[b] (full) {full answer \\ score $s(\text{answer})$};
-  \node[b, below=8mm of full] (drop) {answer without word $i$ \\ score $s(\text{answer}\setminus i)$};
-  \node[b, right=28mm of full, yshift=-7mm, fill=green!8, text width=3.7cm] (imp)
-       {importance of word $i$ \\ $=s(\text{answer})-s(\text{answer}\setminus i)$};
-  \draw[->,thick] (full.east) -- (imp.west);
-  \draw[->,thick] (drop.east) -- (imp.west);
-\end{tikzpicture}
-\caption{How LOO word attribution works: drop a word, the change in score is its importance.}
-\label{fig:loo}
-\end{figure}
-
-We judge explanations on two axes~\citep{lyu2024faithfulsurvey}. \emph{Faithfulness} asks whether the
-explanation reflects the model's reasoning, measured by the ERASER metrics~\citep{deyoung2020eraser}.
-Let $s(x)$ be the score on the full answer, $x_{\setminus k}$ the answer with the top-$k\%$ most
-important words removed, and $x_k$ the answer keeping only those words; then
-\begin{equation}
-\mathrm{comp}_k = s(x) - s(x_{\setminus k}),\qquad \mathrm{suff}_k = s(x) - s(x_{k}),
-\end{equation}
-where \emph{comprehensiveness} should be high (removing important words drops the score) and
-\emph{sufficiency} should be low (the top words alone reproduce the score). We average each over
-$k\in\{10,20,30,40,50\}\%$ as the AOPC summary, and compare against a random-removal baseline; the
-\emph{faithfulness gap} (comprehensiveness minus its random baseline) is positive when the explanation
-beats random. \emph{Plausibility} is the fraction of top important words that also appear in the
-reference answer.
-
-\subsection{Question-Held-Out Evaluation}
-To measure question leakage (RQ6), we re-evaluate the classical champion under the question-held-out
-split (no question shared between train/validation/test), across five seeds. With only 41 questions,
-each unseen-question test set has about six questions, so this estimate is high-variance, which we
-report as the spread across seeds.
+We judge an explanation by its \emph{plausibility}~\citep{lyu2024faithfulsurvey}: whether the words it
+highlights look right to a teacher. A teacher grades a short answer by checking whether it carries the
+key content of the reference answer, so a plausible explanation should highlight answer words that also
+appear in the reference. We therefore measure plausibility as the fraction of the top-$k$ SHAP words
+($k=20\,\%$ of the answer words) that occur in the reference answer; it lies in $[0,1]$ and is
+computable for every pillar.

@@ -29,15 +29,14 @@ val_qwk, best_epoch, seconds
 |---|---|---|---|
 | `full`      | `dataset.csv`                 | False | 1,184 |
 | `no10c`     | `dataset_no_10c_biology.csv`  | False |   909 |
-| `no10c_no0` | `dataset_no_10c_biology.csv`  | True  |   895 |
 
-Every experiment runs on **all three** datasets by default. Use the
+Every experiment runs on **both** datasets by default (grade-0 kept; full 5-class). Use the
 `--datasets` CLI flag on any experiment script to target a subset.
 
 ```powershell
-python experiments/exp01_tfidf_baseline.py                    # all 3
+python experiments/exp01_tfidf_baseline.py                    # both
 python experiments/exp01_tfidf_baseline.py --datasets full    # 1184 only
-python experiments/exp01_tfidf_baseline.py --datasets no10c no10c_no0
+python experiments/exp01_tfidf_baseline.py --datasets no10c   # 909 only
 ```
 
 ## Conventions

@@ -5,7 +5,7 @@ Runs in ~1 minute (downloads tokenizer + config, no weights to disk).
 from unsloth import FastLanguageModel
 
 CANDIDATES = [
-    "google/gemma-4-E4B",
+    "google/gemma-4-E4B-it",
     "Qwen/Qwen3.5-4B",
 ]
 

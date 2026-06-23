@@ -77,10 +77,10 @@ def occlusion_importance(
 
 
 # ────────────────────────────────────────────────────────────────────────────
-# SHAP importance — Shapley values over the same answer word units (COMPARISON
-# method against LOO; LOO remains the headline). Returns the same (words, imp)
-# shape and sign convention (positive = the word supported the grade), so it
-# plugs straight into faithfulness.py / plausibility.py.
+# SHAP importance — Shapley values over the answer word units. This is the headline
+# attribution method for the project; occlusion above is kept as a fast special case.
+# Returns the same (words, imp) shape and sign convention (positive = the word
+# supported the grade), so it plugs straight into plausibility.py.
 # ────────────────────────────────────────────────────────────────────────────
 
 

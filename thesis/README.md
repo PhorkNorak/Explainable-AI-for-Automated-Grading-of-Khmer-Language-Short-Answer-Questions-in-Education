@@ -46,7 +46,6 @@ installed serif.
 - `frontmatter/titlepage.tex`, `committee.tex`, `statements.tex`: **other examination-committee
   names, department/programme name, month/year**.
 - `frontmatter/abstract_kh.tex`: **proofread the drafted Khmer abstract** (machine-assisted draft).
-- `chapters/ch4_experiments.tex` (§4.5): **the live demo URL**.
 - `appendices/appendix.tex` (§D): **1–2 prototype screenshots**; (§E) **IRB/consent details**.
 
 ## Structure

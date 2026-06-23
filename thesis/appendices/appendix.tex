@@ -5,34 +5,42 @@
 
 \section{Hyperparameter Inventory}
 \label{app:hparams}
-Table~\ref{tab:hparams} lists the main hyperparameters. Classical and BiLSTM settings are the defaults
-used throughout; the Transformer and LLM settings follow standard fine-tuning practice with
-validation-selected learning rates (\S\ref{sec:training}).
+Table~\ref{tab:hparams} lists the main hyperparameters, gathered in one place so a reader can reproduce
+any cell. Classical and BiLSTM settings are the defaults used throughout; the Transformer and LLM
+settings follow standard fine-tuning practice with validation-selected learning rates
+(\S\ref{sec:training}). The text axes (the preprocessing mode and input format, \S\ref{sec:axes}) and the
+experiment registry (\S\ref{sec:grid}) define which combinations of these settings each experiment
+sweeps; the exact LLM prompt template is given in \S\ref{sec:pillars}.
 
-\begin{table}[h]
+\begin{table}[ht]
 \centering
-\caption{Show the key hyperparameters of each model.}
+\caption{Key hyperparameters of each model.}
 \label{tab:hparams}
 \small
-\begin{tabular}{@{}llp{7.5cm}@{}}
+\begin{tabular}{@{}ll>{\raggedright\arraybackslash}p{7.5cm}@{}}
 \toprule
 Pillar & Setting & Value \\
 \midrule
 Classical   & TF-IDF analyzer / $n$-grams & \texttt{char\_wb}, $(2,4)$ \\
             & max features / SVR $C$ / kernel & 15{,}000 / 1.0 / RBF \\
-RNN         & embed / hidden / layers & 128 / 128 / 2 (bidirectional) \\
+            & extra baselines & \texttt{tfidf\_cos}, \texttt{fasttext\_cos} (100-dim) \\
+RNN         & char vocab / embed / hidden / layers & 5{,}000 / 128 / 128 / 2 (bidirectional) \\
             & dropout / batch / max epochs & 0.3 / 64 / 20 (patience 4) \\
-            & learning rate & $1\mathrm{e}{-}3$ \\
+            & learning rate / optimiser & $1\mathrm{e}{-}3$ / Adam \\
 Transformer & backbones & mBERT, XLM-R, GTE-multilingual \\
-            & frozen layers / max length / batch & 6 / 256 / 16 \\
-            & learning rate / weight decay & $2\mathrm{e}{-}5$ / 0.01 \\
-LLM         & base / adaptation & Qwen 3.5 4B / QLoRA (4-bit) \\
+            & config / frozen layers / max length / batch & dual + cross / 6 / 256 / 16 \\
+            & learning rate / weight decay / dropout & $2\mathrm{e}{-}5$ / 0.01 / 0.2 \\
+LLM         & base / adaptation & Qwen 3.5 4B / QLoRA (4-bit NF4, double-quant) \\
             & LoRA rank / alpha / dropout & 16 / 16 / 0 \\
             & target modules & q, k, v, o, gate, up, down \\
+            & epochs / batch (effective) / warm-up & 10 / 4 (16 via accumulation) / 5\,\% \\
+            & max sequence length / loss & 1{,}024 / completion-only \\
             & learning rate (val-selected) & $\in\{1,2,3\}\times10^{-4}$ \\
 \midrule
-Common      & split / seed & 70/15/15 / 42 (multi-seed: 42, 1337, 2024, 7, 99) \\
-            & target / loss & $\hat{y}\in[0,1]$ / mean-squared error \\
+Common      & preprocessing modes / input formats & \{raw, clean, segment\} / \{ra, qar\} \\
+            & max-score feature normaliser & divide by 20 (largest observed max) \\
+            & split / seed & 70/15/15 / 42 (multi-seed: 42, 1337, 2024, 7, 99) \\
+            & target / loss & $\hat{y}\in[0,1]$ / mean-squared error (regression heads) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -40,36 +48,75 @@ Common      & split / seed & 70/15/15 / 42 (multi-seed: 42, 1337, 2024, 7, 99) \
 \section{Compute Budget}
 \label{app:compute}
 The classical models train in seconds on a CPU. The full neural, Transformer, and LLM grid (hundreds
-of cells across three dataset variants) requires roughly 40 GPU-hours in total. All metrics are
+of cells across two dataset variants) requires roughly 40 GPU-hours in total. All metrics are
 computed from saved per-answer predictions and need no GPU.
+
+\section{Full Experiment Grid}
+\label{app:grid}
+The complete per-cell leaderboards, every combination of model, preprocessing mode (\texttt{raw} /
+\texttt{clean} / \texttt{segment}), input format (\texttt{ra} / \texttt{qar}), and dataset variant
+(\texttt{full} / \texttt{no10c}), with train and test metrics, are released with the code under
+\texttt{results/leaderboards/}. Chapter~\ref{ch:results} reports the validation-selected champion per
+family and the one-factor-at-a-time effect of each axis (\S\ref{sec:results-data}); the exhaustive grid
+is kept here to keep the chapter readable.
+
+\section{Frontier-Model Breakdown}
+\label{app:frontier}
+Table~\ref{tab:frontier} in Chapter~\ref{ch:results} reports each frontier model at its best of the
+two zero-shot settings. Table~\ref{tab:frontier-full} gives the full per-setting breakdown (bare
+integer vs.\ reasoning-enabled) on the \texttt{no10c} test set, with the per-model unparsed rate;
+unparseable responses are excluded from the metrics rather than imputed. Each model version and the
+evaluation date are pinned, and the raw API responses are cached so the snapshot reproduces.
+
+\begin{table}[ht]
+\centering
+\caption{Frontier models, full zero-shot breakdown (bare vs.\ reasoning). ``[API-pending]'' awaits the
+run; \texttt{exp14} writes \texttt{results\_frontier/no10c/frontier\_metrics.csv}.}
+\label{tab:frontier-full}
+\small
+\begin{tabular}{@{}llccc@{}}
+\toprule
+Model & Setting & QWK & Exact & Unparsed \\
+\midrule
+GPT      & bare      & [API-pending] & [API-pending] & [API-pending] \\
+GPT      & reasoning & [API-pending] & [API-pending] & [API-pending] \\
+Claude   & bare      & [API-pending] & [API-pending] & [API-pending] \\
+Claude   & reasoning & [API-pending] & [API-pending] & [API-pending] \\
+Gemini   & bare      & [API-pending] & [API-pending] & [API-pending] \\
+Gemini   & reasoning & [API-pending] & [API-pending] & [API-pending] \\
+DeepSeek & bare      & [API-pending] & [API-pending] & [API-pending] \\
+DeepSeek & reasoning & [API-pending] & [API-pending] & [API-pending] \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{Additional Explanation Heatmaps}
 \label{app:heatmaps}
-Chapter~\ref{ch:results} shows the classical occlusion heatmap (Figure~\ref{fig:heatmap}). For
+Chapter~\ref{ch:results} shows the classical SHAP heatmap (Figure~\ref{fig:heatmap}). For
 completeness, Figures~\ref{fig:heatmap-bilstm}, \ref{fig:heatmap-encoder}, and \ref{fig:heatmap-llm}
-show LOO occlusion heatmaps for the remaining three pillars on real Khmer answers, so all four
+show SHAP heatmaps for the remaining three pillars on real Khmer answers, so all four
 families are illustrated. Khmer complex script is rendered with browser text shaping, as standard
 plotting back-ends do not correctly stack subscript consonants or reorder vowels, and the readable
-display tokens are used (no KCC reorder).
+tokens are used.
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering
 \includegraphics[width=0.92\textwidth]{heatmap_bilstm.png}
-\caption{Sample of a Khmer word-attribution heatmap (BiLSTM model, LOO).}
+\caption{Sample of a Khmer word-attribution heatmap (BiLSTM model, SHAP).}
 \label{fig:heatmap-bilstm}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering
 \includegraphics[width=0.92\textwidth]{heatmap_encoder.png}
-\caption{Sample of a Khmer word-attribution heatmap (Transformer model, LOO).}
+\caption{Sample of a Khmer word-attribution heatmap (Transformer model, SHAP).}
 \label{fig:heatmap-encoder}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering
 \includegraphics[width=0.92\textwidth]{heatmap_llm.png}
-\caption{Sample of a Khmer word-attribution heatmap (LLM model, LOO).}
+\caption{Sample of a Khmer word-attribution heatmap (LLM model, SHAP).}
 \label{fig:heatmap-llm}
 \end{figure}
 
@@ -88,7 +135,7 @@ Director}; no formal institutional review board (IRB) process applies at this le
 Only pseudonymous identifiers are stored; no student names appear in the data. The system is intended
 to \emph{support}, not replace, a teacher's judgement (human-in-the-loop). Because a single teacher
 graded all answers, the models reflect that grader's decisions; results are reported as agreement with
-this grader, with reporting across three dataset variants as partial mitigation. The grader
+this grader, with reporting across two dataset variants as partial mitigation. The grader
 inconsistency documented in \S\ref{sec:noisy} (class 10C Biology) is disclosed rather than hidden.
 \emph{[If the institution later requires formal consent/IRB documentation, insert the reference
 here.]}

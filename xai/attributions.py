@@ -1,9 +1,8 @@
-"""LOO (Leave-One-Out) word attribution — the unified explanation method.
+"""Occlusion (leave-one-out) word attribution — legacy thin wrapper.
 
-Thin dispatch wrapper kept for call-site compatibility. All explanation in this
-project uses occlusion (LOO): drop a word, measure the score change. It is
-model-agnostic, deterministic, and directly aligned with the ERASER faithfulness
-metrics used to evaluate it.
+Kept for call-site compatibility. The headline explanation method for the project is
+SHAP (see ``xai.explainers.shap_importance``); this occlusion wrapper remains as a fast,
+deterministic, model-agnostic alternative.
 """
 
 from __future__ import annotations

@@ -29,7 +29,7 @@ human-subjects and data-protection obligations. This statement records what has 
   limitation (no inter-annotator agreement was obtainable).
 - The system is intended as a **teacher-assist / formative-feedback** tool, **not** an
   autonomous high-stakes grader. Any deployment should keep a human in the loop and surface the
-  model's explanation (and its **faithfulness caveats** — see the XAI results).
+  model's explanation (the **SHAP word attribution** — see the XAI results).
 - Subject/topic coverage is narrow (Biology, History, Geography, Earth Science; grades from 2
   schools), so the model should not be assumed to generalize to other subjects, dialects, or
   grade levels without re-validation.

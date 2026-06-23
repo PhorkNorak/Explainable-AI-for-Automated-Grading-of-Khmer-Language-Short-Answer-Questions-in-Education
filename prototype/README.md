@@ -1,4 +1,4 @@
-# KhmerXScore — live prototype (Gradio)
+# KhmerXScore: live prototype (Gradio)
 
 A teacher-facing web app for the thesis *"Explainable AI for Automated Grading of Khmer
 Language Short-Answer Questions."* The teacher pastes the **question + reference answer +
@@ -9,7 +9,25 @@ student answer**, picks a **model pillar**, and gets:
 - short **written feedback** (which reference points are missing).
 
 It is a **teacher-assist** tool (human-in-the-loop), not an autonomous grader; the same
-faithfulness-checked **word-attribution** explanation reported in the thesis is what the teacher sees.
+**SHAP word-attribution** explanation reported in the thesis is what the teacher sees.
+
+## The four pillars and how each activates
+
+All four pillars are wired behind one interface. Each one self-activates when its resource is
+available; otherwise it stays in the selector and reports exactly why it is inactive (the status
+line at the bottom of the app lists the state of every pillar).
+
+| Pillar | Runs on | Activates when |
+|---|---|---|
+| **Classical (TF-IDF + SVR)** | CPU | always (trains at startup, a few seconds). **Demo pillar.** |
+| **RNN (BiLSTM + Attention)** | CPU | the champion checkpoint `results/champions/rnn_clean_ra_bilstm_909/best.pt` is present |
+| **Transformer (GTE dual-encoder)** | CPU (slow) / GPU | a fine-tuned checkpoint is present at `results/champions/encoder_clean_qar_dual_gte_maxfeat_1184/best.pt` (or `ENCODER_CKPT`) **and** `transformers` is installed |
+| **LLM (Qwen-KhmerGrader-4B)** | endpoint (any) / GPU | `GRADER_LLM_BASE_URL` is set (endpoint), or `GRADER_LLM_INPROCESS=1` on a GPU |
+
+> The encoder checkpoint and the LLM adapter are trained on HPC/GPU and are **not shipped** with the
+> repo. The code is ready to consume them: drop the encoder `best.pt` into the champion dir, or point
+> the LLM pillar at a served KhmerGrader. Until then those two pillars show a clear "inactive" note
+> and the app runs fine on the demo (Classical) pillar.
 
 ## Run locally
 
@@ -20,50 +38,75 @@ pip install -r prototype/requirements.txt
 python prototype/app.py            # opens http://127.0.0.1:7860
 ```
 
-The **Classical** pillar trains on startup (CPU, a few seconds). The **RNN** pillar loads
-the shipped champion checkpoint (`results/champions/rnn_clean_ra_bilstm_895/best.pt`) if
-present. The **Transformer** and **LLM** pillars appear in the selector but need a GPU +
-their weights, so on a CPU machine the app reports that clearly instead of failing.
+The base install is CPU-only and gives you the **Classical** (demo) and **RNN** pillars plus the
+endpoint-based LLM grader. The **Transformer** and **in-process LLM** paths need the optional extras
+noted in `prototype/requirements.txt`.
 
-Explanation: the app shows **word attribution** (text highlighting) computed by **occlusion**
-(leave-one-out), the model-agnostic, faithfulness-checked highlighter used throughout the thesis.
-It needs no extra install and works for every pillar, including the non-differentiable classical
-model. For the neural pillars the same highlighting can also be produced from **attention** (BiLSTM)
-or **Integrated Gradients** (Transformer); see the thesis explainability chapter.
+Explanation: the app shows **SHAP word attribution** (text highlighting), the model-agnostic
+highlighter used throughout the thesis. With the `shap` library installed it uses the Permutation
+explainer; otherwise a built-in Monte-Carlo Shapley estimator runs, so it needs no extra install and
+is the single, unified attribution method across all four pillars, including the non-differentiable
+classical model. (For a `qar` pillar the question is folded into the model input, so the attribution
+still perturbs only the student's answer words.) The explanation is a **toggle** ("Show explanation"):
+turn it off for a fast score-only result, or on for the heatmap, which is slower, especially for the
+LLM pillar where each SHAP evaluation is a full generation.
 
-## AI-generated feedback (open-source LLM)
+Written feedback comes from an **open-source instruct LLM** over an OpenAI-compatible endpoint
+(`FEEDBACK_LLM_BASE_URL`), never a proprietary API; when no feedback server is reachable the app falls
+back to deterministic **rule-based** feedback (the reference points missing from the answer), so it is
+always available offline.
 
-The **AI feedback** checkbox generates short, Khmer, teacher-style feedback with an
-**open-source LLM** over an **OpenAI-compatible** HTTP endpoint — so it works with Ollama, vLLM,
-llama.cpp's server, LM Studio, OpenRouter, Together, etc. If no LLM server is reachable, the app
-silently falls back to the built-in rule-based feedback (so it always works offline).
+## LLM grading pillar (open-source LLM)
 
-Easiest local setup is **[Ollama](https://ollama.com)** (free, runs the model locally):
+The **LLM (Qwen-KhmerGrader-4B)** pillar grades with an open-source model. It has two backends:
+
+**1. Endpoint (default, runs anywhere incl. this CPU machine).** Point it at any OpenAI-compatible
+server (vLLM / Ollama / llama.cpp / LM Studio / OpenRouter / Together …) that serves a KhmerGrader
+model. The app sends the same grading prompt used in fine-tuning and parses the integer score.
 
 ```bash
-ollama pull qwen2.5:7b-instruct      # a capable, Khmer-aware open model (or gemma2, llama3.1, ...)
-ollama serve                          # exposes http://localhost:11434/v1
-python prototype/app.py               # the app auto-targets Ollama by default
+export GRADER_LLM_BASE_URL="http://localhost:8000/v1"   # your served KhmerGrader
+export GRADER_LLM_MODEL="qwen-khmergrader-4b"
+export GRADER_LLM_API_KEY="..."                          # only for hosted providers
+python prototype/app.py
 ```
-
-Configure via environment variables (all optional; defaults target local Ollama):
 
 | Variable | Default | Notes |
 |---|---|---|
-| `FEEDBACK_LLM_BASE_URL` | `http://localhost:11434/v1` | Any OpenAI-compatible base URL |
-| `FEEDBACK_LLM_MODEL` | `qwen2.5:7b-instruct` | Model name on that server |
-| `FEEDBACK_LLM_API_KEY` | `ollama` | Real key only for hosted providers (OpenRouter/Together/…) |
+| `GRADER_LLM_BASE_URL` | *(empty → pillar inactive)* | OpenAI-compatible base URL serving the grader |
+| `GRADER_LLM_MODEL` | `qwen-khmergrader-4b` | model name on that server |
+| `GRADER_LLM_API_KEY` | `ollama` | real key only for hosted providers |
 
-Example pointing at a hosted open-model provider:
+**2. In-process (GPU only).** Loads the base model + trained LoRA adapter locally instead of calling
+an endpoint. Needs the optional GPU extras and a GPU Space.
 
 ```bash
-export FEEDBACK_LLM_BASE_URL="https://openrouter.ai/api/v1"
-export FEEDBACK_LLM_MODEL="qwen/qwen-2.5-72b-instruct"
-export FEEDBACK_LLM_API_KEY="sk-or-..."
+export GRADER_LLM_INPROCESS=1
+export GRADER_LLM_MODEL="Qwen/Qwen3.5-4B"                # base (HF id)
+export GRADER_LLM_ADAPTER="/path/or/hf-repo/khmergrader-qwen-lora"
+python prototype/app.py
 ```
 
-The feedback is grounded only in the reference answer and is labelled AI-generated; it is a
-teacher-assist suggestion to review, not a final comment.
+## Written feedback (open-source LLM)
+
+The written feedback is generated by a **general open-source instruct model** (separate from the
+KhmerGrader that produces the score), served over any OpenAI-compatible endpoint. Point it at a server
+and the app drafts short Khmer feedback grounded in the question, reference, student answer, the score,
+and the missing reference points. If no endpoint is set or reachable, it falls back to deterministic
+rule-based feedback, so the app always works offline. It never calls a proprietary grading API.
+
+```bash
+export FEEDBACK_LLM_BASE_URL="http://localhost:8000/v1"   # any OpenAI-compatible server
+export FEEDBACK_LLM_MODEL="qwen2.5:7b-instruct"
+export FEEDBACK_LLM_API_KEY="..."                          # only for hosted providers
+python prototype/app.py
+```
+
+| Variable | Default | Notes |
+|---|---|---|
+| `FEEDBACK_LLM_BASE_URL` | *(empty → rule-based fallback)* | OpenAI-compatible base URL serving an instruct model |
+| `FEEDBACK_LLM_MODEL` | `qwen2.5:7b-instruct` | model name on that server |
+| `FEEDBACK_LLM_API_KEY` | `ollama` | real key only for hosted providers |
 
 ## Deploy free on Hugging Face Spaces
 
@@ -72,8 +115,8 @@ The app imports the project code (`config`, `data`, `models/`, `xai/`) and reads
 
 1. Create a new **Gradio** Space.
 2. Push the `final_kxs/` contents to it (the `*.pt` checkpoints are git-ignored by the
-   project `.gitignore` — for the RNN pillar to work on the Space, force-add
-   `results/champions/rnn_clean_ra_bilstm_895/best.pt`, e.g. `git add -f <that file>`).
+   project `.gitignore`; for the RNN pillar to work on the Space, force-add
+   `results/champions/rnn_clean_ra_bilstm_909/best.pt`, e.g. `git add -f <that file>`).
 3. Put this YAML front-matter at the **top of the Space's root `README.md`** so it picks up
    the right entry point and SDK:
 
@@ -89,8 +132,9 @@ The app imports the project code (`config`, `data`, `models/`, `xai/`) and reads
 4. Set the Space's `requirements.txt` to `prototype/requirements.txt` (or copy its contents
    to a root `requirements.txt`).
 
-For the Transformer/LLM pillars, use a **GPU** Space hardware tier and add
-`transformers`, `accelerate`, `peft`, `bitsandbytes` (and `unsloth` for the LLM) — the same
-extras listed in the project's top-level `requirements.txt`.
+To light up the heavier pillars on a Space: for the **encoder**, uncomment `transformers` in
+`prototype/requirements.txt` and force-add an encoder `best.pt`; for the **LLM**, the simplest path
+is the endpoint backend (set `GRADER_LLM_*` to a served model), or use a **GPU** Space with the
+in-process extras (`transformers`, `accelerate`, `peft`, `bitsandbytes`, optionally `unsloth`).
 
 > After deploying, paste the public Space URL into the thesis (§4.5 / prototype slide).

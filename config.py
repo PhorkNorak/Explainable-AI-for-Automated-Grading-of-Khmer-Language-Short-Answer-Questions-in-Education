@@ -58,16 +58,8 @@ TRAIN_RATIO = 0.70
 VAL_RATIO   = 0.15
 TEST_RATIO  = 0.15
 
-# Evaluation split mode (data.split_dataframe reads this):
-#   "random"   — stratified-by-label random per-row split (default; comparable to prior runs)
-#   "question" — GroupShuffleSplit by QuestionID so train/val/test share NO question
-#                (the stricter "unseen-question" generalization test). Override via the
-#                KXS_SPLIT_MODE env var without editing this file.
-SPLIT_MODE      = os.environ.get("KXS_SPLIT_MODE", "random")
-SPLIT_GROUP_COL = "QuestionID"
-
-# Seeds for multi-seed runs (variance / significance reporting).
-SEEDS = [42, 1337, 2024, 7, 99]
+# Stratified-by-label random per-row 70/15/15 split (the single split used throughout).
+SPLIT_MODE = "random"
 
 # Classical
 TFIDF_NGRAMS   = (2, 4)

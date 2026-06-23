@@ -1,13 +1,13 @@
-"""exp11 — cleaning-refinement ablation.
+"""exp11 — format-noise robustness ablation.
 
-Quantifies the effect of the preprocessing refinement (stripping zero-width/format/
-control characters and bullet markers) on the classical champion, to show the
-residual noise removed by the refinement was negligible — so the released headline
-numbers (produced with the pre-refinement cleaning) are robust.
+Quantifies the effect of the cleaning refinement (stripping zero-width/format/
+control characters and bullet markers, plus NFC normalisation) on the classical
+champion, to show the residual noise removed by the refinement is negligible — so the
+released headline numbers (produced with the pre-refinement cleaning) are robust.
 
 For each dataset variant it fits `clean_ra_tfidf_svr` twice:
-  * OLD cleaning  = KCC normalize + strip punctuation        (no invisible strip)
-  * NEW cleaning  = strip invisibles + KCC + strip punctuation (current preprocess)
+  * OLD cleaning  = strip punctuation only            (no invisible strip, no NFC)
+  * NEW cleaning  = strip invisibles + NFC + strip punctuation (current preprocess)
 and reports test QWK + the delta.
 
 Output: results_stats/cleaning_ablation.csv   (CPU-only)
@@ -36,7 +36,6 @@ from models.classical import TFIDFSVR  # noqa: E402
 DATASETS = [
     ("full", "dataset.csv", False),
     ("no10c", "dataset_no_10c_biology.csv", False),
-    ("no10c_no0", "dataset_no_10c_biology.csv", True),
 ]
 
 
@@ -45,7 +44,7 @@ def _old_clean(text: str) -> str:
     the released headline numbers)."""
     if not text or not isinstance(text, str):
         return ""
-    return P.strip_punctuation(P.kcc_normalize(text.strip()))
+    return P.strip_punctuation(text.strip())
 
 
 def _new_clean(text: str) -> str:

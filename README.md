@@ -10,8 +10,8 @@ model families ("pillars") under one consistent recipe:
 
 | Pillar | Representative model | Headline test QWK (uncalibrated) | Deployment |
 |---|---|---|---|
-| **Classical** | TF-IDF + RBF-SVR | QWK 0.795 (895) | exact 0.20 |
-| **RNN** | BiLSTM + Attention (char-level) | **QWK 0.845** (895) | exact 0.54 |
+| **Classical** | TF-IDF + RBF-SVR | QWK 0.795 (909) | exact 0.20 |
+| **RNN** | BiLSTM + Attention (char-level) | **QWK 0.845** (909) | exact 0.54 |
 | **Transformer** | GTE-multilingual dual-encoder (+ max-score feature) | QWK 0.820 (1184) | raw-exact 0.573 |
 | **LLM** | Qwen 3.5 4B, QLoRA fine-tune (KhmerGrader family) | QWK 0.843 (909) | **66% exact**, **83% within ±1 pt** |
 
@@ -27,7 +27,7 @@ small corpus.
 > **Caveat (read before citing numbers):** headline QWKs are **uncalibrated**, reported consistently
 > across pillars. Threshold calibration is a *validation-selected, fragile, model-dependent ablation*
 > — it lifts the classical model (test 0.795→0.847) but **lowers** the BiLSTM on test, so it is not
-> folded into the headline. Pillars are also evaluated on different dataset variants (895/909/1184),
+> folded into the headline. Pillars are also evaluated on different dataset variants (909/1184),
 > so cross-pillar QWK differences are indicative rather than head-to-head (only classical vs BiLSTM
 > share a test set).
 
@@ -42,13 +42,12 @@ A single trained teacher graded every answer.
 
 Ordinal label = `round(4 · StudentScore / MaxScore) ∈ {0..4}` (heavy skew: ~42% full credit).
 
-**Three curated variants** (selected via `DROP_SCORE_ZERO` and the CSV in `config.py`):
+**Two curated variants** (selected via the CSV in `config.py`); grade-0 is kept (full 5-class task):
 
 | Variant | Rows | Definition |
 |---|---:|---|
 | `full` | 1,184 | original |
-| `no10c` | 909 | drop the noisy "10C Biology" subset (`data/dataset_no_10c_biology.csv`) |
-| `no10c_no0` | 895 | also drop the 14 `score=0` outliers (`DROP_SCORE_ZERO=True`) |
+| `no10c` | 909 | drop the noisy "10C Biology" subset (`data/dataset_no_10c_biology.csv`); default |
 
 ---
 
@@ -58,7 +57,7 @@ Ordinal label = `round(4 · StudentScore / MaxScore) ∈ {0..4}` (heavy skew: ~4
 final_kxs/
 ├── config.py          single source of truth: paths, model registry, hyperparameters
 ├── data.py            CSV load, 70/15/15 stratified split (seed 42), dataset classes
-├── preprocess.py      raw / clean (strip invisibles+KCC+punct) / segment (khmernltk); digits kept
+├── preprocess.py      raw / clean (strip invisibles+NFC+punct) / segment (khmernltk); digits kept
 ├── train.py           train_classical · train_bilstm · train_transformer
 ├── evaluate.py        QWK · accuracy · adjacent-acc · MAE + raw (deployment) metrics
 ├── run_all.py         grid orchestrator (legacy single-dataset entry point)
@@ -114,7 +113,7 @@ Install dependencies (Python 3.10+; a GPU is needed only for v05/v06/v03b/v08):
 pip install -r requirements.txt
 ```
 
-Each experiment runs over **all three datasets** by default and writes its own
+Each experiment runs over **both datasets** by default and writes its own
 `results_<dataset>_<version>/` directory. Order only matters for the ensemble (v07), which
 reads the upstream leaderboards.
 
@@ -206,8 +205,8 @@ mkdir -p logs && ( \
   python -u experiments/exp02_threshold_calibration.py --source v06_transformer && \
   python -u experiments/exp02_threshold_calibration.py --source v03b_maxfeat_neural && \
   python -u experiments/exp07_ensemble.py && \
-  python -u experiments/exp08_llm_finetune.py --models qwen35_4b --epochs 7 && \
-  python -u experiments/exp09_xai.py --families classical bilstm encoder llm --dataset no10c_no0 && \
+  python -u experiments/exp08_llm_finetune.py --models qwen35_4b --epochs 10 && \
+  python -u experiments/exp09_xai.py --families classical bilstm encoder llm --dataset no10c && \
   python -u experiments/exp10_significance.py && \
   python -u experiments/exp11_cleaning_ablation.py && \
   python -u experiments/exp12_hparam_tuning.py && \
@@ -224,13 +223,6 @@ ask the orchestrator what is left and run exactly that:
 
 ```bash
 python experiments/check_progress.py     # prints a tailored resume command for MISSING/PARTIAL cells
-```
-
-**Step 7 — (optional) unseen-question runs** for the neural/LLM leakage numbers (thesis future work):
-
-```bash
-KXS_SPLIT_MODE=question python -u experiments/exp05_bilstm.py
-KXS_SPLIT_MODE=question python -u experiments/exp06_transformer.py
 ```
 
 Tips: if `exp06`/`exp08` hit GPU out-of-memory, lower the batch size (`exp08 ... --batch_size 2`;
@@ -250,10 +242,10 @@ single model-agnostic explanation method used across all four families — and s
 
 ```bash
 # Local (CPU, no extra deps) — classical + RNN pillars
-python experiments/exp09_xai.py --families classical bilstm --dataset no10c_no0
+python experiments/exp09_xai.py --families classical bilstm --dataset no10c
 
 # HPC (GPU) — encoder needs transformers+GPU; LLM needs unsloth+peft + the fine-tuned adapter
-python experiments/exp09_xai.py --families encoder llm --dataset no10c_no0
+python experiments/exp09_xai.py --families encoder llm --dataset no10c
 ```
 
 Faithfulness reading: **higher comprehensiveness** and **lower sufficiency** = more faithful;
@@ -287,31 +279,15 @@ text-highlighting). Deployment to a free Hugging Face Space is documented in `pr
 ## Statistical rigor & robustness
 
 ```bash
-# Champion point metrics for all four champions + the random-vs-unseen-question
-# leakage comparison (classical, multi-seed). CPU-only.
-python experiments/exp10_significance.py     # -> results_stats/{champion_metrics,split_compare}.csv
+# Champion point metrics for all four champions. CPU-only.
+python experiments/exp10_significance.py     # -> results_stats/champion_metrics.csv
 
-# Cleaning-refinement ablation: old vs new preprocessing on the classical champion,
+# Cleaning-refinement (format-noise) ablation: old vs new preprocessing on the classical champion,
 # showing the removed zero-width/bullet noise changes QWK by <=0.004 (negligible). CPU-only.
 python experiments/exp11_cleaning_ablation.py  # -> results_stats/cleaning_ablation.csv
 
 # Hyperparameter tuning (validation-selected): classical SVR C + TF-IDF max-features. CPU-only.
 python experiments/exp12_hparam_tuning.py      # -> results_stats/hparam_tuning.csv
-
-# Attribution-method comparison (LOO vs LIME vs SHAP) + cross-method agreement + faithfulness.
-# Mirrors ExASAG (SHAP+IG) and Pinto 2025 (LIME/IG/HEDGE/LOO). NEEDS: pip install lime shap captum
-pip install lime shap captum                   # (machine with internet)
-python experiments/exp13_attribution_comparison.py            # classical: LOO/LIME/SHAP, CPU
-python experiments/exp13_attribution_comparison.py --families transformer   # Integrated Gradients, GPU/HPC
-```
-
-**Unseen-question (question-held-out) evaluation** — set the split mode so train/val/test share
-no `QuestionID` (a `GroupShuffleSplit`). Driven by `config.SPLIT_MODE` or the env var:
-
-```bash
-# one cell under the stricter unseen-question split
-KXS_SPLIT_MODE=question python experiments/exp01_tfidf_baseline.py --datasets no10c_no0
-# full grid + v08 under the unseen-question split (HPC): set KXS_SPLIT_MODE=question and re-run exp01–exp09
 ```
 
 All metrics are computed from any run's `predictions_test.csv`, so they need no re-training.

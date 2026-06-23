@@ -12,18 +12,28 @@ Automatic Short-Answer Grading (ASAG) scores a free-text student answer by compa
 indirectly, to a reference answer. The field has gone through four overlapping stages:
 
 \begin{itemize}[leftmargin=1.4em]
-  \item \textbf{Similarity-based.} Early systems scored answers by how similar they were to a
-  reference, using lexical and dependency features.
-  \item \textbf{Shared tasks.} Standard datasets and the idea of testing on \emph{unseen questions}
-  made systems comparable.
-  \item \textbf{Deep learning.} Work moved from word embeddings to neural and Transformer models, with
-  data augmentation to cope with small data~\citep{sung2022survey,tan2025review}.
-  \item \textbf{Large language models.} LLMs are now fine-tuned or prompted for grading. Fine-tuned
-  specialist models usually beat prompted general ones~\citep{chang2024gpt4}.
+  \item \textbf{Similarity-based.} Early systems scored an answer by how closely it matched the
+  reference, using surface features such as word overlap, $n$-gram and edit distance, and later
+  dependency-graph alignment between the parse trees of the answer and the reference~\citep{mohler2011}.
+  These methods are transparent and need no training data, but they reward wording over meaning and miss
+  paraphrases that use different words for the same idea.
+  \item \textbf{Shared tasks.} Public datasets and common evaluation protocols, most influentially
+  SemEval-2013 Task~7~\citep{dzikovska2013}, made systems comparable for the first time and introduced
+  the key idea of testing on \emph{unseen questions} and \emph{unseen answers}.
+  \item \textbf{Deep learning.} Work moved from hand-built features to learned representations: word
+  embeddings, then recurrent networks, then Transformer encoders fine-tuned for scoring, often with data
+  augmentation to cope with small corpora~\citep{sung2022survey,tan2025review}. These models capture
+  meaning beyond surface overlap but need more data and are harder to interpret.
+  \item \textbf{Large language models.} The current stage fine-tunes or prompts billion-parameter
+  generative models to produce a score directly from the question, reference, and answer. The recurring
+  finding is that a fine-tuned specialist model usually beats a larger general model used
+  zero-shot~\citep{chang2024gpt4}, which is the design this study follows for its LLM pillar.
 \end{itemize}
 
 Throughout these stages, \emph{Quadratic Weighted Kappa} (QWK) has stayed the standard metric for
-ordinal scoring, usually reported with exact and adjacent (within-one-point) agreement.
+ordinal scoring, because it rewards near-misses and penalises large disagreements more than small ones;
+it is usually reported alongside exact and adjacent (within-one-point) agreement so that a reader can
+separate overall correlation from exact-mark accuracy.
 
 \section{Challenges in Khmer}
 \label{sec:lit-khmer}
@@ -46,25 +56,45 @@ concern~\citep{huot2025cambodia}, but grading Khmer student answers is still una
 \label{sec:lit-core}
 
 \subsection{Transformers and Pre-trained Encoders}
-The Transformer replaced recurrence with self-attention and is the backbone of modern NLP. It lets
-every word attend to every other word, capturing long-range links that recurrent models reach only
-with difficulty. Pre-trained encoders built on it learn general text representations that can be
-fine-tuned with little task data. BERT and its multilingual version mBERT~\citep{devlin2019bert} use a
-masked-language-modelling objective; cross-lingual encoders such as XLM-R scale this to many languages,
-which suits Khmer's multilingual setting. BERT, mBERT, XLM-R, GTE-multilingual, and the Qwen LLM used
-in this study are \emph{all} Transformers; they differ in size and how they are adapted, not in their
-core design.
+The Transformer replaced recurrence with \emph{self-attention} and is the backbone of modern NLP.
+Self-attention lets every token in a sentence look directly at every other token and weigh how much
+each one matters for its own representation, so a model can link ``it'' to the noun it refers to, or an
+answer phrase to the part of the reference it echoes, without passing information step by step through a
+chain of hidden states the way a recurrent network must. Because every pair of positions is connected in
+one layer, long-range dependencies are as easy to capture as short ones, and the computation
+parallelises well on a GPU.
 
-\subsection{Explainability and Faithfulness}
-Explainable AI (XAI) makes model decisions transparent. \emph{Attribution} methods give each input
-word an importance score; common ones are perturbation methods (LIME and \emph{occlusion}), gradient
-methods (saliency, Integrated Gradients), and the game-theoretic SHAP. The key distinction is between
-\emph{faithfulness} (does the explanation reflect what the model actually computed?) and
-\emph{plausibility} (does it look reasonable to a human?)~\citep{lyu2024faithfulsurvey}. The two can
-disagree, and a convincing-but-unfaithful explanation is the dangerous case. Faithfulness can be
-measured with the ERASER protocol's \emph{comprehensiveness} and \emph{sufficiency}~\citep{deyoung2020eraser},
-summarised across removal fractions by the area-over-the-perturbation-curve (AOPC). This study takes
-that measure-don't-assume stance and compares each explanation against a random-removal baseline.
+Pre-trained encoders built on this architecture learn general-purpose text representations from large
+unlabelled corpora and can then be fine-tuned on a small labelled task. BERT and its multilingual
+version mBERT~\citep{devlin2019bert} are trained with a masked-language-modelling objective (predict
+hidden words from their context); cross-lingual encoders such as XLM-R extend this to a hundred
+languages in one shared vocabulary, which is what makes them usable for a low-resource language like
+Khmer that has too little text to pre-train a dedicated model. The limitation is that such models see
+only a thin slice of Khmer during pre-training, so their Khmer representations are weaker than their
+English ones. BERT, mBERT, XLM-R, GTE-multilingual, and the Qwen LLM used in this study are \emph{all}
+Transformers; they differ in size, training objective, and how they are adapted, not in their core
+self-attention design.
+
+\subsection{Explainability}
+Explainable AI (XAI) makes model decisions transparent. For text scoring the most useful family is
+\emph{attribution}: assign each input word an importance score so a teacher can see which words drove
+the grade. Attribution methods fall into three groups. \emph{Perturbation} methods change the input and
+watch the output: occlusion (leave-one-out) removes one word at a time, while LIME fits a simple local
+model to many random perturbations. \emph{Gradient} methods (plain saliency, Integrated Gradients) read
+the model's gradients with respect to each input, so they need a differentiable model and access to its
+internals. \emph{SHAP} (SHapley Additive exPlanations) distributes credit among the input words using
+Shapley values, the average marginal contribution of a word over all coalitions of the
+others~\citep{lundberg2017shap}; it is the field standard for explainable scoring and, in its
+model-agnostic form, treats the model as a black box, so one method works for a neural network, a
+Transformer, and the non-differentiable support-vector regressor alike.
+
+This study uses SHAP as its explanation, following the explainable-scoring work of Kumar and
+Boulanger~\citep{kumar2020explainable}, who use SHAP to expose which features drive an essay score and
+show that such explanations carry genuine pedagogical value. We judge an explanation by its
+\emph{plausibility}~\citep{lyu2024faithfulsurvey}: whether the words it highlights look right to a
+teacher, measured as the overlap between the top SHAP words and the content of the reference answer.
+A plausible explanation highlights the rubric-relevant content a teacher would check, which is what
+turns an attribution into a basis for formative feedback.
 
 \section{Related Work}
 \label{sec:lit-related}
@@ -73,44 +103,89 @@ showed that explainable automated essay scoring has pedagogical value, using SHA
 features~\citep{kumar2020explainable}. Most later scoring-XAI work has also relied on SHAP, LIME, or
 Integrated Gradients~\citep{lachana2025dutch}, and one study reports that SHAP and LIME are poorly
 aligned with rubric assessment~\citep{xu2025qwenscore}. A systematic comparison of attribution methods
-for ASAG (including leave-one-out) motivates the occlusion-style method used here~\citep{pinto2025attribution}.
+for ASAG situates our choice of SHAP~\citep{pinto2025attribution}.
 For evaluation, recent work compares fine-tuned models against prompted LLMs for grading and reports
 QWK with exact and adjacent agreement~\citep{lachana2025dutch}. The closest comparable dataset is an
 Arabic ASAG corpus on a three-point scale, whose best Transformer reaches 95.67\,\%/77.22\,\%
 train/test accuracy and an unweighted Cohen's $\kappa$ of 0.60~\citep{alaoui2024}; we use it as the
-anchor for honestly reporting the train/test gap. Table~\ref{tab:priorwork} places this study among
-representative recent datasets; metric values are not comparable across rows.
+anchor for honestly reporting the train/test gap.
 
-\begin{table}[t]
-\centering
-\caption{Show representative recent grading datasets and where this study sits.}
-\label{tab:priorwork}
-\small
-\begin{tabular}{@{}lllp{3.2cm}@{}}
+Table~\ref{tab:priorwork} places this study against representative prior work, and the rows trace the
+arc of the field. The early baselines establish the task and its metrics: Mohler et
+al.~\citep{mohler2011} score answers by semantic similarity and dependency-graph alignment, and the
+SemEval-2013 shared task~\citep{dzikovska2013} standardises evaluation and the unseen-question setting.
+The survey of Sung et al.~\citep{sung2022survey} documents the shift from word embeddings to
+Transformers. On the explainability side, Kumar and Boulanger~\citep{kumar2020explainable} show that
+explainable essay scoring has genuine pedagogical value but rely on SHAP over hand-built features, and
+Xu et al.~\citep{xu2025qwenscore} report that SHAP and LIME align only weakly with how a rubric is
+actually applied. Pinto and Shin~\citep{pinto2025attribution} compare attribution methods for ASAG
+directly, including SHAP and leave-one-out, informing our use of SHAP. On the model side,
+Chang and Ginter~\citep{chang2024gpt4} test GPT-4 prompting and find fine-tuned specialists tend to
+lead, and Lachana~\citep{lachana2025dutch} confirms this for Dutch ordinal scoring while reporting QWK
+with exact and adjacent agreement, the same metric suite we adopt. Latif and
+Zhai~\citep{latif2024finetuning} show that fine-tuning a general LLM substantially outperforms its
+prompted base for scoring; we extend this contrast to a low-resource language by comparing the
+fine-tuned KhmerGrader against contemporary frontier models prompted zero-shot. For Khmer specifically, Buoy et
+al.~\citep{buoy2022khmer} provide pre-trained models and evaluation data but no grading task. Metric
+values are not comparable across rows (different datasets, languages, and scales); the table is a map of
+\emph{approaches}, not a leaderboard.
+
+{\footnotesize\setstretch{1}\setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.2}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{4.2cm} >{\raggedright\arraybackslash}p{1.7cm} >{\raggedright\arraybackslash}p{2.6cm} >{\raggedright\arraybackslash}p{2.3cm} >{\raggedright\arraybackslash}p{2.7cm}@{}}
+\caption[Related work in automated short-answer grading]{Related work in automated short-answer grading and the gap this study fills. Metric values are not comparable across rows.}\label{tab:priorwork}\\
 \toprule
-Study & Language & Scale & Metric / approach \\
+Paper (author, year) and title & Language / task & Model \& approach & XAI method & Headline result \\
 \midrule
-Kumar \& Boulanger~\citep{kumar2020explainable} & English & holistic & QWK; explainable AES (SHAP) \\
-Soulimani et al.~\citep{alaoui2024}             & Arabic  & 3-class (0--2) & accuracy, Cohen $\kappa$; deep learning \\
-Lachana~\citep{lachana2025dutch}                & Dutch   & rubric/ordinal & QWK, exact/adjacent; fine-tuned vs prompted LLM \\
-This study                                      & Khmer   & 5-class (0--4) & QWK, exact/adjacent, accuracy, F1; four families + faithfulness \\
+\endfirsthead
+\multicolumn{5}{@{}l}{\itshape Table~\ref{tab:priorwork} continued from previous page}\\
+\toprule
+Paper (author, year) and title & Language / task & Model \& approach & XAI method & Headline result \\
+\midrule
+\endhead
+\midrule
+\multicolumn{5}{r@{}}{\itshape continued on next page}\\
+\endfoot
 \bottomrule
-\end{tabular}
-\end{table}
+\endlastfoot
+Mohler et al.~(2011)~\citep{mohler2011}\newline \emph{Learning to grade short answer questions using semantic similarity measures and dependency graph alignments} & English, short answer & Lexical similarity + dependency-graph alignment & n/a & Pearson correlation / RMSE (early baseline) \\
+\addlinespace
+Dzikovska et al.~(2013)~\citep{dzikovska2013}\newline \emph{SemEval-2013 Task 7: joint student response analysis and recognizing textual entailment} & English, SemEval-2013 Task~7 & Textual-entailment classification (shared task) & n/a & macro-F1 (standard benchmark) \\
+\addlinespace
+Kumar \& Boulanger~(2020)~\citep{kumar2020explainable}\newline \emph{Explainable automated essay scoring: deep learning really has pedagogical value} & English, essays (AES) & Deep-learning essay scoring & SHAP over features & QWK; shows XAI has pedagogical value \\
+\addlinespace
+Sung et al.~(2022)~\citep{sung2022survey}\newline \emph{A survey on automated short answer grading with deep learning: from word embeddings to transformers} & ASAG survey & Word embeddings $\to$ Transformers & n/a & survey (no single metric) \\
+\addlinespace
+Chang \& Ginter~(2024)~\citep{chang2024gpt4}\newline \emph{Performance of the large language model GPT-4 on automated short answer grading} & English, short answer & GPT-4 prompting (zero/few-shot) & n/a & QWK; fine-tuned specialists tend to lead \\
+\addlinespace
+Soulimani et al.~(2024)~\citep{alaoui2024}\newline \emph{Deep learning based Arabic short answer grading in serious games} & Arabic, 3-class & Deep learning (Transformer) & n/a & Acc 95.67/77.22 (train/test); Cohen $\kappa$ 0.60 \\
+\addlinespace
+Pinto \& Shin~(2025)~\citep{pinto2025attribution}\newline \emph{Evaluating the consistency and reliability of attribution methods in ASAG systems} & English, ASAG & Attribution-method comparison & LOO, SHAP, IG & consistency / reliability of attributions \\
+\addlinespace
+Xu et al.~(2025)~\citep{xu2025qwenscore}\newline \emph{Explainable AI for education: enhancing essay scoring via rubric-aligned chain-of-thought prompting} & Essays (LLM) & Rubric-aligned chain-of-thought prompting & SHAP, LIME & rubric-aligned scoring; SHAP/LIME weakly aligned \\
+\addlinespace
+Lachana~(2025)~\citep{lachana2025dutch}\newline \emph{Automated scoring systems for open-ended questions in Dutch education} & Dutch, ordinal & Fine-tuned vs prompted LLM & n/a & QWK, exact/adjacent; fine-tuned wins \\
+\addlinespace
+Buoy et al.~(2022)~\citep{buoy2022khmer}\newline \emph{Pretrained models and evaluation data for the Khmer language} & Khmer NLP & Pretrained models + evaluation data & n/a & foundational Khmer models (no grading) \\
+\addlinespace
+\textbf{This study}\newline \emph{Explainable AI for automated grading of Khmer language short-answer questions in education} & \textbf{Khmer, 5-class} & Classical SVR, BiLSTM, Transformer, LLM & SHAP & QWK 0.80--0.85; exact 66\% \\
+\end{longtable}
+}
+
+As Table~\ref{tab:priorwork} shows, prior grading work spans several languages and model families, but
+the XAI column is sparse: most grading work ships no word-level explanation at all, the explainable
+studies apply SHAP to a single model type, and none targets Khmer. That is the gap this study fills.
 
 \section{Gap in Existing Research}
 \label{sec:lit-gap}
-Three gaps stand out:
+Two gaps stand out:
 
 \begin{enumerate}[leftmargin=1.8em]
   \item there is \textbf{no published ASAG benchmark for Khmer}, so the field has no data and no
   baselines;
-  \item much ASAG work \emph{shows} explanations without \emph{measuring} whether they are faithful,
-  and most relies on SHAP-style methods;
-  \item benchmarks with few distinct questions risk \emph{question leakage}, which inflates scores, yet
-  this is rarely measured.
+  \item most ASAG work ships no word-level explanation, and the explainable studies apply SHAP to a
+  single model type rather than across diverse model families.
 \end{enumerate}
 
-This study addresses all three: it builds the first reproducible Khmer ASAG benchmark, measures
-explanation faithfulness across four model families with one model-agnostic method, and measures the
-question-leakage effect with a question-held-out evaluation.
+This study addresses both: it builds the first reproducible Khmer ASAG benchmark and applies one
+model-agnostic SHAP explanation across four diverse model families (including the non-differentiable
+classical model).

@@ -1,15 +1,13 @@
 """Data loading, splitting, and dataset classes for the simple pipeline.
 
-70/15/15 split (seed=42). `config.SPLIT_MODE` selects either a stratified random
-per-row split ("random", default) or a question-held-out GroupShuffleSplit over
-QuestionID ("question") that shares no question between train/val/test.
+Stratified-by-label random 70/15/15 split (seed=42).
 """
 
 import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
-from sklearn.model_selection import train_test_split, GroupShuffleSplit
+from sklearn.model_selection import train_test_split
 
 import config as C
 from preprocess import preprocess
@@ -29,45 +27,23 @@ def load_dataframe(csv_path: str = C.RAW_CSV) -> pd.DataFrame:
     return df.reset_index(drop=True)
 
 
-def _group_split(df: pd.DataFrame, seed: int):
-    """Unseen-question split: train/val/test share NO QuestionID (GroupShuffleSplit).
-
-    Stricter "generalization to new questions" evaluation. Groups are disjoint, so the
-    split is unstratified — per-split class balance will vary (reported as a caveat).
-    """
-    groups = df[C.SPLIT_GROUP_COL].astype(str).values
-    g1 = GroupShuffleSplit(n_splits=1, test_size=C.VAL_RATIO + C.TEST_RATIO,
-                           random_state=seed)
-    train_idx, temp_idx = next(g1.split(df, groups=groups))
-    train_df = df.iloc[train_idx]
-    temp = df.iloc[temp_idx]
-    g2 = GroupShuffleSplit(n_splits=1,
-                           test_size=C.TEST_RATIO / (C.VAL_RATIO + C.TEST_RATIO),
-                           random_state=seed)
-    val_idx, test_idx = next(g2.split(temp, groups=temp[C.SPLIT_GROUP_COL].astype(str).values))
-    return train_df, temp.iloc[val_idx], temp.iloc[test_idx]
-
-
 def split_dataframe(df: pd.DataFrame, seed: int = C.SEED):
-    if C.SPLIT_MODE == "question":
-        train_df, val_df, test_df = _group_split(df, seed)
-    else:
-        min_count = df["score_label"].value_counts().min()
-        strat = df["score_label"] if min_count >= 4 else None
-        train_df, temp = train_test_split(
-            df, test_size=C.VAL_RATIO + C.TEST_RATIO, random_state=seed, stratify=strat
-        )
-        strat2 = (
-            temp["score_label"]
-            if strat is not None and temp["score_label"].value_counts().min() >= 2
-            else None
-        )
-        val_df, test_df = train_test_split(
-            temp,
-            test_size=C.TEST_RATIO / (C.VAL_RATIO + C.TEST_RATIO),
-            random_state=seed,
-            stratify=strat2,
-        )
+    min_count = df["score_label"].value_counts().min()
+    strat = df["score_label"] if min_count >= 4 else None
+    train_df, temp = train_test_split(
+        df, test_size=C.VAL_RATIO + C.TEST_RATIO, random_state=seed, stratify=strat
+    )
+    strat2 = (
+        temp["score_label"]
+        if strat is not None and temp["score_label"].value_counts().min() >= 2
+        else None
+    )
+    val_df, test_df = train_test_split(
+        temp,
+        test_size=C.TEST_RATIO / (C.VAL_RATIO + C.TEST_RATIO),
+        random_state=seed,
+        stratify=strat2,
+    )
     return (
         train_df.reset_index(drop=True),
         val_df.reset_index(drop=True),

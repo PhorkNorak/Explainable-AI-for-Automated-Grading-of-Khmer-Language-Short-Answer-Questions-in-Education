@@ -9,7 +9,13 @@ Khmer-speaking teacher.
 from __future__ import annotations
 
 import os
+import warnings
 from typing import List
+
+# The PNG heatmaps are quick previews only (matplotlib cannot shape Khmer complex
+# script; the browser-shaped HTML heatmaps are the real deliverable). Silence the
+# flood of "Glyph NNNN missing from font" warnings so the run log stays readable.
+warnings.filterwarnings("ignore", message=r"Glyph \d+ .* missing from font")
 
 import numpy as np
 import matplotlib
