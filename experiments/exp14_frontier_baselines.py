@@ -73,8 +73,8 @@ OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 # silently). Re-verify on https://openrouter.ai/models if a 404 appears.
 OPENROUTER_MODELS = {
     "openai":   "openai/gpt-5.5-20260423",
-    "anthropic":"anthropic/claude-opus-4.8-20260528",
-    "gemini":   "google/gemini-3.5-flash-20260519",
+    "anthropic":"anthropic/claude-opus-4.8",   # OpenRouter date-pins the others but not Anthropic;
+    "gemini":   "google/gemini-3.5-flash-20260519",  # reproducibility rests on EVAL_DATE + cache
     "deepseek": "deepseek/deepseek-v4-flash-20260423",
 }
 
