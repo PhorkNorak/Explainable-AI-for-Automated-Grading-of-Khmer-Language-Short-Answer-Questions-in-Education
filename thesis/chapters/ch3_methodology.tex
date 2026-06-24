@@ -336,8 +336,12 @@ The score (integer from 0 to \{Max\}): \{score\}
 \noindent The prompt above is the \texttt{qar} format; in the \texttt{ra} format the \emph{Question}
 line is dropped, so the model sees only the student answer and the reference. For instruction-tuned
 bases we render this through the model's chat template with reasoning
-disabled, so the model emits a bare integer rather than a chain of thought. At inference we greedily
-decode, parse the first integer from the output, and clip it to $[0,\text{Max}]$. We fine-tune each base
+disabled, so the model emits a bare integer rather than a chain of thought. At inference we use
+\textbf{greedy decoding (temperature 0)} with reasoning disabled, the same configuration recent work
+adopts for fine-tuned open-source scoring models~\citep{solano2025narrowing}: sampling temperature in
+the $0$--$1$ range affects output variance rather than mean accuracy, and temperature 0 maximises
+reproducibility, which matters because we report a single deterministic score per answer. We then
+parse the first integer from the output and clip it to $[0,\text{Max}]$. We fine-tune each base
 on the \texttt{no10c} variant in both input formats, for up to
 10 epochs at batch size 4 with gradient accumulation to an effective batch of 16, a 5\,\% warm-up, and a
 validation-selected learning rate in $\{1,2,3\}\times10^{-4}$, keeping the epoch with the best

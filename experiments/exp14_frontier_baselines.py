@@ -150,18 +150,13 @@ def _extract_text(msg):
     return c
 
 
-def call_api(base_url, model, key, prompt, mode, max_retries=5):
-    """One OpenAI-compatible /chat/completions call with exponential backoff.
-    `reasoning` mode allows a longer answer (model may emit CoT); `bare` asks for the
-    integer directly with a tighter token budget. A system message pins the output format."""
+def _post(base_url, model, key, messages, max_tokens, max_retries=5):
+    """One OpenAI-compatible /chat/completions call with exponential backoff on 429/5xx.
+    We do NOT send a `reasoning` toggle (OpenRouter 400s on some hybrids), so the bare/
+    reasoning contrast is driven by the system+user prompt and the token budget."""
     import requests
-    max_tokens = 1024 if mode == "reasoning" else 256
     body = {"model": model, "temperature": 0.0, "max_tokens": max_tokens, "stream": False,
-            "messages": [{"role": "system", "content": _SYSTEM[mode]},
-                         {"role": "user", "content": prompt}]}
-    # NOTE: we do NOT send a `reasoning` toggle. OpenRouter rejects it (HTTP 400) for some
-    # hybrid models, so the bare/reasoning contrast is driven by the system+user prompt plus
-    # the token budget. Any residual empty answers are excluded-and-reported.
+            "messages": messages}
     delay = 2.0
     for attempt in range(max_retries):
         try:
@@ -180,6 +175,29 @@ def call_api(base_url, model, key, prompt, mode, max_retries=5):
                 raise
             time.sleep(delay); delay *= 2
     return ""
+
+
+def call_api(base_url, model, key, prompt, mode):
+    """First attempt: system message pins the format, `reasoning` gets a larger token budget."""
+    max_tokens = 1024 if mode == "reasoning" else 256
+    return _post(base_url, model, key,
+                 [{"role": "system", "content": _SYSTEM[mode]},
+                  {"role": "user", "content": prompt}], max_tokens)
+
+
+def force_digit(base_url, model, key, prompt, prev, max_score):
+    """Format-retry: when the first answer had no parseable score, ask once more, showing the
+    model its own reply and demanding a bare digit. Drives the unparsed rate toward zero without
+    inventing a score (a genuinely empty reply still yields nothing and is excluded)."""
+    n = int(max_score)
+    msgs = [
+        {"role": "system", "content": f"You output only a single integer from 0 to {n}, nothing else."},
+        {"role": "user", "content": prompt},
+        {"role": "assistant", "content": (prev or "")[:1500] or "(no answer)"},
+        {"role": "user", "content": f"Output ONLY the integer score from 0 to {n} for the student "
+                                    f"answer above. Reply with exactly one number, no words."},
+    ]
+    return _post(base_url, model, key, msgs, 16)
 
 
 def _cache_load(path):
@@ -234,6 +252,11 @@ def score_model(provider, mode, test_df, out_dir, gateway="direct"):
             prompt = grading_prompt(row["Question"], row["Reference"], row["Answer"], max_score, mode)
             try:
                 raw_text = call_api(base_url, model, key, prompt, mode)
+                # format-retry: if no parseable score, ask once more for a bare digit.
+                if parse_int(raw_text, max_score) is None:
+                    retry = force_digit(base_url, model, key, prompt, raw_text, max_score)
+                    if parse_int(retry, max_score) is not None:
+                        raw_text = retry
             except Exception as e:
                 print(f"    {provider}/{mode} answer {aid}: API error {type(e).__name__}")
                 raw_text = ""

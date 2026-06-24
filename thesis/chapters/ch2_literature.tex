@@ -124,7 +124,10 @@ Chang and Ginter~\citep{chang2024gpt4} test GPT-4 prompting and find fine-tuned 
 lead, and Lachana~\citep{lachana2025dutch} confirms this for Dutch ordinal scoring while reporting QWK
 with exact and adjacent agreement, the same metric suite we adopt. Latif and
 Zhai~\citep{latif2024finetuning} show that fine-tuning a general LLM substantially outperforms its
-prompted base for scoring; we extend this contrast to a low-resource language by comparing the
+prompted base for scoring; and Solano et al.~\citep{solano2025narrowing} report that supervised
+fine-tuning of \emph{open-source} LLMs narrows the gap to proprietary models for educational tools,
+scoring with greedy decoding (temperature 0) and reasoning disabled, the same inference setting we use.
+We extend this contrast to a low-resource language by comparing the
 fine-tuned KhmerGrader against contemporary frontier models prompted zero-shot. For Khmer specifically, Buoy et
 al.~\citep{buoy2022khmer} provide pre-trained models and evaluation data but no grading task. Metric
 values are not comparable across rows (different datasets, languages, and scales); the table is a map of
