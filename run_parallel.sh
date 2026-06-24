@@ -52,15 +52,23 @@ cpu_stream() {
   echo "[cpu] done $(date)"
 }
 
+ft() {  # one fine-tune cell: ft <model> <input>
+  python -u experiments/exp08_llm_finetune.py --models "$1" --epochs 10 --datasets no10c --input "$2"
+}
+
 gpu_stream() {
   echo "[gpu] start $(date)"
-  python -u experiments/exp06_transformer.py           --resume
-  python -u experiments/exp03b_maxfeat_neural.py       --resume
-  # LLM family (KhmerGrader) on no10c only, both input formats; zero-shot THEN fine-tune.
+  python -u experiments/exp06_transformer.py           --resume   # skipped if already on disk
+  python -u experiments/exp03b_maxfeat_neural.py       --resume   # skipped if already on disk
+  # LLM zero-shot baselines (inference only, quick, sequential).
   python -u experiments/exp08_llm_finetune.py --models both --zeroshot --datasets no10c --input qar
   python -u experiments/exp08_llm_finetune.py --models both --zeroshot --datasets no10c --input ra
-  python -u experiments/exp08_llm_finetune.py --models both --epochs 10 --datasets no10c --input qar
-  python -u experiments/exp08_llm_finetune.py --models both --epochs 10 --datasets no10c --input ra
+  # Fine-tune: TWO concurrent lanes, balanced (3 cells each). Each model writes its own
+  # results_no10c_v08_llm_<model>/ dir, so the lanes never collide. Peak ~2x14GB on a 46GB A40.
+  ( ft qwen35_4b qar;  ft qwen35_4b ra;  ft sealion_v45_e2b qar ) &  LANE_A=$!
+  ( ft gemma4_e4b qar; ft gemma4_e4b ra; ft sealion_v45_e2b ra  ) &  LANE_B=$!
+  wait "$LANE_A"; echo "[gpu] lane A exit $?"
+  wait "$LANE_B"; echo "[gpu] lane B exit $?"
   echo "[gpu] done $(date)"
 }
 

@@ -126,18 +126,42 @@ def parse_int(text, max_score):
     return max(0, min(int(chosen), int(max_score)))
 
 
+# System messages hard-constrain the output format. A system role is obeyed far more
+# reliably than an inline instruction (Gemini in particular ignores inline "reply with only
+# the integer" and rambles the answer text back).
+_SYSTEM = {
+    "bare": ("You are a strict exam grader. Output ONLY a single integer score and nothing "
+             "else: no words, no punctuation, no explanation, no restating the answer."),
+    "reasoning": ("You are a strict exam grader. Reason briefly, then output a final line "
+                  "exactly as `Score: N` where N is the integer score."),
+}
+
+
+def _extract_text(msg):
+    """Pull the answer text out of an OpenAI-compatible message, robustly. Handles a plain
+    string `content`, Anthropic-style list-of-blocks `content`, and reasoning-only replies
+    (some hybrid models leave `content` empty and put everything in a `reasoning` field)."""
+    c = msg.get("content")
+    if isinstance(c, list):  # Anthropic content blocks: [{"type":"text","text":"..."}, ...]
+        c = " ".join(b.get("text", "") for b in c if isinstance(b, dict))
+    c = (c or "").strip()
+    if not c:
+        c = (msg.get("reasoning") or msg.get("reasoning_content") or "").strip()
+    return c
+
+
 def call_api(base_url, model, key, prompt, mode, max_retries=5):
     """One OpenAI-compatible /chat/completions call with exponential backoff.
     `reasoning` mode allows a longer answer (model may emit CoT); `bare` asks for the
-    integer directly with a tight token budget."""
+    integer directly with a tighter token budget. A system message pins the output format."""
     import requests
     max_tokens = 1024 if mode == "reasoning" else 256
-    body = {"model": model, "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.0, "max_tokens": max_tokens, "stream": False}
+    body = {"model": model, "temperature": 0.0, "max_tokens": max_tokens, "stream": False,
+            "messages": [{"role": "system", "content": _SYSTEM[mode]},
+                         {"role": "user", "content": prompt}]}
     # NOTE: we do NOT send a `reasoning` toggle. OpenRouter rejects it (HTTP 400) for some
-    # hybrid models, so the bare/reasoning contrast is driven by the prompt instruction plus
-    # the token budget. Bare may leave a few empty (reasoned-but-silent) answers on hybrid
-    # models; those are excluded-and-reported, and the reasoning variant recovers them.
+    # hybrid models, so the bare/reasoning contrast is driven by the system+user prompt plus
+    # the token budget. Any residual empty answers are excluded-and-reported.
     delay = 2.0
     for attempt in range(max_retries):
         try:
@@ -150,13 +174,7 @@ def call_api(base_url, model, key, prompt, mode, max_retries=5):
                 ra = r.headers.get("Retry-After")
                 time.sleep(float(ra) if ra else delay); delay *= 2; continue
             r.raise_for_status()
-            msg = r.json()["choices"][0]["message"]
-            # fall back to the reasoning trace if visible content is empty (parse_int picks the
-            # final integer out of it), so a reasoned-but-silent answer is not lost.
-            content = (msg.get("content") or "").strip()
-            if not content:
-                content = (msg.get("reasoning") or msg.get("reasoning_content") or "").strip()
-            return content
+            return _extract_text(r.json()["choices"][0]["message"])
         except Exception:
             if attempt == max_retries - 1:
                 raise
