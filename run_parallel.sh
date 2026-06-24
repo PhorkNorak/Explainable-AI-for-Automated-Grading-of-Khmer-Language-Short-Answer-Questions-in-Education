@@ -56,19 +56,34 @@ ft() {  # one fine-tune cell: ft <model> <input>
   python -u experiments/exp08_llm_finetune.py --models "$1" --epochs 10 --datasets no10c --input "$2"
 }
 
+zs() {  # one zero-shot cell: zs <model> <input>
+  python -u experiments/exp08_llm_finetune.py --models "$1" --zeroshot --datasets no10c --input "$2"
+}
+
 gpu_stream() {
   echo "[gpu] start $(date)"
   python -u experiments/exp06_transformer.py           --resume   # skipped if already on disk
   python -u experiments/exp03b_maxfeat_neural.py       --resume   # skipped if already on disk
-  # LLM zero-shot baselines (inference only, quick, sequential).
-  python -u experiments/exp08_llm_finetune.py --models both --zeroshot --datasets no10c --input qar
-  python -u experiments/exp08_llm_finetune.py --models both --zeroshot --datasets no10c --input ra
-  # Fine-tune: TWO concurrent lanes, balanced (3 cells each). Each model writes its own
-  # results_no10c_v08_llm_<model>/ dir, so the lanes never collide. Peak ~2x14GB on a 46GB A40.
-  ( ft qwen35_4b qar;  ft qwen35_4b ra;  ft sealion_v45_e2b qar ) &  LANE_A=$!
-  ( ft gemma4_e4b qar; ft gemma4_e4b ra; ft sealion_v45_e2b ra  ) &  LANE_B=$!
-  wait "$LANE_A"; echo "[gpu] lane A exit $?"
-  wait "$LANE_B"; echo "[gpu] lane B exit $?"
+
+  # PHASE 1: all 3 zero-shots in parallel (3 bases x ~10GB ~= 30GB, safe). Each lane does
+  # its model's qar then ra. Zero-shot is inference, so this is the cheap, safe parallelism.
+  echo "[gpu] phase 1: parallel zero-shot $(date)"
+  ( zs qwen35_4b qar;       zs qwen35_4b ra )       &  Z1=$!
+  ( zs gemma4_e4b qar;      zs gemma4_e4b ra )      &  Z2=$!
+  ( zs sealion_v45_e2b qar; zs sealion_v45_e2b ra ) &  Z3=$!
+  wait "$Z1" "$Z2" "$Z3"
+  echo "[gpu] phase 1 done $(date)"
+
+  # PHASE 2: all 3 fine-tunes in parallel (~38-44GB on a 46GB A40 - TIGHT). Memory is
+  # allocated in the first steps and stays flat, so if it does not OOM in the first ~10 min
+  # it will not OOM at all. If logs/gpu_*.log shows CUDA OOM, fall back to 2-wide.
+  echo "[gpu] phase 2: parallel fine-tune $(date)"
+  ( ft qwen35_4b qar;       ft qwen35_4b ra )       &  F1=$!
+  ( ft gemma4_e4b qar;      ft gemma4_e4b ra )      &  F2=$!
+  ( ft sealion_v45_e2b qar; ft sealion_v45_e2b ra ) &  F3=$!
+  wait "$F1"; echo "[gpu] qwen lane exit $?"
+  wait "$F2"; echo "[gpu] gemma lane exit $?"
+  wait "$F3"; echo "[gpu] sealion lane exit $?"
   echo "[gpu] done $(date)"
 }
 
