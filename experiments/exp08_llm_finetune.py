@@ -80,6 +80,9 @@ KHMERGRADER_NAMES = {
 # question; "ra" omits it (answer + reference only). Single-threaded, so a module
 # global is safe and avoids threading the flag through every prompt helper.
 _INPUT_FMT = "qar"
+# Run the per-epoch validation generation only every N epochs (the val pass is the dominant
+# fine-tune cost). 1 = every epoch; the final epoch is always evaluated regardless.
+_EVAL_EVERY = 1
 
 
 def _set_input_fmt(inp: str):
@@ -402,10 +405,14 @@ def train_one_llm(model_key, prep, inp, train_df, val_df, test_df,
     class _CurveCallback(TrainerCallback):
         """Per epoch: validation QWK only -> best-by-val adapter + a val curve."""
         def on_epoch_end(self, a, state, control, **kw):
+            ep = int(round(state.epoch)) if state.epoch else len(history) + 1
+            # Eval cadence: skip the expensive val generation except every _EVAL_EVERY epochs
+            # (the final epoch is always evaluated so we never miss the end-of-training point).
+            if _EVAL_EVERY > 1 and ep % _EVAL_EVERY != 0 and ep != epochs:
+                return
             try:
                 model.train(False)
                 vm = compute_metrics(predict_split(model, tokenizer, val_p))
-                ep = int(round(state.epoch)) if state.epoch else len(history) + 1
                 history.append({"epoch": ep, "val_qwk": vm["qwk"],
                                 **{f"val_{k}": v for k, v in vm.items()}})
                 if vm["qwk"] > best["qwk"]:
@@ -572,6 +579,8 @@ def main():
                     help="1 cell, 1 epoch, 50 train samples")
     ap.add_argument("--zeroshot", action="store_true",
                     help="evaluate the UNTUNED base model (no training) for the baseline")
+    ap.add_argument("--eval-every", type=int, default=1, dest="eval_every",
+                    help="run per-epoch val generation every N epochs (3 ~halves eval time)")
     ap.add_argument("--input", choices=["qar", "ra"], default="qar",
                     help="prompt input format: qar (question+answer+reference) or ra "
                          "(answer+reference, no question). Run once per format to sweep both.")
@@ -580,6 +589,8 @@ def main():
     args = ap.parse_args()
 
     _set_input_fmt(args.input)
+    global _EVAL_EVERY
+    _EVAL_EVERY = max(1, args.eval_every)
     models_to_run = (list(LLM_BACKBONES.keys()) if "both" in args.models
                      else args.models)
 
