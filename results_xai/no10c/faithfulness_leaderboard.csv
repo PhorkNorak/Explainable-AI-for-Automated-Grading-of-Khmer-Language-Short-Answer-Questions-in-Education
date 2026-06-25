@@ -1,3 +1,5 @@
 family,champion,dataset,test_qwk,test_accuracy,explainer,n_explained,fraction,plausibility,seconds
 classical,segment_ra,no10c,0.8139,0.6569,shap,66,0.2,0.6285,139.8
 bilstm,clean_ra,no10c,0.6809,0.5985,shap,66,0.2,0.5985,849.8
+encoder,clean_ra_dual_gte,no10c,0.8236,0.7591,shap,18,0.2,0.6842,184.2
+llm,clean_qar_qwen35_4b,no10c,0.8171,0.8102,shap,18,0.2,0.6053,1374.7
