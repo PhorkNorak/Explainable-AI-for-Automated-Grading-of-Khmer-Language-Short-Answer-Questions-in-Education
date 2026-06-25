@@ -1,0 +1,97 @@
+<!doctype html><html lang="km"><head><meta charset="utf-8">
+<title>classical | true=4 pred=3 | SHAP word attribution on original answer</title>
+<style>body{font-family:'Khmer OS', 'Khmer OS System', 'Noto Sans Khmer', 'Leelawadee UI', 'Khmer UI', sans-serif;margin:24px;background:#fff;color:#1a202c}
+h3{font-size:16px;color:#2c5282;font-family:sans-serif}
+.legend{font-family:sans-serif;font-size:12px;color:#555;margin-top:14px}
+.bar{display:inline-block;width:120px;height:12px;vertical-align:middle;
+background:linear-gradient(to right,#fff,rgb(255,85,85));border:1px solid #ccc}</style>
+</head><body>
+<h3>classical | true=4 pred=3 | SHAP word attribution on original answer</h3>
+<div><span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">រៀបរាប់</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ពី</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ទំនាក់ទំនង</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,252,252);font-size:20px;line-height:1.6">នៃ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,186,186);font-size:20px;line-height:1.6">ការដាំដុះ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,247,247);font-size:20px;line-height:1.6">អាជីវកម្ម</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,224,224);font-size:20px;line-height:1.6">ព្រៃឈើ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,225,225);font-size:20px;line-height:1.6">និង</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ការនេសាទ៖</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">-</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ការដាំដុះ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ព្រៃឈើ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,254,254);font-size:20px;line-height:1.6">ជា</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ភោគ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,234,234);font-size:20px;line-height:1.6">ទ្រព្យ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,228,228);font-size:20px;line-height:1.6">យ៉ាង</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">សំខាន់</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">សម្រាប់</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,164,164);font-size:20px;line-height:1.6">ប្រជាជន</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,247,247);font-size:20px;line-height:1.6">កម្ពុជា</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,226,226);font-size:20px;line-height:1.6">ក្នុង</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,109,109);font-size:20px;line-height:1.6">ការទ្រទ្រង់</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,219,219);font-size:20px;line-height:1.6">ជីវិត</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,232,232);font-size:20px;line-height:1.6">និង</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,145,145);font-size:20px;line-height:1.6">ជីវភាព</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,231,231);font-size:20px;line-height:1.6">រស់</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,254,254);font-size:20px;line-height:1.6">នៅ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,211,211);font-size:20px;line-height:1.6">និង</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,100,100);font-size:20px;line-height:1.6">ការអភិវឌ្ឍន៍</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,233,233);font-size:20px;line-height:1.6">ផ្លូវ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,237,237);font-size:20px;line-height:1.6">ជាតិ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">-</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ដើម្បី</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,222,222);font-size:20px;line-height:1.6">បំពេញ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,177,177);font-size:20px;line-height:1.6">តម្រូវការផលិកម្ម</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,238,238);font-size:20px;line-height:1.6">និង</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,192,192);font-size:20px;line-height:1.6">តម្រូវការ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,161,161);font-size:20px;line-height:1.6">ផ្សេង</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ៗ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ទៀត</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,201,201);font-size:20px;line-height:1.6">ព្រៃឈើ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,244,244);font-size:20px;line-height:1.6">ធ្វើ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,209,209);font-size:20px;line-height:1.6">អាជីវកម្ម</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,235,235);font-size:20px;line-height:1.6">ធ្វើ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ផ្ទះ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,219,219);font-size:20px;line-height:1.6">អាកាសធាតុ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,199,199);font-size:20px;line-height:1.6">ប្រែប្រួល</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">បាត់បង់ជីវិត</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,219,219);font-size:20px;line-height:1.6">សត្វ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">កម្រ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,191,191);font-size:20px;line-height:1.6">សត្វ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,243,243);font-size:20px;line-height:1.6">ព្រៃ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,85,85);font-size:20px;line-height:1.6">បាត់បង់</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ឧស្ម័ន</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,244,244);font-size:20px;line-height:1.6">ធម្មជាតិ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">-</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ទិន្នផល</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,247,247);font-size:20px;line-height:1.6">នៃ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,243,243);font-size:20px;line-height:1.6">ប្រព័ន្ធ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,218,218);font-size:20px;line-height:1.6">ផលិត</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,249,249);font-size:20px;line-height:1.6">កសិកម្ម</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,210,210);font-size:20px;line-height:1.6">នាំឲ្យ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,252,252);font-size:20px;line-height:1.6">មាន</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,217,217);font-size:20px;line-height:1.6">កំណើន</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,254,254);font-size:20px;line-height:1.6">នៃ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,194,194);font-size:20px;line-height:1.6">ការប្រើប្រាស់</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,242,242);font-size:20px;line-height:1.6">គីមី</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">សម្លាប់</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,201,201);font-size:20px;line-height:1.6">សត្វ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,213,213);font-size:20px;line-height:1.6">ល្អិត</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">។</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,205,205);font-size:20px;line-height:1.6">ថ្នាំ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">សម្លាប់</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,232,232);font-size:20px;line-height:1.6">សត្វ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,232,232);font-size:20px;line-height:1.6">ល្អិត</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,237,237);font-size:20px;line-height:1.6">គីមី</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">បាន</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,248,248);font-size:20px;line-height:1.6">ហូរ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">នៅ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ផ្ដុំ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">ទឹក</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,216,216);font-size:20px;line-height:1.6">បំផ្លាញ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,212,212);font-size:20px;line-height:1.6">មច្ឆា</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,224,224);font-size:20px;line-height:1.6">ជាតិ</span>
+<span style="display:inline-block;margin:2px;padding:6px 9px;border:1px solid #ccc;border-radius:3px;background:rgb(255,255,255);font-size:20px;line-height:1.6">។</span></div>
+<div class="legend">word importance (occlusion): low <span class="bar"></span> high &nbsp;|&nbsp;
+darker red = removing this Khmer word changes the predicted score more.</div>
+</body></html>

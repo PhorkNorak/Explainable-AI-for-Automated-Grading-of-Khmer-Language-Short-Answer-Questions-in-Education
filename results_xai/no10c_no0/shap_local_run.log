@@ -1,29 +1,0 @@
-| 2026-06-22 10:30:14,502 | [1;32mINFO[0m | khmer-nltk | Loaded model from C:\Users\Admin\AppData\Local\Programs\Python\Python312\Lib\site-packages\khmernltk\word_tokenize\sklearn_crf_ner_10000.sav |
-[exp09] classical champion on no10c_no0: test_qwk=0.7946 acc=0.6296
-PermutationExplainer explainer: 100%|##########| 1/1 [00:00<?, ?it/s]PermutationExplainer explainer: 2it [00:15, 15.01s/it]               
-PermutationExplainer explainer: 100%|##########| 1/1 [00:00<?, ?it/s]PermutationExplainer explainer: 2it [00:12, 12.79s/it]               
-[exp09] classical [shap]: explaining 64 answers ...
-PermutationExplainer explainer: 100%|##########| 1/1 [00:00<?, ?it/s]PermutationExplainer explainer: 2it [00:14, 14.71s/it]               
-PermutationExplainer explainer: 100%|##########| 1/1 [00:00<?, ?it/s]PermutationExplainer explainer: 2it [00:14, 14.86s/it]               
-PermutationExplainer explainer: 100%|##########| 1/1 [00:00<?, ?it/s]PermutationExplainer explainer: 2it [00:12, 12.97s/it]               
-[exp09] classical: wrote global top-words -> D:\cloud\Documents\work\R&I\khmer\final_kxs\results_xai\no10c_no0\shap_global\classical.csv
-    [bilstm] epoch  1  qwk(tr/va/te)=0.000/0.000/0.000
-    [bilstm] epoch  2  qwk(tr/va/te)=0.153/0.141/0.119
-    [bilstm] epoch  3  qwk(tr/va/te)=0.580/0.547/0.629
-    [bilstm] epoch  4  qwk(tr/va/te)=0.573/0.516/0.590
-    [bilstm] epoch  5  qwk(tr/va/te)=0.529/0.534/0.544
-    [bilstm] epoch  6  qwk(tr/va/te)=0.637/0.584/0.648
-    [bilstm] epoch  7  qwk(tr/va/te)=0.667/0.665/0.695
-    [bilstm] epoch  8  qwk(tr/va/te)=0.663/0.615/0.685
-    [bilstm] epoch  9  qwk(tr/va/te)=0.678/0.602/0.676
-    [bilstm] epoch 10  qwk(tr/va/te)=0.725/0.664/0.678
-    [bilstm] epoch 11  qwk(tr/va/te)=0.752/0.678/0.693
-    [bilstm] epoch 12  qwk(tr/va/te)=0.770/0.696/0.722
-    [bilstm] wrote D:\cloud\Documents\work\R&I\khmer\final_kxs\results_xai\no10c_no0\curves\bilstm\train_history.png
-[exp09] bilstm champion on no10c_no0: test_qwk=0.7219 acc=0.6593
-[exp09] bilstm [shap]: explaining 64 answers ...
-[exp09] bilstm: wrote global top-words -> D:\cloud\Documents\work\R&I\khmer\final_kxs\results_xai\no10c_no0\shap_global\bilstm.csv
-
-[exp09] wrote D:\cloud\Documents\work\R&I\khmer\final_kxs\results_xai\no10c_no0\faithfulness_leaderboard.csv
-  classical [shap     ] n= 64 qwk=0.795 plausibility=0.656
-  bilstm   [shap     ] n= 64 qwk=0.722 plausibility=0.591

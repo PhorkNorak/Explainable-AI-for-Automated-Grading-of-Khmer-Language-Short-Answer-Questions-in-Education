@@ -1,3 +1,0 @@
-family,champion,dataset,test_qwk,test_accuracy,explainer,n_explained,fraction,plausibility,seconds
-classical,segment_ra,no10c_no0,0.7946,0.6296,shap,64,0.2,0.6562,402.4
-bilstm,clean_ra,no10c_no0,0.7219,0.6593,shap,64,0.2,0.5909,263.0
