@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+title: "Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education"
+type: software
+authors:
+  - family-names: "Phork"
+    given-names: "Norak"
+repository-code: "https://github.com/PhorkNorak/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education"
+license: MIT
+version: 1.0.0
+date-released: 2026-08-01
+keywords:
+  - automatic short-answer grading
+  - Khmer
+  - explainable AI
+  - SHAP
+  - natural language processing

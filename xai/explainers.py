@@ -132,10 +132,16 @@ def shap_importance(
         pass
 
     # Fallback: Monte-Carlo permutation Shapley (same maths, no extra deps).
+    # Derive the permutation count from the eval budget so a small max_evals means
+    # FEW evaluations, not the fixed 32*n that made long answers take minutes each
+    # (each permutation costs n predict calls). This is the path long answers take
+    # when max_evals < 2n+1 (the library PermutationExplainer's minimum), so without
+    # this cap a single long answer could run thousands of predictions.
+    n_perm_eff = n_perm if max_evals is None else max(1, int(max_evals) // n)
     rng = np.random.default_rng(seed)
     phi = np.zeros(n, dtype=np.float64)
     base = float(predict_fn(detokenize([], preprocess_mode), reference_proc))
-    for _ in range(n_perm):
+    for _ in range(n_perm_eff):
         order = rng.permutation(n)
         present = np.zeros(n, dtype=bool)
         prev = base

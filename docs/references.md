@@ -1,9 +1,9 @@
 # References (verified, with download links)
 
-Every entry below corresponds to a key in `thesis/refs.bib` (= `paper/refs.bib`) and was
+Every entry below corresponds to a key in `paper/refs.bib` and was
 **web-verified during the reference audit** (title, authors, venue, year, and a working
-DOI / arXiv / publisher link). Entries with a local copy are marked **[PDF in
-`docs/reference_papers/`]**. Links go to the official/open record so each can be downloaded.
+DOI / arXiv / publisher link). Local copies of third-party papers are intentionally excluded from
+the repository. Links go to the official or open record.
 
 Still verify author order and page numbers against the publisher's record before final binding;
 the audit confirmed each paper exists and is the correct work, not every bibliographic field.
@@ -37,7 +37,7 @@ the audit confirmed each paper exists and is the correct work, not every bibliog
   https://arxiv.org/abs/2204.03503
 - **`tan2025review`** Tan, Hu, Yeo, Cheong (2025). *A comprehensive review on automated grading
   systems in STEM using AI techniques.* Mathematics 13(17):2828.
-  https://doi.org/10.3390/math13172828 **[PDF in `docs/reference_papers/`]**
+  https://doi.org/10.3390/math13172828
 
 ## ASAG: LLM era
 
@@ -55,11 +55,11 @@ the audit confirmed each paper exists and is the correct work, not every bibliog
 
 - **`alaoui2024`** Soulimani (Alaoui), El Achaak, Bouhorma (2024). *Deep learning based Arabic short
   answer grading in serious games.* IJECE 14(1). https://ijece.iaescore.com/index.php/IJECE/article/view/31253
-  **[PDF in `docs/reference_papers/`]** (1,276 answers, 18 questions, 3 classes; test acc 77.22%,
+  (1,276 answers, 18 questions, 3 classes; test acc 77.22%,
   unweighted kappa 0.60; verified directly from the PDF.)
 - **`alqurashi2025arabic`** Alqurashi, Alharbi, Sabbeh (2025). *An automatic grading system for
   Arabic language short-answer questions using deep learning.* ETASR 15(5):26665-26675.
-  https://etasr.com/index.php/ETASR/article/view/10917 **[PDF in `docs/reference_papers/`]**
+  https://etasr.com/index.php/ETASR/article/view/10917
 
 ## Transformers and pre-trained encoders
 
@@ -116,7 +116,7 @@ the audit confirmed each paper exists and is the correct work, not every bibliog
 
 - **`kumar2020explainable`** Kumar, Boulanger (2020). *Explainable automated essay scoring: deep
   learning really has pedagogical value.* Frontiers in Education 5:572367.
-  https://doi.org/10.3389/feduc.2020.572367 **[PDF in `docs/reference_papers/`]**
+  https://doi.org/10.3389/feduc.2020.572367
 - **`exasag2023`** Törnqvist, Mahamud, Mendez Guzman, Farazouli (2023). *ExASAG: explainable framework
   for automatic short answer grading.* BEA @ ACL. https://aclanthology.org/2023.bea-1.29/
 - **`pinto2025attribution`** Pinto Jr., Shin (2025). *Evaluating the consistency and reliability of
@@ -126,7 +126,7 @@ the audit confirmed each paper exists and is the correct work, not every bibliog
   models.* arXiv:2405.00489 (also AIED 2024). https://arxiv.org/abs/2405.00489
 - **`xu2025qwenscore`** Xu et al. (2025). *Explainable AI for education: enhancing essay scoring via
   rubric-aligned chain-of-thought prompting.* Preprints.org.
-  https://doi.org/10.20944/preprints202504.2338.v1 **[PDF in `docs/reference_papers/`]**
+  https://doi.org/10.20944/preprints202504.2338.v1
 - **`wei2022cot`** Wei et al. (2022). *Chain-of-thought prompting elicits reasoning in LLMs.* NeurIPS.
   https://arxiv.org/abs/2201.11903
 
@@ -134,7 +134,6 @@ the audit confirmed each paper exists and is the correct work, not every bibliog
 
 - **`condor2024`** Condor (2024). *Automatic grading and feedback for students' short written
   responses.* Ph.D. dissertation, UC Berkeley. https://escholarship.org/uc/item/4f54k5tf
-  **[PDF in `docs/reference_papers/`]**
 - **`engsaf2024`** Aggarwal, Sil, Raman, Bhattacharyya (2024). *"I understand why I got this grade":
   automatic short answer grading with feedback.* arXiv:2407.12818. https://arxiv.org/abs/2407.12818
 - **`chillgrader2025`** Raikote, Randl, Miliou, Lakes, Papapetrou (2026). *CHiL(L)Grader: calibrated
@@ -143,10 +142,10 @@ the audit confirmed each paper exists and is the correct work, not every bibliog
 ## Cross-lingual and low-resource scoring
 
 - **`li2024crosslingual`** Li, He (2024). *Zero-shot cross-lingual automated essay scoring.*
-  LREC-COLING. https://aclanthology.org/2024.lrec-main.1558/ **[PDF in `docs/reference_papers/`]**
+  LREC-COLING. https://aclanthology.org/2024.lrec-main.1558/
 - **`lachana2025dutch`** Lachana (2025). *Automated scoring systems for open-ended questions in Dutch
   education.* M.Sc. thesis, Utrecht University (with CITO).
-  https://studenttheses.uu.nl/handle/20.500.12932/50896 **[PDF in `docs/reference_papers/`]**
+  https://studenttheses.uu.nl/handle/20.500.12932/50896
 
 ## Khmer NLP and the Cambodian context
 
@@ -156,7 +155,7 @@ the audit confirmed each paper exists and is the correct work, not every bibliog
   https://github.com/VietHoang1512/khmer-nltk
 - **`huot2025cambodia`** Huot et al. (2025). *Educating in the age of AI: preparing Cambodian teachers
   and students for an AI-augmented learning future.* JETELI 1(2).
-  https://www.researchgate.net/publication/399573404 **[PDF in `docs/reference_papers/`]**
+  https://www.researchgate.net/publication/399573404
   (Confirm full author list against the PDF cover.)
 
 ## Metrics and evaluation

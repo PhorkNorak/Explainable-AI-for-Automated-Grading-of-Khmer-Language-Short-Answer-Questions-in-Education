@@ -2,7 +2,7 @@
 
 This project uses **real student answers** collected in Cambodian schools, so it carries
 human-subjects and data-protection obligations. This statement records what has been done and
-**what the author must confirm before journal submission** (items marked ⚠️).
+**what the author must confirm before any public data release** (items marked ⚠️).
 
 ## Data collection & consent
 - The corpus contains short-answer responses written by school students (grades/classes across
@@ -14,7 +14,7 @@ human-subjects and data-protection obligations. This statement records what has 
   qualified for exemption, the basis for exemption.
 
 ## Anonymization & privacy
-- The released CSVs contain `SchoolID`, `ClassID`, `StudentID`, `QuestionID` — these are
+- The local research CSVs contain `SchoolID`, `ClassID`, `StudentID`, and `QuestionID`. These are
   **pseudonymous codes**, not names. No student names, contact details, or free-text personal
   identifiers should be present.
 - ⚠️ **Verify before release**: that no answer text contains personally identifying information
@@ -29,15 +29,16 @@ human-subjects and data-protection obligations. This statement records what has 
   limitation (no inter-annotator agreement was obtainable).
 - The system is intended as a **teacher-assist / formative-feedback** tool, **not** an
   autonomous high-stakes grader. Any deployment should keep a human in the loop and surface the
-  model's explanation (the **SHAP word attribution** — see the XAI results).
+  model's explanation (the **SHAP word attribution**; see the XAI results).
 - Subject/topic coverage is narrow (Biology, History, Geography, Earth Science; grades from 2
   schools), so the model should not be assumed to generalize to other subjects, dialects, or
   grade levels without re-validation.
 
 ## Reproducibility & data availability
-- Code, configuration, seeds, leaderboards, and the curated dataset variants are in this
-  repository. ⚠️ Confirm the data licence/usage terms permit public release before publishing
-  the CSVs; otherwise release a synthetic or access-controlled sample.
+- Code, configuration, seeds, and experiment scripts are included in this repository. The student
+  CSVs, saved predictions, and generated results are excluded from Git.
+- ⚠️ Confirm that the data licence and consent terms permit public release before publishing any
+  corpus files. Otherwise, provide a synthetic sample or an access-controlled request process.
 
 ## Environmental note
 - Compute was modest (~40 GPU-hours total for the full grid; the headline classical model

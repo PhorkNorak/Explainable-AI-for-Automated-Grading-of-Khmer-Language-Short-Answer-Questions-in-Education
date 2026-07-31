@@ -6,8 +6,8 @@ answer, and a student answer. The family exists to test one question across diff
 points: does the choice of base model (general multilingual vs region-adapted) matter for Khmer
 grading once you fine-tune?
 
-**What we claim.** The fine-tuned adapters, the training recipe, the Khmer grading data, and the
-benchmark results are our contribution. We do **not** claim the base models; each KhmerGrader model
+**What we claim.** The fine-tuned adapters, training recipe, benchmark design, and evaluation are our
+contribution. The student data is not distributed in this repository. We do **not** claim the base models; each KhmerGrader model
 is a derivative of an existing open model and is named to disclose its lineage, following the
 SEA-LION convention (`Gemma-SEA-LION-v3`, `Qwen-SEA-LION-v4`) and prior domain fine-tunes
 (SeaLLMs-v3 on Qwen2, ChatDoctor on LLaMA).
@@ -38,20 +38,11 @@ family is meant to answer, not an assumption.
 
 ## Results
 
-Each model is compared against its **own untuned base evaluated zero-shot** on the same test set,
-so the reported lift isolates the effect of fine-tuning (the standard, honest baseline).
-
-| Model | Base zero-shot QWK | Fine-tuned QWK | Lift | Exact |
-|---|---|---|---|---|
-| Qwen-KhmerGrader-4B | 0.500 | **0.843** | +0.34 | 0.657 |
-| Gemma-KhmerGrader-4B | [pending] | 0.763 | [pending] | 0.657 |
-| SEA-LION-KhmerGrader-E2B | 0.541 | 0.802 | +0.26 | **0.693** |
-
-All values are the `no10c` (909) test set. Sourced from
-`results_no10c_v08z_llm_<model>_zeroshot/leaderboard.csv` (zero-shot baseline) and
-`results_no10c_v08_llm_<model>/leaderboard.csv` (fine-tuned); `Exact` is `test_raw_exact`. The
-figure `paper/figures/fig_llm_finetune_gain.png` visualizes this table. Do not hand-edit these
-numbers; they trace to the result files above.
+Each model is compared with its own base model using zero-shot prompting on the same test split. This
+comparison measures the benefit of task-specific fine-tuning. Current headline results are reported in
+the root [`README.md`](../README.md). Run `experiments/exp08_llm_finetune.py` to regenerate the detailed
+per-model leaderboards locally. Generated results and per-answer predictions are not committed because
+they are derived from the restricted student corpus.
 
 ## Intended use and limitations
 

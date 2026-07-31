@@ -1,306 +1,195 @@
-# Khmer ASAG — A Reproducible Multi-Pillar Benchmark
+# Explainable Khmer Short-Answer Grading
 
-Automatic Short Answer Grading (ASAG) for **Khmer**: grading a student's free-text answer
-against a reference answer on a numeric scale. This repository accompanies the thesis and
-contains the dataset, the full experiment pipeline, the result leaderboards, and the defense
-slides.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
 
-To our knowledge this is the **first reproducible Khmer ASAG benchmark**. It compares four
-model families ("pillars") under one consistent recipe:
+An explainable automatic short-answer grading (ASAG) pipeline for Khmer educational text. The project
+compares classical machine learning, recurrent neural networks, multilingual Transformer encoders, and
+fine-tuned open-source large language models under one evaluation workflow. SHAP word attribution is
+used to show which words influenced each predicted score.
 
-| Pillar | Representative model | Headline test QWK (uncalibrated) | Deployment |
-|---|---|---|---|
-| **Classical** | TF-IDF + RBF-SVR | QWK 0.795 (909) | exact 0.20 |
-| **RNN** | BiLSTM + Attention (char-level) | **QWK 0.845** (909) | exact 0.54 |
-| **Transformer** | GTE-multilingual dual-encoder (+ max-score feature) | QWK 0.820 (1184) | raw-exact 0.573 |
-| **LLM** | Qwen 3.5 4B, QLoRA fine-tune (KhmerGrader family) | QWK 0.843 (909) | **66% exact**, **83% within ±1 pt** |
+This repository contains the research code and a Gradio prototype developed for the bachelor thesis
+*Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education*.
 
-All four QWKs fall in a narrow 0.05 band (0.795–0.845; see `results_stats/champion_metrics.csv`),
-so **no pillar is a clear research winner on QWK**; the LLM's lead on the deployment/accuracy metrics
-is the one clear ranking.
+## Highlights
 
-**Key finding — no free lunch:** the four pillars are comparable on the research metric
-(QWK), while a fine-tuned LLM wins every classroom-deployment metric (exact-score match, within
-±1 point). Data cleaning moves results **as much as or more than swapping architectures** on this
-small corpus.
+- Four model families evaluated with the same scoring and preprocessing pipeline.
+- Khmer-aware text cleaning and optional word segmentation with `khmer-nltk`.
+- Reproducible 70/15/15 train, validation, and test split using seed 42.
+- Ordinal evaluation with Quadratic Weighted Kappa (QWK), accuracy, macro-F1, and point-level agreement.
+- One SHAP word-attribution workflow across all model families.
+- A Gradio prototype that returns a predicted score, word highlights, and feedback.
+- CPU baselines and GPU-ready Transformer and QLoRA experiment scripts.
 
-> **Caveat (read before citing numbers):** headline QWKs are **uncalibrated**, reported consistently
-> across pillars. Threshold calibration is a *validation-selected, fragile, model-dependent ablation*
-> — it lifts the classical model (test 0.795→0.847) but **lowers** the BiLSTM on test, so it is not
-> folded into the headline. Pillars are also evaluated on different dataset variants (909/1184),
-> so cross-pillar QWK differences are indicative rather than head-to-head (only classical vs BiLSTM
-> share a test set).
+## Verified results
 
----
+The current uncalibrated champion results are:
 
-## Dataset
+| Model family | Representative model | Test size | QWK |
+|---|---|---:|---:|
+| Classical | TF-IDF + RBF-SVR | 137 | 0.802 |
+| RNN | BiLSTM with attention | 137 | 0.789 |
+| Transformer | GTE multilingual encoder | 178 | 0.777 |
+| LLM | Qwen-KhmerGrader-4B, QLoRA fine-tuned | 137 | **0.850** |
+| LLM baseline | Qwen 4B, zero-shot | 137 | 0.529 |
 
-`data/dataset.csv` — **1,184** graded answers (after dropping 1 incomplete row), from
-2 schools, 8 classes, 203 students, **41 unique questions** across 4 subjects (Biology,
-History, Geography, Earth Science). Each question has its own max score ∈ {5,6,7,8,10,12,15,20}.
-A single trained teacher graded every answer.
-
-Ordinal label = `round(4 · StudentScore / MaxScore) ∈ {0..4}` (heavy skew: ~42% full credit).
-
-**Two curated variants** (selected via the CSV in `config.py`); grade-0 is kept (full 5-class task):
-
-| Variant | Rows | Definition |
-|---|---:|---|
-| `full` | 1,184 | original |
-| `no10c` | 909 | drop the noisy "10C Biology" subset (`data/dataset_no_10c_biology.csv`); default |
-
----
+Qwen-KhmerGrader-4B matched the teacher's exact mark on 67% of the test answers and produced a mark
+within one point on 80%. The Transformer result uses the full-corpus split, while the other champion
+models use the curated `no10c` split. Cross-family differences should therefore be treated as
+indicative rather than as a strict head-to-head comparison.
 
 ## Repository structure
 
-```
-final_kxs/
-├── config.py          single source of truth: paths, model registry, hyperparameters
-├── data.py            CSV load, 70/15/15 stratified split (seed 42), dataset classes
-├── preprocess.py      raw / clean (strip invisibles+NFC+punct) / segment (khmernltk); digits kept
-├── train.py           train_classical · train_bilstm · train_transformer
-├── evaluate.py        QWK · accuracy · adjacent-acc · MAE + raw (deployment) metrics
-├── run_all.py         grid orchestrator (legacy single-dataset entry point)
-├── analyze_run.py     per-run error inspection
-├── xai.py             gradient × input saliency for the top transformer cell
-├── models/            classical.py · bilstm.py · dual.py · cross.py
-├── xai/               explainable-AI toolkit shared across all four families
-│   ├── explainers.py  LOO occlusion — the sole unified word-attribution method (all 4 pillars)
-│   ├── attributions.py popular attribution methods: occlusion · LIME · SHAP (one dispatcher)
-│   ├── faithfulness.py ERASER comprehensiveness & sufficiency + random baseline
-│   ├── plausibility.py reference-overlap plausibility proxy (answer↔reference word overlap)
-│   ├── render.py      Khmer word-importance heatmaps (PNG) + rationale cards
-│   └── render_html.py browser-shaped Khmer heatmaps (PNG can't shape Khmer)
-├── prototype/         live teacher-facing web app (Gradio) — see prototype/README.md
-│   ├── app.py         score + word-attribution heatmap + AI/rule-based feedback; 4-pillar selector
-│   └── requirements.txt
-├── experiments/       exp01–exp09 (one enhancement each) + orchestration
-│   ├── exp01_tfidf_baseline.py          v01  TF-IDF cosine + SVR
-│   ├── exp02_threshold_calibration.py   v02  post-hoc cut-point calibration
-│   ├── exp03_maxscore_feature.py        v03  max-score feature → SVR
-│   ├── exp03b_maxfeat_neural.py         v03b max-score feature → neural heads
-│   ├── exp04_bucket_svr.py              v04  per-max-score bucket SVR
-│   ├── exp05_bilstm.py                  v05  BiLSTM + Attention grid
-│   ├── exp06_transformer.py             v06  Dual/Cross × mBERT/XLM-R/GTE
-│   ├── exp07_ensemble.py                v07  weighted top-3 by val QWK
-│   ├── exp08_llm_finetune.py            v08  Qwen 3.5 4B QLoRA fine-tune
-│   ├── exp09_xai.py                     XAI: faithfulness + plausibility across families
-│   ├── check_progress.py                resumable orchestrator + status table
-│   ├── compare_all.py                   cross-experiment ranking
-│   └── plot_history.py                  per-cell training curves
-├── data/              dataset.csv · dataset_no_10c_biology.csv
-├── results/
-│   ├── leaderboards/  one CSV per (dataset × version), 24-column schema
-│   └── champions/     full run dir (config + metrics + predictions) for each cited cell
-└── docs/
-    ├── slides.md          thesis-defense deck (Marp)
-    ├── script.md          speaker notes
-    ├── references.md      verified citation list
-    └── reference_papers/  Arabic ASAG anchor (Alaoui et al. 2024)
+```text
+.
+├── config.py                 experiment paths, model registry, and hyperparameters
+├── data.py                   dataset loading and deterministic splitting
+├── preprocess.py             Khmer text cleaning and segmentation
+├── train.py                  shared model-training functions
+├── evaluate.py               agreement and point-level metrics
+├── models/                   classical, BiLSTM, dual-encoder, and cross-encoder models
+├── xai/                      SHAP attribution, plausibility, and Khmer rendering
+├── experiments/              experiment and analysis entry points
+├── prototype/                Gradio demonstration application
+├── paper/                    paper source and figure-generation script
+├── docs/                     ethics, model cards, and supporting documentation
+├── data/README.md            required local dataset schema
+├── run_pipeline.sh           full resumable research pipeline
+└── requirements.txt          Python dependencies
 ```
 
-The leaderboard schema (24 columns) reports **train + test** for 8 metrics per cell:
-`qwk, accuracy, adjacent_accuracy, mae, raw_exact, raw_within1, raw_mae, pct_mae`, plus
-`val_qwk, best_epoch, seconds`.
+The thesis source, student data, generated predictions, model weights, logs, and document exports are
+intentionally excluded from the public repository.
 
----
+## Installation
 
-## Reproducing the results
-
-Install dependencies (Python 3.10+; a GPU is needed only for v05/v06/v03b/v08):
+Python 3.10 or later is recommended.
 
 ```bash
+git clone https://github.com/PhorkNorak/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education.git
+cd Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education
+
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Each experiment runs over **both datasets** by default and writes its own
-`results_<dataset>_<version>/` directory. Order only matters for the ensemble (v07), which
-reads the upstream leaderboards.
+On Windows PowerShell, activate the environment with:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+For GPU experiments, install the PyTorch build that matches the CUDA version reported by
+`nvidia-smi` before installing the remaining requirements. See the comments in
+[`requirements.txt`](requirements.txt) for an example.
+
+## Dataset setup
+
+The research corpus contains real answers written by school students and is not included in this
+public repository pending confirmation of its release and reuse terms. Do not publish the CSV files
+without the required consent and privacy review.
+
+To run the project with an approved copy of the data, place these files locally:
+
+```text
+data/dataset.csv
+data/dataset_no_10c_biology.csv
+```
+
+The required columns and validation guidance are documented in [`data/README.md`](data/README.md).
+Both files are ignored by Git.
+
+## Quick start
+
+Run the classical baseline on the curated dataset:
 
 ```bash
-# Classical (fast, CPU)
-python experiments/exp01_tfidf_baseline.py
-python experiments/exp02_threshold_calibration.py
-python experiments/exp03_maxscore_feature.py
-python experiments/exp04_bucket_svr.py
+python experiments/exp01_tfidf_baseline.py --datasets no10c
+```
 
-# Neural / LLM (GPU)
-python experiments/exp05_bilstm.py
-python experiments/exp06_transformer.py
-python experiments/exp03b_maxfeat_neural.py
-python experiments/exp08_llm_finetune.py
+Check experiment status:
 
-# Ensemble + comparison
-python experiments/exp07_ensemble.py
-python experiments/compare_all.py --topk 20
-
-# Resumable status / what's left to run
+```bash
 python experiments/check_progress.py
 ```
 
-Run a single cell for a smoke test:
+Run the full resumable pipeline on a CUDA-capable machine:
 
 ```bash
-python experiments/exp01_tfidf_baseline.py --datasets full
+bash run_pipeline.sh
 ```
 
-> **Note on GTE.** `Alibaba-NLP/gte-multilingual-base` ships a NaN-corrupted RoPE cache under
-> fp16; `models/dual.py` rebuilds the rotary cache in fp32 on load. If you see NaN loss from
-> step 1 or a CUDA index assert in RoPE, that patch has regressed.
+The full pipeline includes classical, BiLSTM, Transformer, QLoRA, SHAP, ablation, and reporting steps.
+It writes generated artifacts to ignored `results*` and `logs` directories.
 
-The pre-computed leaderboards for every cell are in `results/leaderboards/`, and the full
-prediction files for the thesis-cited champion cells are in `results/champions/`.
-
----
-
-## Running the full pipeline on an HPC (step by step, with tmux)
-
-The classical/RNN baselines run on CPU; the Transformer encoders (v06) and the LLM (v08) need a
-CUDA GPU. Run the whole thing inside **tmux** so it survives an SSH disconnect. Budget ~40 GPU-hours
-for the full grid + LLM on one A40-class GPU.
-
-**Step 1 — get the code onto the HPC and open a tmux session.**
+## Main experiment commands
 
 ```bash
-cd final_kxs                 # the project folder
-tmux new -s kxs              # detach with Ctrl-b then d; reattach with: tmux attach -t kxs
-```
+# Classical models
+python experiments/exp01_tfidf_baseline.py --datasets no10c
+python experiments/exp03_maxscore_feature.py --datasets no10c
+python experiments/exp04_bucket_svr.py --datasets no10c
 
-**Step 2 — create a virtual environment and install dependencies.**
-Install the CUDA build of PyTorch *first* (match your driver — check `nvidia-smi`; `cu124` is the
-most compatible, use `cu121`/`cu118` if the driver is older), then the rest.
+# Neural models
+python experiments/exp05_bilstm.py --datasets no10c
+python experiments/exp06_transformer.py --datasets no10c
 
-```bash
-python -m venv .venv && source .venv/bin/activate
-pip install --upgrade pip
-pip install torch --index-url https://download.pytorch.org/whl/cu124   # GPU build of torch
-pip install -r requirements.txt
-# extras needed by the encoders (v06) and the LLM (v08) — not in requirements.txt:
-pip install accelerate sentencepiece einops "datasets>=2.18" peft bitsandbytes
-pip install unsloth          # LLM QLoRA (v08); if its build fails, exp08 falls back to peft+bnb
-```
+# Open-source LLM fine-tuning
+python experiments/exp08_llm_finetune.py --models qwen35_4b --epochs 10 --datasets no10c --input qar
 
-**Step 3 — sanity-check GPU + Khmer segmenter (≈10 s).**
-
-```bash
-python -c "import torch; print('CUDA:', torch.cuda.is_available())"
-python -c "import khmernltk; print('khmernltk OK')"
-export HF_HOME=$PWD/.hfcache   # keep downloaded models (mBERT/XLM-R/GTE/Qwen) inside the project
-export TOKENIZERS_PARALLELISM=false
-```
-
-**Step 4 — run the whole pipeline (one resumable, logged command).**
-Training scripts take `--resume`, so a crash/preemption is recovered by re-pasting the same block.
-
-```bash
-mkdir -p logs && ( \
-  python -u experiments/exp01_tfidf_baseline.py   --resume && \
-  python -u experiments/exp03_maxscore_feature.py --resume && \
-  python -u experiments/exp04_bucket_svr.py       --resume && \
-  python -u experiments/exp05_bilstm.py           --resume && \
-  python -u experiments/exp06_transformer.py      --resume && \
-  python -u experiments/exp03b_maxfeat_neural.py  --resume && \
-  python -u experiments/exp02_threshold_calibration.py && \
-  python -u experiments/exp02_threshold_calibration.py --source v05_bilstm && \
-  python -u experiments/exp02_threshold_calibration.py --source v06_transformer && \
-  python -u experiments/exp02_threshold_calibration.py --source v03b_maxfeat_neural && \
-  python -u experiments/exp07_ensemble.py && \
-  python -u experiments/exp08_llm_finetune.py --models qwen35_4b --epochs 10 && \
-  python -u experiments/exp09_xai.py --families classical bilstm encoder llm --dataset no10c && \
-  python -u experiments/exp10_significance.py && \
-  python -u experiments/exp11_cleaning_ablation.py && \
-  python -u experiments/exp12_hparam_tuning.py && \
-  python -u experiments/compare_all.py --topk 20 && \
-  python -u experiments/check_progress.py \
-) 2>&1 | tee "logs/runall_$(date +%Y%m%d_%H%M%S).log"
-```
-
-**Step 5 — monitor / detach.** Detach with `Ctrl-b` then `d` (the run keeps going); reattach with
-`tmux attach -t kxs`. From any other shell: `tail -f logs/runall_*.log`.
-
-**Step 6 — resume after a crash.** Re-paste the Step-4 block (`--resume` skips finished cells), or
-ask the orchestrator what is left and run exactly that:
-
-```bash
-python experiments/check_progress.py     # prints a tailored resume command for MISSING/PARTIAL cells
-```
-
-Tips: if `exp06`/`exp08` hit GPU out-of-memory, lower the batch size (`exp08 ... --batch_size 2`;
-encoder batch is `TXFMR_BATCH` in `config.py`). The first run downloads the HuggingFace models, so
-the node needs internet (or pre-populate `$HF_HOME`).
-
----
-
-## Explainability (XAI)
-
-`experiments/exp09_xai.py` runs the explainability study: it anchors each family's champion on
-one common dataset, produces **Leave-One-Out (LOO) word attribution** (text highlighting) — the
-single model-agnostic explanation method used across all four families — and scores it with
-**faithfulness** (ERASER comprehensiveness & sufficiency, vs a random-removal baseline) and a
-**plausibility** proxy (reference-overlap). Output: `results_xai/<dataset>/`
-(`faithfulness_leaderboard.csv` + Khmer word-attribution heatmaps).
-
-```bash
-# Local (CPU, no extra deps) — classical + RNN pillars
+# Explainability and summary metrics
 python experiments/exp09_xai.py --families classical bilstm --dataset no10c
-
-# HPC (GPU) — encoder needs transformers+GPU; LLM needs unsloth+peft + the fine-tuned adapter
-python experiments/exp09_xai.py --families encoder llm --dataset no10c
+python experiments/exp10_significance.py
 ```
 
-Faithfulness reading: **higher comprehensiveness** and **lower sufficiency** = more faithful;
-**faithfulness_gap > 0** means the explanation beats removing random words; **AOPC** averages
-over k∈{10..50}%. Heatmaps show the **original Khmer answer** (word-attribution / occlusion
-importance) and need an installed Khmer font (e.g. *Khmer OS*); `xai/render.py` auto-selects one.
+Transformer and LLM experiments require a CUDA GPU and access to their base models. The classical
+pipeline runs on CPU. See [`experiments/README.md`](experiments/README.md) for the experiment registry.
 
-Occlusion is the headline word-attribution method; `xai/attributions.py`
-(`word_importance(method, ...)`) unifies it with the **LIME** and **SHAP** baselines used for the
-method-robustness cross-check (`exp13`). The prototype uses occlusion word attribution.
+## Prototype
 
----
-
-## Live prototype (web app)
-
-A teacher-facing Gradio app — paste **question + reference + student answer**, pick a model
-pillar, get a **score + Khmer word-attribution heatmap + feedback**:
+Install and start the Gradio application:
 
 ```bash
 pip install -r prototype/requirements.txt
-python prototype/app.py            # http://127.0.0.1:7860
+python prototype/app.py
 ```
 
-The **Classical** pillar trains on startup and the **RNN** pillar loads the shipped champion
-checkpoint — both run on CPU; the **Transformer/LLM** pillars are wired into the selector and
-activate where a GPU + their weights are available. Explanation = **word attribution** (occlusion
-text-highlighting). Deployment to a free Hugging Face Space is documented in `prototype/README.md`.
+Then open <http://127.0.0.1:7860>. The application supports local or OpenAI-compatible endpoints for
+open-source grading and feedback models, with a rule-based feedback fallback. Configuration details are
+in [`prototype/README.md`](prototype/README.md). Never commit API keys or local model paths.
 
----
+## Reproducibility
 
-## Statistical rigor & robustness
+- Default random seed: `42`
+- Default split: 70% training, 15% validation, 15% test
+- Primary metric: Quadratic Weighted Kappa
+- Model selection: validation QWK
+- Headline results: uncalibrated test values
+- Saved outputs: generated under `results*` and excluded from Git
 
-```bash
-# Champion point metrics for all four champions. CPU-only.
-python experiments/exp10_significance.py     # -> results_stats/champion_metrics.csv
+Exact results depend on the approved dataset, hardware, package versions, and access to the listed base
+models. Closed-model comparisons are optional dated baselines and are not required to run the core
+open-source pipeline.
 
-# Cleaning-refinement (format-noise) ablation: old vs new preprocessing on the classical champion,
-# showing the removed zero-width/bullet noise changes QWK by <=0.004 (negligible). CPU-only.
-python experiments/exp11_cleaning_ablation.py  # -> results_stats/cleaning_ablation.csv
+## Responsible use
 
-# Hyperparameter tuning (validation-selected): classical SVR C + TF-IDF max-features. CPU-only.
-python experiments/exp12_hparam_tuning.py      # -> results_stats/hparam_tuning.csv
-```
+This system is intended to assist teachers, not replace them in high-stakes grading. The reported scores
+measure agreement with one teacher on a limited corpus. They do not establish universal correctness or
+fairness across schools, subjects, or student groups. Any real deployment should include human review,
+additional graders, privacy controls, and evaluation in the target classroom setting.
 
-All metrics are computed from any run's `predictions_test.csv`, so they need no re-training.
-**Reproducibility note:** the classical champion's headline QWK is the *uncalibrated* continuous
-score (0.795); calibration lifts the point estimate (0.795 → 0.847) but is a model-dependent
-ablation (it lowers the BiLSTM's test QWK), so
-headline numbers are uncalibrated. See `docs/ethics.md` for the data-governance statement.
+See [`docs/ethics.md`](docs/ethics.md) for the full data-governance statement and
+[`docs/model_cards.md`](docs/model_cards.md) for model lineage and limitations.
 
----
+## Citation
 
-## Citing
+If you use this code, please cite the project metadata in [`CITATION.cff`](CITATION.cff). GitHub can
+also generate a citation from the repository's **Cite this repository** menu.
 
-If you use this dataset or pipeline, please cite the thesis (see `docs/`). The closest prior
-study, used as the methodological anchor for honest train/test-gap reporting, is Soulimani /
-Alaoui et al. (2024), *Deep learning based Arabic short answer grading in serious games*,
-IJECE — see `docs/references.md`.
+## License
+
+The source code is released under the [MIT License](LICENSE). This license does not grant permission to
+use the private student dataset, third-party model weights, or third-party research papers. Those items
+remain subject to their own access and licensing terms.

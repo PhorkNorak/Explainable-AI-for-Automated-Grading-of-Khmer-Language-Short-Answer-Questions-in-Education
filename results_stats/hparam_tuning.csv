@@ -1,3 +1,0 @@
-dataset,best_C,best_max_feat,val_qwk,tuned_test_qwk,"default_test_qwk(C1,15k)",delta_vs_default
-no10c,1.0,15000,0.8452,0.8139,0.8139,0.0
-full,10.0,5000,0.6889,0.7784,0.7804,-0.002

@@ -194,21 +194,17 @@ def fig_qwk_pillars():
                   color=[PILLAR_COLORS[p] for p in PILLAR_ORDER], width=0.6)
     for b, v in zip(bars, vals):
         ax.text(b.get_x() + b.get_width() / 2, v + 0.012, f"{v:.3f}", ha="center", fontsize=9)
-    lo, hi = vals.min(), vals.max()
-    ax.axhline(lo, color="gray", ls=":", lw=0.9)
-    ax.axhline(hi, color="gray", ls=":", lw=0.9)
-    ax.text(-0.4, 0.93, f"QWK band {hi - lo:.3f}", ha="left", fontsize=9, color="gray")
-    # Qwen zero-shot reference line: the fine-tuning lift, visible in the headline figure.
+    # Qwen zero-shot reference line (the fine-tuning lift): bold and clearly labelled.
     zs = _zeroshot_qwk()
     if zs is not None:
-        ax.axhline(zs, color=RED, ls="--", lw=1.1)
-        ax.text(len(vals) - 0.55, zs + 0.012, f"Qwen zero-shot {zs:.2f}",
-                ha="right", fontsize=8, color=RED)
+        ax.axhline(zs, color=RED, ls="--", lw=2.2, zorder=5,
+                   label=f"Qwen zero-shot base ({zs:.2f})")
+        ax.legend(loc="upper left", fontsize=8.5, framealpha=0.95)
     ax.set_xticks(range(len(vals)))
     ax.set_xticklabels([PILLAR_LABELS[p] for p in PILLAR_ORDER])
     ax.set_ylabel("Test QWK")
     ax.set_ylim(0, 1.0)
-    ax.set_title("Primary metric: QWK comparable across pillars (narrow band)")
+    ax.set_title("Test QWK by pillar: the fine-tuned LLM leads")
     ax.grid(alpha=0.3, axis="y")
     _save(fig, "fig_qwk_pillars.png")
 

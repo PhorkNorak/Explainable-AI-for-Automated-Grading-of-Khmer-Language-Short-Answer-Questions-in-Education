@@ -1,7 +1,0 @@
-{
-  "run_id": "segment_ra_tfidf_cos",
-  "model": "tfidf_cos",
-  "family": "classical",
-  "preprocess": "segment",
-  "input": "ra"
-}
