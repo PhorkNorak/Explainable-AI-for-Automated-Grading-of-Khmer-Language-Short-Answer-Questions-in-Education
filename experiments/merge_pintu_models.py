@@ -12,7 +12,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import torch
-from peft import PeftModel
+from peft import PeftConfig, PeftModel
+from safetensors import safe_open
 from transformers import AutoModelForMultimodalLM, AutoProcessor
 
 
@@ -53,6 +54,60 @@ MODEL_SPECS = {
 }
 
 
+def exact_adapter_targets(adapter_path: Path, base_model: torch.nn.Module) -> list[str]:
+    """Map saved LoRA tensors to exact module paths in the complete base model.
+
+    Gemma 4 contains text, audio, and vision modules that reuse generic names
+    such as ``q_proj``.  Loading the adapter's original broad target list would
+    therefore make PEFT try to wrap unrelated ``Gemma4ClippableLinear`` audio
+    and vision layers.  The adapter checkpoint itself identifies precisely
+    which language-model modules were trained, so use those paths instead.
+    """
+    weights_path = adapter_path / "adapter_model.safetensors"
+    if not weights_path.is_file():
+        raise FileNotFoundError(f"Missing adapter weights: {weights_path}")
+
+    with safe_open(weights_path, framework="pt", device="cpu") as checkpoint:
+        keys = list(checkpoint.keys())
+
+    saved_modules: set[str] = set()
+    for key in keys:
+        for marker in (".lora_A.", ".lora_B."):
+            if marker in key:
+                saved_modules.add(key.split(marker, 1)[0])
+                break
+    if not saved_modules:
+        raise RuntimeError(f"No LoRA tensors found in {weights_path}")
+
+    base_modules = tuple(name for name, _ in base_model.named_modules() if name)
+    exact_targets: set[str] = set()
+    unmatched: list[str] = []
+    for saved_name in sorted(saved_modules):
+        matches = [
+            name
+            for name in base_modules
+            if saved_name == name or saved_name.endswith("." + name)
+        ]
+        if not matches:
+            unmatched.append(saved_name)
+            continue
+        exact_targets.add(max(matches, key=len))
+
+    if unmatched:
+        preview = "\n  ".join(unmatched[:10])
+        raise RuntimeError(
+            "Adapter modules do not match the selected complete base model:\n  "
+            + preview
+        )
+    if len(exact_targets) != len(saved_modules):
+        raise RuntimeError(
+            "Adapter-to-base module mapping was not one-to-one: "
+            f"{len(saved_modules)} saved modules, {len(exact_targets)} targets"
+        )
+
+    return sorted(exact_targets)
+
+
 def merge_one(spec: ModelSpec, output_root: Path) -> Path:
     adapter_config = spec.adapter_path / "adapter_config.json"
     if not adapter_config.is_file():
@@ -82,10 +137,14 @@ def merge_one(spec: ModelSpec, output_root: Path) -> Path:
         low_cpu_mem_usage=True,
         trust_remote_code=True,
     )
+    peft_config = PeftConfig.from_pretrained(str(spec.adapter_path))
+    peft_config.target_modules = exact_adapter_targets(spec.adapter_path, base_model)
+    print(f"Exact trained LoRA targets: {len(peft_config.target_modules)}", flush=True)
     peft_model = PeftModel.from_pretrained(
         base_model,
         str(spec.adapter_path),
         is_trainable=False,
+        config=peft_config,
     )
     peft_model.eval()
 
