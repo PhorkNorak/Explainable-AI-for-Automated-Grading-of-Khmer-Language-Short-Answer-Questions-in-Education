@@ -11,7 +11,7 @@ is available, otherwise the app reports clearly why a pillar is inactive:
   * Classical (TF-IDF + RBF-SVR) trains at startup and runs fully on CPU. (Demo pillar.)
   * RNN (BiLSTM + attention) loads the shipped champion checkpoint, CPU.
   * Transformer (GTE dual-encoder) loads a fine-tuned checkpoint if present (CPU-capable).
-  * LLM (Qwen-KhmerGrader-4B) grades via an OpenAI-compatible endpoint (default) or
+  * LLM (Pintu-Qwen3.5-4B) grades via an OpenAI-compatible endpoint (default) or
     in-process on a GPU.
 
 Run locally:  python prototype/app.py      (opens http://127.0.0.1:7860)
@@ -225,14 +225,16 @@ def _parse_llm_int(text, max_score):
 
 
 # Endpoint config for the LLM *grader* (separate from the FEEDBACK_LLM_* vars: grading
-# uses the fine-tuned KhmerGrader, feedback uses a general instruct model).
+# uses the fine-tuned Pintu model, feedback uses a general instruct model).
 GRADER_LLM_BASE_URL = os.environ.get("GRADER_LLM_BASE_URL", "").strip()
-GRADER_LLM_MODEL = os.environ.get("GRADER_LLM_MODEL", "qwen-khmergrader-4b")
+GRADER_LLM_MODEL = os.environ.get(
+    "GRADER_LLM_MODEL", "phorknorak/Pintu-Qwen3.5-4B"
+)
 GRADER_LLM_API_KEY = os.environ.get("GRADER_LLM_API_KEY", "ollama")
 
 
 class LLMGrader:
-    name = "LLM (Qwen-KhmerGrader-4B)"
+    name = "LLM (Pintu-Qwen3.5-4B)"
     preprocess_mode = "clean"
     input_format = "qar"
 
@@ -247,7 +249,7 @@ class LLMGrader:
         else:
             raise RuntimeError(
                 "no grading backend configured: set GRADER_LLM_BASE_URL to an "
-                "OpenAI-compatible endpoint serving a KhmerGrader model, or "
+                "OpenAI-compatible endpoint serving a Pintu model, or "
                 "GRADER_LLM_INPROCESS=1 on a GPU (with GRADER_LLM_MODEL / "
                 "GRADER_LLM_ADAPTER) to load the adapter in-process")
 
@@ -322,7 +324,7 @@ DEFAULT_MODEL = ("Classical (TF-IDF + SVR)" if "Classical (TF-IDF + SVR)" in MOD
 
 # ───────────────────────── grading + feedback ─────────────────────────
 # Feedback config (separate from the GRADER_LLM_* vars): grading uses the fine-tuned
-# KhmerGrader; the WRITTEN feedback uses a general open-source instruct model served over
+# Pintu; the WRITTEN feedback uses a general open-source instruct model served over
 # an OpenAI-compatible endpoint (Ollama / vLLM / llama.cpp / LM Studio), never a
 # proprietary grading API. When no endpoint is reachable we fall back to rule-based text.
 FEEDBACK_LLM_BASE_URL = os.environ.get("FEEDBACK_LLM_BASE_URL", "").strip()
@@ -460,7 +462,7 @@ def grade(question, reference, answer, max_score, model_name, explain=True):
 
     # SHAP word attribution is the unified explanation method: model-agnostic (it only calls
     # the scoring function), so one method explains the classical SVR, the BiLSTM, the
-    # encoder, and the LLM, matching the SHAP study reported in the thesis.
+    # encoder, and the LLM, matching the SHAP study reported in the undergraduate report.
     try:
         words, imp = shap_importance(pred_one, ans_disp, ref_proc, "segment")
         heat = heatmap_html_fragment(words, imp,

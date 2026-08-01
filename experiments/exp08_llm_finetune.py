@@ -67,12 +67,12 @@ LLM_BACKBONES = {
     "sealion_v45_e2b":  "aisingapore/Gemma-SEA-LION-v4.5-E2B-IT",
 }
 
-# Released-model names for the KhmerGrader family (base lineage disclosed in
+# Released-model names for the Pintu family (base lineage disclosed in
 # docs/model_cards.md). Maps the internal model_key -> the name we claim.
-KHMERGRADER_NAMES = {
-    "qwen35_4b":       "Qwen-KhmerGrader-4B",
-    "gemma4_e4b":      "Gemma-KhmerGrader-4B",
-    "sealion_v45_e2b": "SEA-LION-KhmerGrader-E2B",
+PINTU_NAMES = {
+    "qwen35_4b":       "Pintu-Qwen3.5-4B",
+    "gemma4_e4b":      "Pintu-Gemma4-E4B",
+    "sealion_v45_e2b": "Pintu-SEA-LION-v4.5-E2B",
 }
 
 

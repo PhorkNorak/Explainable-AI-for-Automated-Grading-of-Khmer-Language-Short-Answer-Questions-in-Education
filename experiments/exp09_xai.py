@@ -383,7 +383,7 @@ def _build_encoder(train_df, val_df, test_df, cfg, out_root, max_epochs=8):
 
 
 def _load_llm_finetuned(model_key, dataset, adapter_path=None, max_seq_length=1024):
-    """Load the base model + the fine-tuned KhmerGrader LoRA adapter for inference.
+    """Load the base model + the fine-tuned Pintu LoRA adapter for inference.
 
     Auto-discovers the adapter from the exp08 run dir or a champion dir; falls back
     to the base model (with a warning) if none is found.

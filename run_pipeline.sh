@@ -52,7 +52,7 @@ python -c "import khmernltk; print('khmernltk OK')"
   python -u experiments/exp02_threshold_calibration.py --source v06_transformer
   python -u experiments/exp02_threshold_calibration.py --source v03b_maxfeat_neural
   python -u experiments/exp07_ensemble.py
-  # LLM family (KhmerGrader) on no10c only, both input formats (qar, ra), all 3 bases
+  # LLM family (Pintu) on no10c only, both input formats (qar, ra), all 3 bases
   # (qwen35_4b, gemma4_e4b, sealion_v45_e2b). Zero-shot baselines THEN QLoRA fine-tune.
   python -u experiments/exp08_llm_finetune.py --models both --zeroshot --datasets no10c --input qar  # GPU/HPC
   python -u experiments/exp08_llm_finetune.py --models both --zeroshot --datasets no10c --input ra   # GPU/HPC
@@ -78,7 +78,11 @@ python -c "import khmernltk; print('khmernltk OK')"
 
   echo "=================== 3. AGGREGATE + FIGURES ==================="
   python -u experiments/compare_all.py --topk 20
-  python -u paper/make_figures.py                   # regenerate the figure suite from the CSVs
+  if [ -f paper/make_figures.py ]; then
+    python -u paper/make_figures.py                 # optional local manuscript figures
+  else
+    echo "[skip] paper/make_figures.py is not included in the public code repository."
+  fi
   python -u experiments/check_progress.py
 } 2>&1 | tee "$LOG"
 
@@ -87,4 +91,4 @@ echo "Pipeline finished. Manual follow-up (needs a browser, for correct Khmer sh
 echo "  1) Open the SHAP heatmap HTML galleries and screenshot each to a PNG:"
 echo "       results_xai/no10c/heatmaps/{classical,bilstm,encoder,llm}/*_gallery.html"
 echo "     Save as thesis/figures/heatmap_{classical,bilstm,encoder,llm}.png"
-echo "  2) Then propagate refreshed numbers from results_stats/*.csv into the thesis/paper tables."
+echo "  2) Then propagate refreshed numbers from results_stats/*.csv into local report tables."

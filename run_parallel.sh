@@ -130,4 +130,4 @@ echo "Parallel pipeline finished. Manual follow-up (needs a browser for Khmer sh
 echo "  1) Screenshot the SHAP galleries:"
 echo "       results_xai/no10c/heatmaps/{classical,bilstm,encoder,llm}/*_gallery.html"
 echo "     Save as thesis/figures/heatmap_{classical,bilstm,encoder,llm}.png"
-echo "  2) Propagate refreshed numbers from results_stats/*.csv into the thesis/paper tables."
+echo "  2) Propagate refreshed numbers from results_stats/*.csv into the report/paper tables."

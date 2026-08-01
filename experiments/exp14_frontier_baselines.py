@@ -1,11 +1,11 @@
-"""exp14 — frontier-LLM baselines (prompted) vs the fine-tuned KhmerGrader.
+"""exp14 — frontier-LLM baselines (prompted) vs the fine-tuned Pintu.
 
 Evaluates closed/frontier models (GPT, Claude, Gemini, DeepSeek) via API on the same
 Khmer test split, prompted ZERO-SHOT, in two variants each: a bare-integer answer and a
-reasoning-on answer. The KhmerGrader champion (fine-tuned) is the contribution this
+reasoning-on answer. The Pintu champion (fine-tuned) is the contribution this
 table is compared against (read tab:champs / tab:llmfamily).
 
-Design notes (see the thesis methodology + limitations):
+Design notes (see the undergraduate report methodology + limitations):
   * One unified OpenAI-compatible client for all providers (per-provider base_url +
     model id + env-var key). Determinism: temperature=0.
   * Reproducibility: every raw API response is CACHED to disk
@@ -87,7 +87,7 @@ _ANSWER_MARKERS = ("</think>", "<|channel|>final", "final answer", "Final answer
 
 
 def grading_prompt(question, reference, answer, max_score, mode="bare"):
-    """The same grading task used to fine-tune the KhmerGrader (fair comparison). The
+    """The same grading task used to fine-tune the Pintu (fair comparison). The
     output-format instruction is mode-specific: `bare` asks for the integer alone; `reasoning`
     lets the model think, then pins the final answer behind a `Score:` marker we parse."""
     body = (

@@ -29,14 +29,13 @@ CLAUDE.md
 Thumbs.db
 desktop.ini
 
-# Private research data. See data/README.md.
-/data/*.csv
-/data/*.xlsx
-/data/*.xls
-/data/*.jsonl
-!/data/README.md
+# Private research material and manuscript drafts
+/data/
+/docs/
+/paper/
+/distribution/
 
-# Thesis and local document exports
+# Undergraduate report and local document exports
 /thesis/
 /*.png
 *.pdf
@@ -60,14 +59,6 @@ desktop.ini
 *.synctex.gz
 *.toc
 
-# Downloaded papers and generated paper figures
-/docs/reference_papers/
-/docs/defense_qa.md
-/docs/script.md
-/docs/slide*.md
-/docs/slides*.md
-/paper/figures/
-
 # One-off local run scripts superseded by run_pipeline.sh
 /resume.sh
 /runall.sh
@@ -79,6 +70,7 @@ desktop.ini
 /xai_visuals_*/
 /outputs/
 /publish/
+/.release/
 /errors.txt
 *.jsonl
 

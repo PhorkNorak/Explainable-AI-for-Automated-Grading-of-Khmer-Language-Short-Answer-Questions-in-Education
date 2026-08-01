@@ -58,7 +58,7 @@ def _write_card(out, name, arch, license_, desc, deps, usage):
         f"- Training data: a single-trained-teacher Khmer secondary-school corpus "
         f"(no10c split, 909 answers)\n- {deps}\n\n"
         f"## Usage\n\n```python\n{usage}\n```\n\n"
-        f"Part of the **KhmerGrader** benchmark. Model class and full inference "
+        f"Part of the **Pintu** benchmark. Model class and full inference "
         f"pipeline (Khmer preprocessing: NFC, strip invisibles, strip punctuation, "
         f"khmernltk segmentation) are in the project repository. Intended for "
         f"assistive grading with a human in the loop, not high-stakes autonomous use.\n"
@@ -83,7 +83,7 @@ def _qwk_on_test(pred_fn, test_p, fmt):
 def export_classical():
     import joblib
     from models.classical import TFIDFSVR
-    name = "KhmerGrader-Classical-SVR"
+    name = "Pintu-Classical-SVR"
     out = os.path.join(PUB, name)
     os.makedirs(out, exist_ok=True)
     mode, fmt = "segment", "ra"
@@ -114,7 +114,7 @@ def export_classical():
 def export_bilstm():
     import torch
     from models.bilstm import BiLSTMScorer
-    name = "KhmerGrader-BiLSTM"
+    name = "Pintu-BiLSTM"
     out = os.path.join(PUB, name)
     os.makedirs(out, exist_ok=True)
     champ = os.path.join(_ROOT, "results", "champions", "rnn_clean_ra_bilstm_909")
@@ -174,7 +174,7 @@ def export_encoder(max_epochs=8):
     import torch.nn as nn
     from transformers import AutoTokenizer
     from models.dual import DualEncoderScorer
-    name = "KhmerGrader-Encoder-GTE"
+    name = "Pintu-Encoder-GTE"
     out = os.path.join(PUB, name)
     os.makedirs(out, exist_ok=True)
     mode, fmt = "clean", "ra"

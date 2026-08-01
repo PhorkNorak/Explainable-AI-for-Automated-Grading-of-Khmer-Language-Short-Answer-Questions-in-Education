@@ -1,7 +1,8 @@
 # KhmerXScore: live prototype (Gradio)
 
-A teacher-facing web app for the thesis *"Explainable AI for Automated Grading of Khmer
-Language Short-Answer Questions."* The teacher pastes the **question + reference answer +
+A teacher-facing web app developed for Phork Norak's undergraduate report, *"Explainable AI for
+Automated Grading of Khmer Language Short-Answer Questions,"* under the supervision of
+Dr. Khim Chamroeun. The teacher pastes the **question + reference answer +
 student answer**, picks a **model pillar**, and gets:
 
 - a **score** (raw points + percentage + 5-class grade),
@@ -9,7 +10,7 @@ student answer**, picks a **model pillar**, and gets:
 - short **written feedback** (which reference points are missing).
 
 It is a **teacher-assist** tool (human-in-the-loop), not an autonomous grader; the same
-**SHAP word-attribution** explanation reported in the thesis is what the teacher sees.
+**SHAP word-attribution** explanation reported in the undergraduate report is what the teacher sees.
 
 ## The four pillars and how each activates
 
@@ -22,11 +23,11 @@ line at the bottom of the app lists the state of every pillar).
 | **Classical (TF-IDF + SVR)** | CPU | always (trains at startup, a few seconds). **Demo pillar.** |
 | **RNN (BiLSTM + Attention)** | CPU | the champion checkpoint `results/champions/rnn_clean_ra_bilstm_909/best.pt` is present |
 | **Transformer (GTE dual-encoder)** | CPU (slow) / GPU | a fine-tuned checkpoint is present at `results/champions/encoder_clean_qar_dual_gte_maxfeat_1184/best.pt` (or `ENCODER_CKPT`) **and** `transformers` is installed |
-| **LLM (Qwen-KhmerGrader-4B)** | endpoint (any) / GPU | `GRADER_LLM_BASE_URL` is set (endpoint), or `GRADER_LLM_INPROCESS=1` on a GPU |
+| **LLM (Pintu-Qwen3.5-4B)** | endpoint (any) / GPU | `GRADER_LLM_BASE_URL` is set (endpoint), or `GRADER_LLM_INPROCESS=1` on a GPU |
 
 > The encoder checkpoint and the LLM adapter are trained on HPC/GPU and are **not shipped** with the
 > repo. The code is ready to consume them: drop the encoder `best.pt` into the champion dir, or point
-> the LLM pillar at a served KhmerGrader. Until then those two pillars show a clear "inactive" note
+> the LLM pillar at a served Pintu. Until then those two pillars show a clear "inactive" note
 > and the app runs fine on the demo (Classical) pillar.
 
 ## Run locally
@@ -43,7 +44,7 @@ endpoint-based LLM grader. The **Transformer** and **in-process LLM** paths need
 noted in `prototype/requirements.txt`.
 
 Explanation: the app shows **SHAP word attribution** (text highlighting), the model-agnostic
-highlighter used throughout the thesis. With the `shap` library installed it uses the Permutation
+highlighter used throughout the undergraduate report. With the `shap` library installed it uses the Permutation
 explainer; otherwise a built-in Monte-Carlo Shapley estimator runs, so it needs no extra install and
 is the single, unified attribution method across all four pillars, including the non-differentiable
 classical model. (For a `qar` pillar the question is folded into the model input, so the attribution
@@ -58,15 +59,15 @@ always available offline.
 
 ## LLM grading pillar (open-source LLM)
 
-The **LLM (Qwen-KhmerGrader-4B)** pillar grades with an open-source model. It has two backends:
+The **LLM (Pintu-Qwen3.5-4B)** pillar grades with an open-source model. It has two backends:
 
 **1. Endpoint (default, runs anywhere incl. this CPU machine).** Point it at any OpenAI-compatible
-server (vLLM / Ollama / llama.cpp / LM Studio / OpenRouter / Together …) that serves a KhmerGrader
+server (vLLM / Ollama / llama.cpp / LM Studio / OpenRouter / Together …) that serves a Pintu
 model. The app sends the same grading prompt used in fine-tuning and parses the integer score.
 
 ```bash
-export GRADER_LLM_BASE_URL="http://localhost:8000/v1"   # your served KhmerGrader
-export GRADER_LLM_MODEL="qwen-khmergrader-4b"
+export GRADER_LLM_BASE_URL="http://localhost:8000/v1"   # your served Pintu
+export GRADER_LLM_MODEL="phorknorak/Pintu-Qwen3.5-4B"
 export GRADER_LLM_API_KEY="..."                          # only for hosted providers
 python prototype/app.py
 ```
@@ -74,7 +75,7 @@ python prototype/app.py
 | Variable | Default | Notes |
 |---|---|---|
 | `GRADER_LLM_BASE_URL` | *(empty → pillar inactive)* | OpenAI-compatible base URL serving the grader |
-| `GRADER_LLM_MODEL` | `qwen-khmergrader-4b` | model name on that server |
+| `GRADER_LLM_MODEL` | `phorknorak/Pintu-Qwen3.5-4B` | model name on that server |
 | `GRADER_LLM_API_KEY` | `ollama` | real key only for hosted providers |
 
 **2. In-process (GPU only).** Loads the base model + trained LoRA adapter locally instead of calling
@@ -83,14 +84,14 @@ an endpoint. Needs the optional GPU extras and a GPU Space.
 ```bash
 export GRADER_LLM_INPROCESS=1
 export GRADER_LLM_MODEL="Qwen/Qwen3.5-4B"                # base (HF id)
-export GRADER_LLM_ADAPTER="/path/or/hf-repo/khmergrader-qwen-lora"
+export GRADER_LLM_ADAPTER="/path/or/hf-repo/Pintu-Qwen3.5-4B"
 python prototype/app.py
 ```
 
 ## Written feedback (open-source LLM)
 
 The written feedback is generated by a **general open-source instruct model** (separate from the
-KhmerGrader that produces the score), served over any OpenAI-compatible endpoint. Point it at a server
+Pintu that produces the score), served over any OpenAI-compatible endpoint. Point it at a server
 and the app drafts short Khmer feedback grounded in the question, reference, student answer, the score,
 and the missing reference points. If no endpoint is set or reachable, it falls back to deterministic
 rule-based feedback, so the app always works offline. It never calls a proprietary grading API.
@@ -137,4 +138,4 @@ To light up the heavier pillars on a Space: for the **encoder**, uncomment `tran
 is the endpoint backend (set `GRADER_LLM_*` to a served model), or use a **GPU** Space with the
 in-process extras (`transformers`, `accelerate`, `peft`, `bitsandbytes`, optionally `unsloth`).
 
-> After deploying, paste the public Space URL into the thesis (§4.5 / prototype slide).
+> After deploying, paste the public Space URL into the undergraduate report (§4.5 / prototype slide).
