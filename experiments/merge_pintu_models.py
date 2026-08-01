@@ -154,11 +154,19 @@ def merge_one(spec: ModelSpec, output_root: Path) -> Path:
     )
     merged_model.eval()
 
+    # The HPC login node has limited host RAM.  Drop the now-empty PEFT wrapper
+    # before serialization and use small shards so copying GPU tensors to CPU
+    # never requires a multi-gigabyte temporary buffer.
+    del peft_model
+    del base_model
+    gc.collect()
+    torch.cuda.empty_cache()
+
     output_path.mkdir(parents=True)
     merged_model.save_pretrained(
         output_path,
         safe_serialization=True,
-        max_shard_size="5GB",
+        max_shard_size="1GB",
     )
     processor.save_pretrained(output_path)
 
@@ -172,8 +180,6 @@ def merge_one(spec: ModelSpec, output_root: Path) -> Path:
     print(f"Saved complete BF16 model: {output_path}")
 
     del merged_model
-    del peft_model
-    del base_model
     del processor
     gc.collect()
     torch.cuda.empty_cache()
