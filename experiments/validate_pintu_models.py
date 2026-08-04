@@ -108,11 +108,17 @@ def validate_one(
     model_root: Path,
     output_root: Path,
     processor_source: str,
+    model_source: str,
 ) -> None:
     spec = SPECS[model_key]
-    model_path = model_root / spec.release_name
+    adapter_path = spec.original_run / "lora_adapter"
+    model_path = (
+        adapter_path
+        if model_source == "adapter"
+        else model_root / spec.release_name
+    )
     if not model_path.is_dir():
-        raise FileNotFoundError(f"Missing complete model: {model_path}")
+        raise FileNotFoundError(f"Missing model source: {model_path}")
 
     print("\n" + "=" * 72, flush=True)
     print(f"Validating: {spec.release_name}", flush=True)
@@ -120,26 +126,39 @@ def validate_one(
     print(f"Reference:  {spec.original_run}", flush=True)
     print("=" * 72, flush=True)
 
-    processor_path = (
-        spec.original_run / "lora_adapter"
-        if processor_source == "adapter"
-        else model_path
-    )
-    if not processor_path.is_dir():
-        raise FileNotFoundError(f"Missing processor source: {processor_path}")
-    print(f"Processor:  {processor_path}", flush=True)
-    processor = AutoProcessor.from_pretrained(
-        processor_path,
-        trust_remote_code=True,
-    )
-    device_map = {"": torch.cuda.current_device()} if torch.cuda.is_available() else "cpu"
-    model = AutoModelForMultimodalLM.from_pretrained(
-        model_path,
-        dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
-        device_map=device_map,
-        low_cpu_mem_usage=True,
-        trust_remote_code=True,
-    )
+    if model_source == "adapter":
+        from unsloth import FastLanguageModel
+
+        processor_path = adapter_path
+        print(f"Processor:  {processor_path}", flush=True)
+        model, processor = FastLanguageModel.from_pretrained(
+            model_name=str(adapter_path),
+            max_seq_length=1024,
+            dtype=None,
+            load_in_4bit=True,
+        )
+        FastLanguageModel.for_inference(model)
+    else:
+        processor_path = (
+            adapter_path if processor_source == "adapter" else model_path
+        )
+        if not processor_path.is_dir():
+            raise FileNotFoundError(f"Missing processor source: {processor_path}")
+        print(f"Processor:  {processor_path}", flush=True)
+        processor = AutoProcessor.from_pretrained(
+            processor_path,
+            trust_remote_code=True,
+        )
+        device_map = (
+            {"": torch.cuda.current_device()} if torch.cuda.is_available() else "cpu"
+        )
+        model = AutoModelForMultimodalLM.from_pretrained(
+            model_path,
+            dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
+            device_map=device_map,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+        )
     model.eval()
 
     test_rows_path = spec.test_rows_run / "predictions_test.csv"
@@ -222,6 +241,7 @@ def validate_one(
 
     report = {
         "model": spec.release_name,
+        "model_source": model_source,
         "model_path": str(model_path),
         "processor_path": str(processor_path),
         "input": "qar",
@@ -276,6 +296,12 @@ def parse_args() -> argparse.Namespace:
         default="model",
         help="Load processor files from the merged model or original adapter.",
     )
+    parser.add_argument(
+        "--model-source",
+        choices=("merged", "adapter"),
+        default="merged",
+        help="Validate complete merged weights or the original 4-bit QLoRA adapter.",
+    )
     return parser.parse_args()
 
 
@@ -288,6 +314,7 @@ def main() -> None:
             args.model_root,
             args.output_root,
             args.processor_source,
+            args.model_source,
         )
     print("\nAll requested Pintu validations completed.", flush=True)
 
