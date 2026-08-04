@@ -113,9 +113,33 @@ def validate_one(model_key: str, model_root: Path, output_root: Path) -> None:
     )
     model.eval()
 
-    exp08._set_input_fmt("qar")
-    dataframe = data.load_dataframe()
-    _, _, test_df = data.split_dataframe(dataframe)
+    original_predictions_path = spec.original_run / "predictions_test.csv"
+    if not original_predictions_path.is_file():
+        raise FileNotFoundError(
+            f"Missing report test predictions: {original_predictions_path}"
+        )
+    original = pd.read_csv(original_predictions_path)
+    required_columns = [
+        "Question",
+        "Reference",
+        "Answer",
+        "Max Score",
+        "true_raw",
+        "true_label",
+        "true_score",
+    ]
+    missing_columns = [column for column in required_columns if column not in original]
+    if missing_columns:
+        raise ValueError(
+            f"Missing columns in {original_predictions_path}: {missing_columns}"
+        )
+    test_df = original[required_columns].rename(
+        columns={
+            "true_raw": "Student Score",
+            "true_label": "score_label",
+            "true_score": "normalized_score",
+        }
+    )
     test_df = data.apply_preprocess(test_df, "clean")
     print(f"Curated test answers: {len(test_df)}", flush=True)
 
@@ -127,33 +151,27 @@ def validate_one(model_key: str, model_root: Path, output_root: Path) -> None:
     exp08.write_predictions(predictions, str(output_dir), "test")
 
     comparison: dict[str, object] = {}
-    original_predictions_path = spec.original_run / "predictions_test.csv"
-    if original_predictions_path.is_file():
-        original = pd.read_csv(original_predictions_path)
-        if len(original) != len(predictions):
-            comparison["original_prediction_rows"] = len(original)
-            comparison["merged_prediction_rows"] = len(predictions)
-            comparison["comparable"] = False
-        else:
-            original_raw = original["pred_raw"].to_numpy(dtype=int)
-            merged_raw = predictions["pred_raw"].to_numpy(dtype=int)
-            comparison.update(
-                {
-                    "comparable": True,
-                    "exact_prediction_matches": int(np.sum(original_raw == merged_raw)),
-                    "prediction_rows": len(merged_raw),
-                    "prediction_match_rate": float(np.mean(original_raw == merged_raw)),
-                    "mean_absolute_raw_difference": float(
-                        np.mean(np.abs(original_raw - merged_raw))
-                    ),
-                    "maximum_absolute_raw_difference": int(
-                        np.max(np.abs(original_raw - merged_raw))
-                    ),
-                }
-            )
-    else:
+    if len(original) != len(predictions):
+        comparison["original_prediction_rows"] = len(original)
+        comparison["merged_prediction_rows"] = len(predictions)
         comparison["comparable"] = False
-        comparison["missing_original_predictions"] = str(original_predictions_path)
+    else:
+        original_raw = original["pred_raw"].to_numpy(dtype=int)
+        merged_raw = predictions["pred_raw"].to_numpy(dtype=int)
+        comparison.update(
+            {
+                "comparable": True,
+                "exact_prediction_matches": int(np.sum(original_raw == merged_raw)),
+                "prediction_rows": len(merged_raw),
+                "prediction_match_rate": float(np.mean(original_raw == merged_raw)),
+                "mean_absolute_raw_difference": float(
+                    np.mean(np.abs(original_raw - merged_raw))
+                ),
+                "maximum_absolute_raw_difference": int(
+                    np.max(np.abs(original_raw - merged_raw))
+                ),
+            }
+        )
 
     original_metrics_path = spec.original_run / "metrics.json"
     if original_metrics_path.is_file():
@@ -185,7 +203,7 @@ def validate_one(model_key: str, model_root: Path, output_root: Path) -> None:
 
     del predictions
     del test_df
-    del dataframe
+    del original
     del model
     del processor
     gc.collect()
