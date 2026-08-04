@@ -103,7 +103,12 @@ def predict(model, processor, test_df: pd.DataFrame) -> pd.DataFrame:
     return predictions
 
 
-def validate_one(model_key: str, model_root: Path, output_root: Path) -> None:
+def validate_one(
+    model_key: str,
+    model_root: Path,
+    output_root: Path,
+    processor_source: str,
+) -> None:
     spec = SPECS[model_key]
     model_path = model_root / spec.release_name
     if not model_path.is_dir():
@@ -115,7 +120,18 @@ def validate_one(model_key: str, model_root: Path, output_root: Path) -> None:
     print(f"Reference:  {spec.original_run}", flush=True)
     print("=" * 72, flush=True)
 
-    processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
+    processor_path = (
+        spec.original_run / "lora_adapter"
+        if processor_source == "adapter"
+        else model_path
+    )
+    if not processor_path.is_dir():
+        raise FileNotFoundError(f"Missing processor source: {processor_path}")
+    print(f"Processor:  {processor_path}", flush=True)
+    processor = AutoProcessor.from_pretrained(
+        processor_path,
+        trust_remote_code=True,
+    )
     device_map = {"": torch.cuda.current_device()} if torch.cuda.is_available() else "cpu"
     model = AutoModelForMultimodalLM.from_pretrained(
         model_path,
@@ -207,6 +223,7 @@ def validate_one(model_key: str, model_root: Path, output_root: Path) -> None:
     report = {
         "model": spec.release_name,
         "model_path": str(model_path),
+        "processor_path": str(processor_path),
         "input": "qar",
         "preprocess": "clean",
         "test_rows_source": str(test_rows_path),
@@ -253,6 +270,12 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("publish/validation"),
     )
+    parser.add_argument(
+        "--processor-source",
+        choices=("model", "adapter"),
+        default="model",
+        help="Load processor files from the merged model or original adapter.",
+    )
     return parser.parse_args()
 
 
@@ -260,7 +283,12 @@ def main() -> None:
     os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
     args = parse_args()
     for model_key in args.models:
-        validate_one(model_key, args.model_root, args.output_root)
+        validate_one(
+            model_key,
+            args.model_root,
+            args.output_root,
+            args.processor_source,
+        )
     print("\nAll requested Pintu validations completed.", flush=True)
 
 
