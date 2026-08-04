@@ -37,6 +37,7 @@ import exp08_llm_finetune as exp08  # noqa: E402
 class ValidationSpec:
     release_name: str
     original_run: Path
+    test_rows_run: Path
 
 
 SPECS = {
@@ -46,6 +47,10 @@ SPECS = {
             "results_no10c_v08_llm_qwen35_4b/"
             "runs/clean_qar_qwen35_4b"
         ),
+        test_rows_run=Path(
+            "results_no10c_v08_llm_qwen35_4b/"
+            "runs/clean_ra_qwen35_4b"
+        ),
     ),
     "gemma": ValidationSpec(
         release_name="Pintu-Gemma4-E4B",
@@ -53,12 +58,20 @@ SPECS = {
             "results_no10c_v08_llm_gemma4_e4b/"
             "runs/clean_qar_gemma4_e4b"
         ),
+        test_rows_run=Path(
+            "results_no10c_v08_llm_gemma4_e4b/"
+            "runs/clean_ra_gemma4_e4b"
+        ),
     ),
     "sealion": ValidationSpec(
         release_name="Pintu-SEA-LION-v4.5-E2B",
         original_run=Path(
             "results_no10c_v08_llm_sealion_v45_e2b/"
             "runs/clean_qar_sealion_v45_e2b"
+        ),
+        test_rows_run=Path(
+            "results_no10c_v08_llm_sealion_v45_e2b/"
+            "runs/clean_ra_sealion_v45_e2b"
         ),
     ),
 }
@@ -113,12 +126,12 @@ def validate_one(model_key: str, model_root: Path, output_root: Path) -> None:
     )
     model.eval()
 
-    original_predictions_path = spec.original_run / "predictions_test.csv"
-    if not original_predictions_path.is_file():
+    test_rows_path = spec.test_rows_run / "predictions_test.csv"
+    if not test_rows_path.is_file():
         raise FileNotFoundError(
-            f"Missing report test predictions: {original_predictions_path}"
+            f"Missing saved test rows: {test_rows_path}"
         )
-    original = pd.read_csv(original_predictions_path)
+    test_rows = pd.read_csv(test_rows_path)
     required_columns = [
         "Question",
         "Reference",
@@ -128,12 +141,12 @@ def validate_one(model_key: str, model_root: Path, output_root: Path) -> None:
         "true_label",
         "true_score",
     ]
-    missing_columns = [column for column in required_columns if column not in original]
+    missing_columns = [column for column in required_columns if column not in test_rows]
     if missing_columns:
         raise ValueError(
-            f"Missing columns in {original_predictions_path}: {missing_columns}"
+            f"Missing columns in {test_rows_path}: {missing_columns}"
         )
-    test_df = original[required_columns].rename(
+    test_df = test_rows[required_columns].rename(
         columns={
             "true_raw": "Student Score",
             "true_label": "score_label",
@@ -151,27 +164,35 @@ def validate_one(model_key: str, model_root: Path, output_root: Path) -> None:
     exp08.write_predictions(predictions, str(output_dir), "test")
 
     comparison: dict[str, object] = {}
-    if len(original) != len(predictions):
-        comparison["original_prediction_rows"] = len(original)
-        comparison["merged_prediction_rows"] = len(predictions)
-        comparison["comparable"] = False
-    else:
-        original_raw = original["pred_raw"].to_numpy(dtype=int)
-        merged_raw = predictions["pred_raw"].to_numpy(dtype=int)
-        comparison.update(
-            {
-                "comparable": True,
-                "exact_prediction_matches": int(np.sum(original_raw == merged_raw)),
-                "prediction_rows": len(merged_raw),
-                "prediction_match_rate": float(np.mean(original_raw == merged_raw)),
-                "mean_absolute_raw_difference": float(
-                    np.mean(np.abs(original_raw - merged_raw))
-                ),
-                "maximum_absolute_raw_difference": int(
-                    np.max(np.abs(original_raw - merged_raw))
-                ),
-            }
+    original_predictions_path = spec.original_run / "predictions_test.csv"
+    if not original_predictions_path.is_file():
+        comparison["prediction_comparison_available"] = False
+        comparison["missing_original_qar_predictions"] = str(
+            original_predictions_path
         )
+    else:
+        original = pd.read_csv(original_predictions_path)
+        if len(original) != len(predictions):
+            comparison["prediction_comparison_available"] = False
+            comparison["original_prediction_rows"] = len(original)
+            comparison["merged_prediction_rows"] = len(predictions)
+        else:
+            original_raw = original["pred_raw"].to_numpy(dtype=int)
+            merged_raw = predictions["pred_raw"].to_numpy(dtype=int)
+            comparison.update(
+                {
+                    "prediction_comparison_available": True,
+                    "exact_prediction_matches": int(np.sum(original_raw == merged_raw)),
+                    "prediction_rows": len(merged_raw),
+                    "prediction_match_rate": float(np.mean(original_raw == merged_raw)),
+                    "mean_absolute_raw_difference": float(
+                        np.mean(np.abs(original_raw - merged_raw))
+                    ),
+                    "maximum_absolute_raw_difference": int(
+                        np.max(np.abs(original_raw - merged_raw))
+                    ),
+                }
+            )
 
     original_metrics_path = spec.original_run / "metrics.json"
     if original_metrics_path.is_file():
@@ -188,6 +209,8 @@ def validate_one(model_key: str, model_root: Path, output_root: Path) -> None:
         "model_path": str(model_path),
         "input": "qar",
         "preprocess": "clean",
+        "test_rows_source": str(test_rows_path),
+        "test_rows_source_predictions_not_used": True,
         "test_answers": len(test_df),
         "merged_test_metrics": metrics,
         "adapter_comparison": comparison,
@@ -203,7 +226,7 @@ def validate_one(model_key: str, model_root: Path, output_root: Path) -> None:
 
     del predictions
     del test_df
-    del original
+    del test_rows
     del model
     del processor
     gc.collect()
