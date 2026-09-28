@@ -310,15 +310,27 @@ def generate_score(model, tokenizer, prompt: str, max_score: int, device):
         )
     new_tokens = out[0, ids_t.shape[1]:].tolist()
     text = text_tok.decode(new_tokens, skip_special_tokens=True)
-    parsed = text
+    score, _ = parse_score(text, max_score)
+    return score, text.strip()
+
+
+def parse_score(text: str, max_score: int) -> tuple[int, bool]:
+    """Parse a generated reply into a clipped integer score.
+
+    Keeps only the tail after a known answer marker, takes the first integer and
+    clips it to [0, max_score]. Returns (score, parsed); when no integer is found
+    the score falls back to max_score // 2 and parsed is False. Shared by the
+    transformers path (generate_score) and the GGUF release validation so every
+    runtime is scored by the same rule.
+    """
+    parsed = text or ""
     for marker in _ANSWER_MARKERS:
         if marker in parsed:
             parsed = parsed.split(marker)[-1]
     m = re.search(r"\d+", parsed)
     if m:
-        score = max(0, min(int(m.group()), int(max_score)))
-        return score, text.strip()
-    return int(max_score) // 2, text.strip()
+        return max(0, min(int(m.group()), int(max_score))), True
+    return int(max_score) // 2, False
 
 
 def predict_split(model, tokenizer, df_proc):
@@ -543,7 +555,7 @@ def run_zeroshot(model_key, val_df, test_df, run_id, max_seq_length):
     model, tokenizer, loader = load_model(model_name, max_seq_length, lora=False)
     model.train(False)
 
-    prep, inp = "clean", "qar"
+    prep, inp = "clean", _INPUT_FMT
     test_p = predict_split(model, tokenizer, data.apply_preprocess(test_df, prep))
     val_p  = predict_split(model, tokenizer, data.apply_preprocess(val_df,  prep))
     test_m, val_m = llm_metrics(test_p), llm_metrics(val_p)

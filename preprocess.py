@@ -10,9 +10,8 @@ U+200B, ZWNJ/ZWJ, BOM, soft hyphen, controls) plus bullet markers (• ◦ ‣ �
 genuine noise that survives punctuation stripping. Digits (Arabic and Khmer) and
 letters are *kept* as answer content.
 
-Note: the released headline results were produced with the pre-refinement
-cleaning (which did not strip invisibles); experiments/exp11_cleaning_ablation.py
-quantifies the (negligible) effect of this refinement on the classical champion.
+Historical result preprocessing is not established by filenames or this source.
+See docs/audit for prediction reproduction and remaining provenance requirements.
 """
 
 import re
@@ -61,13 +60,8 @@ def segment_khmer(text: str) -> str:
     try:
         import khmernltk
         return " ".join(khmernltk.word_tokenize(text))
-    except ImportError:
-        if not _khmernltk_warned:
-            print("NOTE: khmernltk not installed — segmentation skipped.")
-            _khmernltk_warned = True
-        return text
-    except Exception:
-        return text
+    except Exception as exc:
+        raise RuntimeError("segment mode requires working khmernltk segmentation") from exc
 
 
 def preprocess(text: str, mode: str) -> str:

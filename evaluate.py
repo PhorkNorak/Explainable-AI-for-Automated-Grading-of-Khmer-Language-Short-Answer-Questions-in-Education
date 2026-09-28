@@ -29,8 +29,28 @@ from sklearn.metrics import (cohen_kappa_score, accuracy_score, mean_absolute_er
 
 
 def metrics(pred_scores, true_labels, max_scores=None, true_raw=None) -> dict:
-    pred_scores = np.asarray(pred_scores, dtype=np.float64).clip(0.0, 1.0)
-    true_labels = np.asarray(true_labels, dtype=np.int64).clip(0, 4)
+    pred_scores = np.asarray(pred_scores, dtype=np.float64)
+    true_labels = np.asarray(true_labels, dtype=np.float64)
+    if (pred_scores.ndim != 1 or pred_scores.size == 0
+            or true_labels.shape != pred_scores.shape
+            or not np.all(np.isfinite(pred_scores))
+            or not np.all(np.isfinite(true_labels))):
+        raise ValueError("scores and labels must be aligned, nonempty, finite vectors")
+    if np.any((true_labels < 0) | (true_labels > 4) | (true_labels != np.rint(true_labels))):
+        raise ValueError("true labels must be integers from 0 to 4")
+    if (max_scores is None) != (true_raw is None):
+        raise ValueError("max_scores and true_raw must be provided together")
+    if max_scores is not None:
+        max_scores = np.asarray(max_scores, dtype=np.float64)
+        true_raw = np.asarray(true_raw, dtype=np.float64)
+        if (max_scores.shape != pred_scores.shape or true_raw.shape != pred_scores.shape
+                or not np.all(np.isfinite(max_scores)) or not np.all(np.isfinite(true_raw))
+                or np.any(max_scores <= 0) or np.any(max_scores != np.rint(max_scores))
+                or np.any(true_raw != np.rint(true_raw))
+                or np.any(true_raw < 0) or np.any(true_raw > max_scores)):
+            raise ValueError("raw scores must be aligned integers within positive integer maxima")
+    pred_scores = pred_scores.clip(0.0, 1.0)
+    true_labels = true_labels.astype(np.int64)
     pred_labels = np.round(pred_scores * 4.0).astype(np.int64).clip(0, 4)
 
     qwk = cohen_kappa_score(true_labels, pred_labels, weights="quadratic",

@@ -45,7 +45,8 @@ def heatmap_html_fragment(words: List[str], importance, caption: str = "") -> st
             f'<div style="font-family:sans-serif;font-size:12px;color:#555;margin-top:8px">'
             f'low <span style="display:inline-block;width:90px;height:11px;vertical-align:middle;'
             f'background:linear-gradient(to right,#fff,rgb(255,85,85));border:1px solid #ccc"></span> high '
-            f'&nbsp;—&nbsp; darker = removing this word changes the score more.</div></div>')
+            f'&nbsp;|&nbsp; darker = larger positive attribution to the score. '
+            f'Zero and negative values are shown in white.</div></div>')
 
 
 def render_word_heatmap_html(words: List[str], importance, out_path: str, title: str):
@@ -63,8 +64,9 @@ background:linear-gradient(to right,#fff,rgb(255,85,85));border:1px solid #ccc}}
 </head><body>
 <h3>{_esc(title)}</h3>
 <div>{tiles}</div>
-<div class="legend">word importance (occlusion): low <span class="bar"></span> high &nbsp;|&nbsp;
-darker red = removing this Khmer word changes the predicted score more.</div>
+<div class="legend">positive attribution: low <span class="bar"></span> high &nbsp;|&nbsp;
+darker red = larger positive attribution to the score. Zero and negative values are shown in white.
+The caption identifies the attribution method.</div>
 </body></html>"""
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
@@ -88,7 +90,8 @@ span.tile{{}}</style></head><body>
 <h2>{_esc(title)}</h2>
 {body}
 <p style="font-family:sans-serif;font-size:12px;color:#555">Browser-shaped Khmer
-(occlusion importance on the original answer). Print-to-PDF or screenshot for a figure.</p>
+(positive attribution; the caption identifies the method). Zero and negative values are white.
+Print-to-PDF or screenshot for a figure.</p>
 </body></html>"""
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:

@@ -10,6 +10,7 @@ Runs locally on CPU from the saved champion predictions; needs no re-training.
 from __future__ import annotations
 
 import csv
+import argparse
 import os
 import sys
 
@@ -46,6 +47,13 @@ def _load_predictions(path):
 
 
 def champion_metrics(out_dir):
+    missing = [fam for fam, d in CHAMPS.items()
+               if not os.path.isfile(os.path.join(C.PROJECT_ROOT, d, "predictions_test.csv"))]
+    if missing:
+        raise FileNotFoundError("Champion evidence missing: " + ", ".join(missing))
+    destination = os.path.join(out_dir, "champion_metrics.csv")
+    if os.path.exists(destination):
+        raise FileExistsError("Preserving existing evidence; choose a new --output-dir")
     rows = []
     for fam, d in CHAMPS.items():
         p = os.path.join(C.PROJECT_ROOT, d, "predictions_test.csv")
@@ -60,17 +68,21 @@ def champion_metrics(out_dir):
               f"kappa={row['cohen_kappa']} P={row['precision_macro']} R={row['recall_macro']} "
               f"F1={row['f1_macro']} within1={row['raw_within1']}")
     fields = ["family", "n"] + METRICS
-    with open(os.path.join(out_dir, "champion_metrics.csv"), "w", newline="", encoding="utf-8") as f:
+    os.makedirs(out_dir, exist_ok=True)
+    with open(destination, "x", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=fields); w.writeheader(); w.writerows(rows)
     return rows
 
 
 def main():
-    out_dir = os.path.join(C.PROJECT_ROOT, "results_stats")
-    os.makedirs(out_dir, exist_ok=True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output-dir", required=True,
+                        help="new directory for reviewed champion metrics; original evidence is preserved")
+    args = parser.parse_args()
+    out_dir = args.output_dir
     print("=== champion point metrics (random-split predictions) ===")
     champion_metrics(out_dir)
-    print("\n[exp10] wrote results_stats/ -> champion_metrics.csv")
+    print(f"\n[exp10] wrote {out_dir}/champion_metrics.csv; provenance review still required")
 
 
 if __name__ == "__main__":

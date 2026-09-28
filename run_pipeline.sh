@@ -63,17 +63,17 @@ python -c "import khmernltk; print('khmernltk OK')"
   # SHAP: full on the cheap pillars; capped on the LLM (each SHAP eval is a full generation).
   python -u experiments/exp09_xai.py --families classical bilstm encoder --dataset no10c
   python -u experiments/exp09_xai.py --families llm --dataset no10c --shap-max-evals 50   # GPU/HPC
-  python -u experiments/exp10_significance.py       # champion point metrics
+  python -u experiments/exp10_significance.py --output-dir "results_stats/audit_$(date +%Y%m%d_%H%M%S)" # refuses incomplete champion sets
   python -u experiments/exp11_cleaning_ablation.py  # format-noise robustness
   python -u experiments/exp12_hparam_tuning.py      # classical hyperparameter sweep
 
   echo "=================== 2b. FRONTIER BASELINES (paid API, ~\$5-11, cached) ==================="
   # Frontier LLMs via one OpenRouter key (zero-shot, bare + reasoning, no10c). Responses cache
   # to results_frontier/, so a re-run is free; skipped automatically if no key is exported.
-  if [ -n "${OPENROUTER_API_KEY:-}" ]; then
+  if [ "${KXS_RUN_FRONTIER:-0}" = "1" ] && [ -n "${OPENROUTER_API_KEY:-}" ]; then
     python -u experiments/exp14_frontier_baselines.py --gateway openrouter --dataset no10c
   else
-    echo "[skip] OPENROUTER_API_KEY not set; skipping exp14 frontier baselines."
+    echo "[skip] Frontier evaluation requires explicit KXS_RUN_FRONTIER=1 and approved data use."
   fi
 
   echo "=================== 3. AGGREGATE + FIGURES ==================="
