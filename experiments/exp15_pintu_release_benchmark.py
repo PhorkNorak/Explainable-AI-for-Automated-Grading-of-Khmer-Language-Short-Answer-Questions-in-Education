@@ -349,8 +349,8 @@ def make_figures(release: str, bench: pd.DataFrame, fid: pd.DataFrame, runs: lis
         from matplotlib.colors import LinearSegmentedColormap
         cmap = LinearSegmentedColormap.from_list("blue_seq", ["#eaf2fc", "#2a78d6", "#0c3a70"])
         fig, ax = plt.subplots(figsize=(0.62 * len(ids) + 2, 0.55 * len(ids) + 1.4))
-        im = ax.imshow(mat.to_numpy(float), cmap=cmap, vmin=float(np.nanmin(mat.to_numpy()) - 0.02),
-                       vmax=1.0)
+        vmin = float(np.nanmin(mat.to_numpy()) - 0.02)
+        im = ax.imshow(mat.to_numpy(float), cmap=cmap, vmin=vmin, vmax=1.0)
         ax.set_xticks(range(len(ids)), ids)
         ax.set_yticks(range(len(ids)), ids)
         for i in range(len(ids)):
@@ -358,7 +358,7 @@ def make_figures(release: str, bench: pd.DataFrame, fid: pd.DataFrame, runs: lis
                 v = mat.iloc[i, j]
                 if np.isfinite(v):
                     ax.text(j, i, f"{v:.2f}", ha="center", va="center", fontsize=7,
-                            color="white" if v > 0.9 else INK)
+                            color="white" if (v - vmin) / (1.0 - vmin) > 0.45 else INK)
         ax.tick_params(colors=INK_2, labelsize=9, length=0)
         for spine in ax.spines.values():
             spine.set_visible(False)
@@ -406,8 +406,9 @@ def make_figures(release: str, bench: pd.DataFrame, fid: pd.DataFrame, runs: lis
         ref_df = keyed(primary[reference].predictions)[["_key", "pred_raw"]]
         cols = min(4, len(quants))
         rows_n = int(np.ceil(len(quants) / cols))
-        fig, axes = plt.subplots(rows_n, cols, figsize=(3.1 * cols, 2.5 * rows_n),
-                                 squeeze=False, sharey=True)
+        fig, axes = plt.subplots(rows_n, cols, figsize=(3.1 * cols, 2.7 * rows_n),
+                                 squeeze=False, sharey=True,
+                                 gridspec_kw={"hspace": 0.55, "wspace": 0.15})
         bins = np.arange(-3, 4)
         for ax, key in zip(axes.flat, quants):
             _style(ax)
@@ -599,13 +600,24 @@ def make_fixture(root: Path, release: str, n: int = 137, seed: int = 0) -> None:
             (d / "validation.json").write_text(json.dumps({"cost": cost}), encoding="utf-8")
 
 
+def resolve_reference(requested: str, release_bench: Path) -> str:
+    """'auto' -> the merge run_release.sh chose for this release (CHOSEN_MERGE)."""
+    if requested != "auto":
+        return requested
+    chosen = release_bench / "CHOSEN_MERGE"
+    if chosen.is_file() and chosen.read_text().strip() == "nf4-dequant":
+        return "merged_nf4dequant"
+    return "merged_bf16"
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--models", nargs="+", choices=tuple(RELEASES), default=["qwen"])
-    parser.add_argument("--reference", default="merged_bf16",
-                        help="Fidelity reference variant (the chosen merge, e.g. merged_nf4dequant).")
+    parser.add_argument("--reference", default="auto",
+                        help="Fidelity reference variant. 'auto' reads publish/benchmark/<release>/"
+                             "CHOSEN_MERGE (written by run_release.sh), else merged_bf16.")
     parser.add_argument("--bench-root", type=Path, default=Path("publish/benchmark"))
     parser.add_argument("--gguf-root", type=Path, default=Path("publish/gguf"))
     parser.add_argument("--stats-dir", type=Path, default=Path("results_stats"))
@@ -615,8 +627,8 @@ def main() -> None:
     parser.add_argument("--dry-run-out", type=Path, default=None,
                         help="Keep dry-run outputs here instead of a deleted temp folder.")
     args = parser.parse_args()
-    if args.reference not in ORDER:
-        raise SystemExit(f"--reference must be one of {list(ORDER)}")
+    if args.reference != "auto" and args.reference not in ORDER:
+        raise SystemExit(f"--reference must be 'auto' or one of {list(ORDER)}")
 
     merged_roots = {"merged_bf16": Path("publish/full_models"),
                     "merged_nf4dequant": Path("publish/full_models_nf4dequant")}
@@ -639,11 +651,13 @@ def main() -> None:
         if not runs:
             print(f"[{release}] no runs found under {args.bench_root / release}; skipped")
             continue
-        bench, fid = build_tables(release, runs, args.reference, args.gguf_root, merged_roots)
-        if args.reference not in set(bench["variant"]):
-            print(f"[{release}] reference {args.reference} not measured yet: fidelity is [pending]")
+        reference = resolve_reference(args.reference, args.bench_root / release)
+        print(f"[{release}] fidelity reference: {reference}")
+        bench, fid = build_tables(release, runs, reference, args.gguf_root, merged_roots)
+        if reference not in set(bench["variant"]):
+            print(f"[{release}] reference {reference} not measured yet: fidelity is [pending]")
         fig_dir = args.stats_dir / "figures" / "pintu_release" / release
-        figs = make_figures(release, bench, fid, runs, args.reference, fig_dir)
+        figs = make_figures(release, bench, fid, runs, reference, fig_dir)
 
         hub_dir = args.bench_root / release
         hub_figs = hub_dir / "figures"
@@ -652,12 +666,12 @@ def main() -> None:
             shutil.copy2(f, hub_figs / f.name)
         bench.to_csv(hub_dir / "benchmark.csv", index=False)
         fid.to_csv(hub_dir / "fidelity.csv", index=False)
-        write_report(release, bench, fid, args.reference, figs, "figures/",
+        write_report(release, bench, fid, reference, figs, "figures/",
                      hub_dir / "REPORT.md", args.dry_run)
         if len(args.models) == 1:
             # docs/ and results_stats/ are siblings in both real and dry runs.
             rel = f"../{args.stats_dir.name}/figures/pintu_release/{release}/"
-            write_report(release, bench, fid, args.reference, figs, rel,
+            write_report(release, bench, fid, reference, figs, rel,
                          args.docs_report, args.dry_run)
         all_bench.append(bench)
         all_fid.append(fid)
