@@ -478,6 +478,17 @@ def train_one_llm(model_key, prep, inp, train_df, val_df, test_df,
     # Inference mode (use train(False) instead of .eval to dodge hook regex)
     model.train(False)
 
+    # Save the best adapter + tokenizer FIRST, so a failure during the final
+    # inference/metrics below can never lose the trained model.
+    adapter_dir = os.path.join(out_dir, "lora_adapter")
+    model.save_pretrained(adapter_dir)
+    try:
+        tokenizer.save_pretrained(adapter_dir)
+    except Exception:
+        pass
+    print(f"  [{run_id}] saved best adapter -> {adapter_dir} "
+          f"(epoch {best_epoch}; upload this dir to HuggingFace)")
+
     import gc; gc.collect(); torch.cuda.empty_cache()
     print(f"  [{run_id}] inferencing on val + test + train...")
     test_p  = predict_split(model, tokenizer, test_p)
@@ -526,19 +537,6 @@ def train_one_llm(model_key, prep, inp, train_df, val_df, test_df,
             print(f"  [{run_id}] wrote train_history.png")
     except Exception as e:
         print(f"  [{run_id}] curve plot skipped: {e}")
-
-    # Save the best adapter + tokenizer (self-contained for a HuggingFace upload).
-    adapter_dir = os.path.join(out_dir, "lora_adapter")
-    try:
-        model.save_pretrained(adapter_dir)
-        try:
-            tokenizer.save_pretrained(adapter_dir)
-        except Exception:
-            pass
-        print(f"  [{run_id}] saved best adapter -> {adapter_dir} "
-              f"(epoch {best_epoch}; upload this dir to HuggingFace)")
-    except Exception as e:
-        print(f"  [{run_id}] adapter save failed: {e}")
 
     return {"train": train_m, "val": val_m, "test": test_m,
             "best_epoch": best_epoch, "seconds": train_time}
