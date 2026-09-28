@@ -5,7 +5,9 @@
 #   -> pick merge -> text-only GGUF quantize -> validate GGUF (GPU, CPU) -> benchmark
 #
 #   tmux new -s pintu
-#   bash run_release.sh                 # MODEL=qwen by default
+#   bash run_release.sh                         # all three: qwen, gemma, sealion
+#   MODELS="qwen sealion" bash run_release.sh   # a subset, in this order
+#   MODEL=gemma bash run_release.sh             # exactly one model
 #   # detach: Ctrl-b then d   ·   reattach: tmux attach -t pintu
 #   # watch:  tail -f logs/release_*.log
 #
@@ -19,7 +21,29 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-MODEL="${MODEL:-qwen}"
+# Several models: run each in its own pass (one failing model does not stop
+# the others), then print a summary.
+if [ -z "${MODEL:-}" ]; then
+  MODELS="${MODELS:-qwen gemma sealion}"
+  declare -A STATUS=()
+  for m in $MODELS; do
+    if MODEL="$m" bash "$0"; then STATUS[$m]="ok"; else STATUS[$m]="FAILED"; fi
+  done
+  echo; echo "=================== SUMMARY ==================="
+  for m in $MODELS; do echo "  $m: ${STATUS[$m]}"; done
+  # One combined benchmark over every model that finished (each per-model pass
+  # rewrites results_stats/pintu_release_*.csv with only its own model).
+  OK=""
+  for m in $MODELS; do [ "${STATUS[$m]}" = "ok" ] && OK="$OK $m"; done
+  if [ -n "$OK" ]; then
+    [ -f .venv/bin/activate ] && source .venv/bin/activate
+    # shellcheck disable=SC2086
+    PYTHONUTF8=1 python -u experiments/exp15_pintu_release_benchmark.py --models $OK --reference auto \
+      2>&1 | tee "logs/release_combined_$(date +%Y%m%d_%H%M%S).log"
+  fi
+  for m in $MODELS; do [ "${STATUS[$m]}" = "ok" ] || exit 1; done
+  exit 0
+fi
 case "$MODEL" in
   qwen)    KEY="qwen35_4b";       RELEASE="Pintu-Qwen3.5-4B" ;;
   gemma)   KEY="gemma4_e4b";      RELEASE="Pintu-Gemma4-E4B" ;;
