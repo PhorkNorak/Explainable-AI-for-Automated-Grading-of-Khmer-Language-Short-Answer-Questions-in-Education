@@ -91,3 +91,6 @@ wandb/
 
 # Notebook checkpoints
 .ipynb_checkpoints/
+
+# Codex agent config (local only)
+.codex/

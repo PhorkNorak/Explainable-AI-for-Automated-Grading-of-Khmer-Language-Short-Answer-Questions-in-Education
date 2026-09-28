@@ -95,8 +95,15 @@ MERGED_VARIANTS = {"bf16": "merged_bf16", "nf4-dequant": "merged_nf4dequant"}
 
 
 def load_test_rows(spec: ValidationSpec) -> tuple[pd.DataFrame, Path]:
-    """The report's curated test rows, preprocessed exactly as in exp08."""
+    """The report's curated test rows, preprocessed exactly as in exp08.
+
+    Prefers the saved ``ra`` run; falls back to the ``qar`` run, which scores the
+    same no10c test split (only the saved gold columns are used, never its
+    predictions), so a fresh machine needs just the one qar fine-tune.
+    """
     test_rows_path = spec.test_rows_run / "predictions_test.csv"
+    if not test_rows_path.is_file():
+        test_rows_path = spec.original_run / "predictions_test.csv"
     if not test_rows_path.is_file():
         raise FileNotFoundError(
             f"Missing saved test rows: {test_rows_path}"

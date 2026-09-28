@@ -79,6 +79,8 @@ def main() -> None:
         with StageManifest("imatrix_calib", spec.release_name, args=vars(args)) as manifest:
             train_df = training_rows(model_key)
             test_path = spec.test_rows_run / "predictions_test.csv"
+            if not test_path.is_file():  # same split, saved by the qar run
+                test_path = spec.original_run / "predictions_test.csv"
             train_df, n_dropped, n_test = drop_test_text(train_df, test_path)
             processor = AutoProcessor.from_pretrained(args.processor_root / spec.release_name,
                                                       trust_remote_code=True)
