@@ -26,11 +26,8 @@ def _reference_content_words(reference_proc: str, preprocess_mode: str) -> set:
     if preprocess_mode == "segment":
         toks = reference_proc.split(" ")
     else:
-        try:
-            import khmernltk
-            toks = khmernltk.word_tokenize(reference_proc)
-        except Exception:
-            toks = list(reference_proc)
+        from .explainers import tokenize_answer
+        toks = tokenize_answer(reference_proc, preprocess_mode)
     return {t.strip() for t in toks if len(t.strip()) > 1}  # drop 1-char tokens
 
 
@@ -44,15 +41,21 @@ def plausibility(
     """Reference-overlap plausibility: fraction of the explainer's top-k answer words
     that occur in the reference answer.
 
-    Returns a value in [0, 1]: higher means the words the model relied on are
-    rubric-relevant (present in the reference answer).
+    Selects max(1, round(n * fraction)) tokens by signed attribution, with ties
+    resolved in answer order. One-character reference tokens are excluded.
+    Returns overlap in [0, 1], not faithfulness or educational validity.
     """
+    importance = np.asarray(importance, dtype=float)
+    if importance.shape != (len(words),) or not np.all(np.isfinite(importance)):
+        raise ValueError("importance must be finite and aligned with words")
+    if not 0 < fraction <= 1:
+        raise ValueError("fraction must be in (0, 1]")
     if not words:
         return 0.0
     ref = _reference_content_words(reference_proc, preprocess_mode)
     if not ref:
         return 0.0
     k = max(1, int(round(len(words) * fraction)))
-    top = np.argsort(importance)[::-1][:k]
+    top = np.argsort(-importance, kind="stable")[:k]
     hits = sum(1 for i in top if words[i].strip() in ref)
     return hits / float(len(top))

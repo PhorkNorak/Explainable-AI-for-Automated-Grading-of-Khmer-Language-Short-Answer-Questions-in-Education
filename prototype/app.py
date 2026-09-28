@@ -51,7 +51,7 @@ def readable_tokens(text):
     """
     if not text:
         return []
-    t = strip_punctuation(strip_invisibles(str(text)))
+    t = preprocess(str(text), "clean")
     try:
         import khmernltk
         return [w for w in khmernltk.word_tokenize(t) if w.strip()]
@@ -218,10 +218,10 @@ def _parse_llm_int(text, max_score):
     for marker in _LLM_ANSWER_MARKERS:
         if marker in parsed:
             parsed = parsed.split(marker)[-1]
-    m = re.search(r"\d+", parsed)
+    m = re.fullmatch(r"\s*(?:score\s*:\s*)?(\d+)\s*", parsed, flags=re.IGNORECASE)
     if m:
-        return max(0, min(int(m.group()), int(max_score)))
-    return int(max_score) // 2
+        return max(0, min(int(m.group(1)), int(max_score)))
+    raise ValueError("grading endpoint must return one nonnegative integer score")
 
 
 # Endpoint config for the LLM *grader* (separate from the FEEDBACK_LLM_* vars: grading
@@ -421,12 +421,18 @@ def grade(question, reference, answer, max_score, model_name, explain=True):
     ref_proc = preprocess(reference, mode)
     ans_proc = preprocess(answer, mode)
     try:
-        max_score = max(1, int(max_score))
-    except (TypeError, ValueError):
-        max_score = 10
+        numeric_max = float(max_score)
+        if not np.isfinite(numeric_max) or numeric_max < 1 or not numeric_max.is_integer():
+            raise ValueError("maximum must be a positive integer")
+        max_score = int(numeric_max)
+    except (TypeError, ValueError, OverflowError):
+        return ("Please enter a positive integer maximum score.", "", "")
 
     try:
-        yhat = float(np.clip(grader.score(q_proc, ref_proc, ans_proc, max_score), 0.0, 1.0))
+        yhat = float(grader.score(q_proc, ref_proc, ans_proc, max_score))
+        if not np.isfinite(yhat):
+            raise ValueError("model returned a non-finite score")
+        yhat = float(np.clip(yhat, 0.0, 1.0))
     except Exception as e:
         return (f"⚠️ **{grader.name}** could not grade this answer "
                 f"({type(e).__name__}: {e}).", "", "")
@@ -452,19 +458,20 @@ def grade(question, reference, answer, max_score, model_name, explain=True):
     # Explanation: attribute over READABLE original word units; the predictor re-runs the
     # model's own preprocessing inside score(). For qar pillars the question is prepended
     # inside score(), so the attribution still perturbs only the answer.
-    disp = readable_tokens(answer)
-    if len(disp) < 2:
-        return (score_md, "<i>Answer too short to explain.</i>", fb)
-    ans_disp = " ".join(disp)
-
-    def pred_one(a_disp, b=ref_proc):
-        return grader.score(q_proc, b, preprocess(a_disp, mode), max_score)
+    def pred_one(model_answer, b=ref_proc):
+        # The explainer aligns words to this exact processed input, preserving
+        # separators. Do not introduce display spaces or segment a second time.
+        value = float(grader.score(q_proc, b, model_answer, max_score))
+        if not np.isfinite(value):
+            raise ValueError("model returned a non-finite explanation score")
+        return float(np.clip(value, 0, 1))
 
     # SHAP word attribution is the unified explanation method: model-agnostic (it only calls
     # the scoring function), so one method explains the classical SVR, the BiLSTM, the
     # encoder, and the LLM, matching the SHAP study reported in the undergraduate report.
     try:
-        words, imp = shap_importance(pred_one, ans_disp, ref_proc, "segment")
+        budget = int(os.environ.get("PROTOTYPE_SHAP_MAX_EVALS", "100"))
+        words, imp = shap_importance(pred_one, ans_proc, ref_proc, mode, max_evals=budget)
         heat = heatmap_html_fragment(words, imp,
                                      f"SHAP word attribution (highlighted words): {grader.name}")
     except Exception as e:

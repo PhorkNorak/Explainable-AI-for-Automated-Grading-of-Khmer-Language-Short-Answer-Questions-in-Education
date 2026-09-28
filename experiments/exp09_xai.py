@@ -22,6 +22,8 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
+import hashlib
 import os
 import sys
 import time
@@ -83,7 +85,7 @@ def _set_dataset(ds: str):
 def _sample_test(test_p, n: int, seed: int = 42):
     """Pick ~n test rows, balanced across the 5 score labels."""
     if n <= 0 or n >= len(test_p):
-        return list(range(len(test_p)))
+        return list(test_p.index)
     rng = np.random.default_rng(seed)
     per = max(1, n // 5)
     idx = []
@@ -91,7 +93,63 @@ def _sample_test(test_p, n: int, seed: int = 42):
         pool = test_p.index[test_p["score_label"] == lab].tolist()
         take = min(per, len(pool))
         idx.extend(rng.choice(pool, size=take, replace=False).tolist())
+    remaining = [i for i in test_p.index if i not in set(idx)]
+    if len(idx) < n:
+        idx.extend(rng.choice(remaining, size=n - len(idx), replace=False).tolist())
     return sorted(idx)[:n]
+
+
+def _save_attribution(out_root, family, method, idx, words, imp, value, max_evals=None, n_perm=32):
+    directory = os.path.join(out_root, "attributions", family, method)
+    os.makedirs(directory, exist_ok=True)
+    with open(os.path.join(directory, f"{idx}.json"), "w", encoding="utf-8") as stream:
+        json.dump({"index": int(idx), "method": method,
+                   "estimator": "monte_carlo_permutation_shap" if method == "shap" else "leave_one_out",
+                   "words": words, "importance": np.asarray(imp).tolist(),
+                   "max_evals": max_evals, "requested_permutations": n_perm if method == "shap" else None,
+                   "effective_permutations": (n_perm if max_evals is None else min(n_perm, (max_evals - 1) // len(words))) if method == "shap" and words else None,
+                   "plausibility": value}, stream, ensure_ascii=False, indent=2)
+
+
+def _hash_files(directory):
+    hashes = {}
+    if directory:
+        for root, _, files in os.walk(directory):
+            for filename in sorted(files):
+                path = os.path.join(root, filename)
+                digest = hashlib.sha256()
+                with open(path, "rb") as source:
+                    for block in iter(lambda: source.read(1024 * 1024), b""):
+                        digest.update(block)
+                hashes[os.path.relpath(path, directory)] = digest.hexdigest()
+    return hashes
+
+
+def _save_sample_manifest(test_p, idxs, out_root, family, cfg, max_evals=None, fraction=.2, adapter_path=None):
+    """Persist sample identity and implementation hashes without student text."""
+    hashes = {}
+    for rel in ("preprocess.py", "data.py", "xai/explainers.py", "xai/plausibility.py", "experiments/exp09_xai.py"):
+        with open(os.path.join(_ROOT, rel), "rb") as source:
+            hashes[rel] = hashlib.sha256(source.read()).hexdigest()
+    rows = []
+    for idx in idxs:
+        row = test_p.loc[idx]
+        payload = row.to_json(force_ascii=False)
+        raw = row[[key for key in row.index if not str(key).endswith("_proc")]].to_json(force_ascii=False)
+        rows.append({"index": int(idx), "raw_row_sha256": hashlib.sha256(raw.encode()).hexdigest(),
+                     "processed_row_sha256": hashlib.sha256(payload.encode()).hexdigest()})
+    with open(os.path.join(out_root, f"{family}_sample_manifest.json"), "w", encoding="utf-8") as stream:
+        json.dump({"family": family, "config": cfg, "seed": C.SEED,
+                   "estimator": "monte_carlo_permutation_shap", "source_sha256": hashes,
+                   "samples": rows, "max_evals": max_evals, "requested_permutations": 32,
+                   "fraction": fraction, "sampling": "score-stratified allocation plus random remainder",
+                   "budget_scope": "per attribution invocation, not entire run; heatmaps are extra invocations",
+                   "model_origin": {"classical": "TFIDFSVR refit on exp09 training split",
+                                    "bilstm": "BiLSTM refit on exp09 training split, validation-selected weights",
+                                    "encoder": "GTE dual encoder refit on exp09 training split, validation-selected weights",
+                                    "llm": "base model plus required fine-tuned adapter"}[family],
+                   "checkpoint": None, "checkpoint_note": "refit weights are not persisted by exp09; this is not a champion-checkpoint attribution run" if family != "llm" else "adapter files hashed below; base revision must be recorded by HPC runner",
+                   "adapter_path": adapter_path, "adapter_sha256": _hash_files(adapter_path)}, stream, indent=2)
 
 
 def _qwk_acc(predict_fn, test_p, input_fmt):
@@ -398,10 +456,13 @@ def _load_llm_finetuned(model_key, dataset, adapter_path=None, max_seq_length=10
         cands += glob.glob(os.path.join(_ROOT, "results", "champions",
                                         f"llm_clean_qar_{model_key}_*", "lora_adapter"))
         adapter_path = next((p for p in cands if os.path.isdir(p)), None)
+    if not adapter_path or not os.path.isdir(adapter_path):
+        raise FileNotFoundError("Fine-tuned LLM adapter required; supply --llm-adapter")
     model, tok, _ = L.load_model(base, max_seq_length=max_seq_length, lora=False)
     if adapter_path and os.path.isdir(adapter_path):
         from peft import PeftModel
         model = PeftModel.from_pretrained(model, adapter_path)
+        model._xai_adapter_path = os.path.abspath(adapter_path)
         print(f"  [llm] loaded fine-tuned adapter: {adapter_path}")
     else:
         print("  [llm] WARNING: no fine-tuned adapter found; faithfulness will be "
@@ -451,6 +512,8 @@ def run_llm_family(family, dataset, test_df, cfg, sample_n, fraction, out_root,
     print(f"[exp09] llm champion on {dataset}: test_qwk={qwk:.4f} acc={acc:.4f}")
 
     idxs = _sample_test(test_p, sample_n)
+    _save_sample_manifest(test_p, idxs, out_root, family, cfg, shap_max_evals, fraction,
+                          getattr(model, "_xai_adapter_path", adapter_path))
     heat_dir = os.path.join(out_root, "heatmaps", family)
 
     def _explain_for(imp_name):
@@ -477,6 +540,7 @@ def run_llm_family(family, dataset, test_df, cfg, sample_n, fraction, out_root,
                 continue
             n_ok += 1
             plaus.append(plausibility(words, imp, R, mode, fraction))
+            _save_attribution(out_root, family, imp_name, idx, words, imp, plaus[-1], shap_max_evals)
             for w_, v_ in zip(words, imp):
                 gabs[w_.strip()] += abs(float(v_))
 
@@ -555,6 +619,7 @@ def run_family(family, dataset, sample_n, fraction, out_root, adapter_path=None,
 
     mode = cfg["preprocess"]
     idxs = _sample_test(test_p, sample_n)
+    _save_sample_manifest(test_p, idxs, out_root, family, cfg, shap_max_evals, fraction)
 
     # Materialise the sampled (row, answer, reference) once.
     inst = []
@@ -615,6 +680,7 @@ def run_family(family, dataset, sample_n, fraction, out_root, adapter_path=None,
                 continue
             n_ok += 1
             plaus.append(plausibility(words, imp, ref, mode, fraction))
+            _save_attribution(out_root, family, vname, row.name, words, imp, plaus[-1], shap_max_evals)
             for w_, v_ in zip(words, imp):
                 gabs[w_.strip()] += abs(float(v_))
         if vname == "shap":
@@ -641,6 +707,8 @@ def main():
                     choices=["classical", "bilstm", "encoder", "llm"])
     ap.add_argument("--dataset", default="no10c",
                     choices=["full", "no10c"])
+    ap.add_argument("--output-dir", default=None,
+                    help="new output directory; existing directories are refused to preserve evidence")
     ap.add_argument("--sample", type=int, default=80,
                     help="number of test answers to explain (balanced by score)")
     ap.add_argument("--fraction", type=float, default=0.2,
@@ -651,17 +719,19 @@ def main():
                          "occlusion is kept only as the internal mechanism / a debug option")
     ap.add_argument("--shap-max-evals", type=int, default=None,
                     help="cap SHAP evaluations per answer (lower = faster; for the "
-                         "LLM try ~2*num_words). Default: max(2*words+1, 100).")
+                         "minimum is num_words+1). Default: 32 complete permutations, "
+                         "using 1+32*num_words model calls per invocation.")
     ap.add_argument("--llm-adapter", default=None,
                     help="path to the fine-tuned LoRA adapter dir (lora_adapter/); "
                          "auto-discovered from the exp08 run if omitted")
     args = ap.parse_args()
 
     _set_dataset(args.dataset)
-    out_root = os.path.join(C.PROJECT_ROOT, "results_xai", args.dataset)
-    os.makedirs(out_root, exist_ok=True)
+    out_root = args.output_dir or os.path.join(C.PROJECT_ROOT, "results_xai", "audit_runs", args.dataset + "_" + time.strftime("%Y%m%d_%H%M%S"))
+    os.makedirs(out_root, exist_ok=False)
 
     rows = []
+    failures = []
     for fam in args.families:
         try:
             r = run_family(fam, args.dataset, args.sample, args.fraction, out_root,
@@ -673,6 +743,8 @@ def main():
             r = None
         if r:
             rows.extend(r)
+        else:
+            failures.append(fam)
 
     if rows:
         lb = os.path.join(out_root, "faithfulness_leaderboard.csv")
@@ -695,6 +767,8 @@ def main():
         for r in rows:
             print(f"  {r['family']:8s} [{r['explainer']:9s}] n={r['n_explained']:>3} "
                   f"qwk={float(r['test_qwk']):.3f} plausibility={float(r['plausibility']):.3f}")
+    if failures:
+        raise SystemExit("Failed families: " + ", ".join(failures))
 
 
 if __name__ == "__main__":

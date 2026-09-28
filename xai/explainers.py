@@ -37,8 +37,7 @@ def tokenize_answer(answer_proc: str, preprocess_mode: str) -> List[str]:
         import khmernltk
         return [w for w in khmernltk.word_tokenize(answer_proc) if w.strip()]
     except Exception:
-        # Fallback: character units (still valid, just finer-grained)
-        return list(answer_proc)
+        raise RuntimeError("Khmer word segmentation is required for word attribution")
 
 
 def detokenize(words: List[str], preprocess_mode: str) -> str:
@@ -93,63 +92,58 @@ def shap_importance(
     n_perm: int = 32,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray]:
-    """Shapley-value attribution of each answer word, as a comparison to LOO.
+    """Permutation-sampled SHAP values over answer words, empty-answer baseline.
 
-    The baseline coalition is the empty answer (all words removed); the Shapley
-    value of word ``i`` is its average marginal contribution to the predicted
-    score across coalitions, which uses the same remove-a-word mechanism as LOO
-    and so is directly comparable. Uses the ``shap`` library if available
-    (Permutation explainer, background = all words removed) and otherwise a
-    self-contained Monte-Carlo permutation estimator, so it always runs.
+    Uses a seeded Monte Carlo permutation estimator with no dependency-dependent
+    backend switch. Each complete permutation telescopes to full minus empty.
+    ``max_evals`` is a hard bound on model calls, including the empty baseline.
+    A budget smaller than n_words + 1 cannot cover one complete permutation and
+    raises before scoring. Model failures propagate; they are never replaced by
+    occlusion or a second estimator.
     """
     words = tokenize_answer(answer_proc, preprocess_mode)
     n = len(words)
     if n == 0:
         return [], np.zeros(0, dtype=np.float64)
-    if n == 1:
-        full = float(predict_fn(answer_proc, reference_proc))
-        empty = float(predict_fn(detokenize([], preprocess_mode), reference_proc))
-        return words, np.array([full - empty], dtype=np.float64)
-
-    def f(masks):  # masks: (B, n) of 0/1; keep word where >= 0.5
-        masks = np.asarray(masks)
-        out = np.empty(masks.shape[0], dtype=np.float64)
-        for r in range(masks.shape[0]):
-            kept = [w for w, keep in zip(words, masks[r]) if keep >= 0.5]
-            out[r] = float(predict_fn(detokenize(kept, preprocess_mode), reference_proc))
-        return out
-
-    # Preferred: the SHAP library (Permutation explainer, all-removed background).
-    try:
-        import shap  # noqa: F401
-        np.random.seed(seed)
-        background = np.zeros((1, n), dtype=np.float64)
-        explainer = shap.Explainer(f, background)
-        me = max_evals if max_evals is not None else max(2 * n + 1, 100)
-        sv = explainer(np.ones((1, n), dtype=np.float64), max_evals=me)
-        return words, np.asarray(sv.values[0], dtype=np.float64)
-    except Exception:
-        pass
-
-    # Fallback: Monte-Carlo permutation Shapley (same maths, no extra deps).
-    # Derive the permutation count from the eval budget so a small max_evals means
-    # FEW evaluations, not the fixed 32*n that made long answers take minutes each
-    # (each permutation costs n predict calls). This is the path long answers take
-    # when max_evals < 2n+1 (the library PermutationExplainer's minimum), so without
-    # this cap a single long answer could run thousands of predictions.
-    n_perm_eff = n_perm if max_evals is None else max(1, int(max_evals) // n)
+    # Preserve actual separators so the full coalition is the graded string.
+    # Repeated words are aligned by position, not by membership in a word set.
+    pieces = []
+    cursor = 0
+    for word in words:
+        start = answer_proc.find(word, cursor)
+        if start < 0 or answer_proc[cursor:start].strip():
+            raise ValueError("word tokens do not align with the graded answer")
+        pieces.append(answer_proc[cursor:start] + word)
+        cursor = start + len(word)
+    tail = answer_proc[cursor:]
+    if tail.strip():
+        raise ValueError("word tokens omit answer content")
+    if n_perm < 1:
+        raise ValueError("n_perm must be positive")
+    if max_evals is not None and max_evals < n + 1:
+        raise ValueError(f"SHAP needs at least {n + 1} evaluations for {n} words")
+    n_perm_eff = n_perm if max_evals is None else min(n_perm, (int(max_evals) - 1) // n)
     rng = np.random.default_rng(seed)
     phi = np.zeros(n, dtype=np.float64)
-    base = float(predict_fn(detokenize([], preprocess_mode), reference_proc))
+
+    def score(mask):
+        text = "".join(piece for piece, keep in zip(pieces, mask) if keep)
+        if any(mask):
+            text += tail
+        value = float(predict_fn(text, reference_proc))
+        if not np.isfinite(value):
+            raise ValueError("SHAP predictor returned a non-finite score")
+        return value
+
+    base = score(np.zeros(n, dtype=bool))
     for _ in range(n_perm_eff):
         order = rng.permutation(n)
         present = np.zeros(n, dtype=bool)
         prev = base
         for idx in order:
             present[idx] = True
-            kept = [w for w, p in zip(words, present) if p]
-            s = float(predict_fn(detokenize(kept, preprocess_mode), reference_proc))
-            phi[idx] += s - prev
-            prev = s
-    phi /= n_perm
+            value = score(present)
+            phi[idx] += value - prev
+            prev = value
+    phi /= n_perm_eff
     return words, phi
