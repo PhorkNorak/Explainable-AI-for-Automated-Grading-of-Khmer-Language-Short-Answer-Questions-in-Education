@@ -91,16 +91,23 @@ have() { [ -e "$1" ] && echo "[skip] $1 exists"; }
   step "4. Merge M1 (bf16) and M2 (nf4-dequant)"
   have "publish/full_models/$RELEASE/config.json" || \
     python -u experiments/merge_pintu_models.py --models "$MODEL" --merge-target bf16
+  M2_OK=1
   have "publish/full_models_nf4dequant/$RELEASE/config.json" || \
-    python -u experiments/merge_pintu_models.py --models "$MODEL" --merge-target nf4-dequant
+    python -u experiments/merge_pintu_models.py --models "$MODEL" --merge-target nf4-dequant || {
+      echo "[warn] M2 (nf4-dequant) merge failed for $RELEASE; continuing with M1 only"; M2_OK=0; }
 
   step "5. Validate merged models (rows B1, B2)"
   have "$BENCH/merged_bf16__gpu/validation.json" || \
     python -u experiments/validate_pintu_models.py --models "$MODEL" --merge-target bf16
-  have "$BENCH/merged_nf4dequant__gpu/validation.json" || \
-    python -u experiments/validate_pintu_models.py --models "$MODEL" --merge-target nf4-dequant
+  if [ "$M2_OK" = "1" ]; then
+    have "$BENCH/merged_nf4dequant__gpu/validation.json" || \
+      python -u experiments/validate_pintu_models.py --models "$MODEL" --merge-target nf4-dequant
+  fi
 
   step "6. Choose merge"
+  if [ "$M2_OK" != "1" ] && [ -z "${MERGE:-}" ]; then
+    MERGE="bf16"
+  fi
   if [ -z "${MERGE:-}" ]; then
     MERGE="$(python - "$BENCH" <<'PY'
 import json, sys

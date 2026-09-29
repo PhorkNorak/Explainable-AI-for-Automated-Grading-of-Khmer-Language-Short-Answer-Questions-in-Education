@@ -138,30 +138,27 @@ def training_base_id(spec: ModelSpec) -> str:
     return config.get("base_model_name_or_path") or spec.base_id
 
 
-def load_nf4_dequantized(spec: ModelSpec):
-    """Load the base in NF4 exactly as in training, then dequantize to BF16.
+def quantized_module_names(spec: ModelSpec, kwargs: dict) -> tuple[set[str], str]:
+    """Names of the Linear layers that training held in 4-bit NF4.
 
-    A pre-quantized training base (its config has a quantization_config) is
-    loaded as stored. Otherwise the upstream base is quantized with the same
-    BitsAndBytesConfig as ``exp08_llm_finetune.try_load_hf`` (NF4, double
-    quantization, BF16 compute), which is also Unsloth's default 4-bit recipe.
-    ``dequantize()`` then replaces every Linear4bit by a BF16 Linear holding
-    dequant(NF4(W)).
+    A pre-quantized training base (e.g. an Unsloth bnb-4bit repo named in
+    adapter_config.json) defines the set exactly. Otherwise the upstream base is
+    loaded with the same BitsAndBytesConfig as ``exp08_llm_finetune.try_load_hf``
+    (NF4, double quantization, BF16 compute), Unsloth's default 4-bit recipe.
+    The 4-bit model is only inspected, then freed.
     """
     source = training_base_id(spec)
-    kwargs = dict(device_map="auto", low_cpu_mem_usage=True, trust_remote_code=True)
-    model, prequantized = None, False
+    model = None
     if source != spec.base_id:
         try:
             model = AutoModelForMultimodalLM.from_pretrained(source, dtype=torch.bfloat16, **kwargs)
-            prequantized = bool(getattr(model, "is_quantized", False))
+            if not getattr(model, "is_quantized", False):
+                del model
+                model = None
         except Exception as error:  # e.g. a pre-quantized repo this class cannot load
             print(f"Could not load training base {source}: {error}")
-    if not prequantized:
-        if model is not None:
-            del model
-            gc.collect()
-            torch.cuda.empty_cache()
+            model = None
+    if model is None:
         source = f"{spec.base_id} (NF4, double quant, bf16 compute)"
         model = AutoModelForMultimodalLM.from_pretrained(
             spec.base_id,
@@ -174,14 +171,51 @@ def load_nf4_dequantized(spec: ModelSpec):
             dtype=torch.bfloat16,
             **kwargs,
         )
-    model = model.dequantize()
-    model = model.to(torch.bfloat16)
-    if getattr(model.config, "quantization_config", None) is not None:
-        del model.config.quantization_config
-    remaining = [n for n, m in model.named_modules() if "4bit" in type(m).__name__]
-    if remaining:
-        raise RuntimeError(f"Modules still quantized after dequantize(): {remaining[:5]}")
-    print(f"Dequantized NF4 base to BF16 from: {source}", flush=True)
+    names = {n for n, m in model.named_modules() if "4bit" in type(m).__name__}
+    del model
+    gc.collect()
+    torch.cuda.empty_cache()
+    if not names:
+        raise RuntimeError(f"No 4-bit layers found when loading {source}")
+    return names, source
+
+
+def load_nf4_dequantized(spec: ModelSpec):
+    """BF16 base in which every layer training held in NF4 is replaced by
+    dequant(NF4(W)), i.e. exactly the weights the QLoRA adapter was trained on.
+
+    The round trip is done directly with bitsandbytes (NF4, blocksize 64, double
+    quantization) on the BF16 base weights, instead of transformers'
+    ``dequantize()``, which fails on some Gemma 4 layers. Shared (tied) tensors
+    are processed once, so no weight is quantized twice.
+    """
+    from bitsandbytes.functional import dequantize_4bit, quantize_4bit
+
+    kwargs = dict(device_map="auto", low_cpu_mem_usage=True, trust_remote_code=True)
+    names, source = quantized_module_names(spec, kwargs)
+    model = AutoModelForMultimodalLM.from_pretrained(spec.base_id, dtype=torch.bfloat16, **kwargs)
+    modules = dict(model.named_modules())
+    missing = sorted(n for n in names if n not in modules)
+    if missing:
+        raise RuntimeError(f"4-bit layers absent from the BF16 base: {missing[:5]}")
+
+    seen: set[int] = set()
+    with torch.no_grad():
+        for name in sorted(names):
+            weight = modules[name].weight
+            if weight.data_ptr() in seen:
+                continue
+            seen.add(weight.data_ptr())
+            data = weight.data
+            if data.device.type != "cuda":
+                data = data.cuda()
+            packed, state = quantize_4bit(
+                data.contiguous(), blocksize=64, compress_statistics=True, quant_type="nf4"
+            )
+            restored = dequantize_4bit(packed, state).to(weight.dtype).reshape(weight.shape)
+            weight.data.copy_(restored.to(weight.device))
+    print(f"NF4 round trip applied to {len(seen)} weight tensors "
+          f"({len(names)} layers) from: {source}", flush=True)
     return model, source
 
 

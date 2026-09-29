@@ -91,6 +91,15 @@ if [ ! -x "$CONVERT_VENV/bin/python" ]; then
     -r "$LLAMA_CPP_DIR/requirements/requirements-convert_hf_to_gguf.txt" psutil
 fi
 CONVERT_PY="$CONVERT_VENV/bin/python"
+# llama.cpp pins an older transformers that cannot read configs/tokenizers saved
+# by transformers 5 (model type qwen3_5/gemma4, TokenizersBackend tokenizer class).
+# Use the SAME transformers version that saved the merged model.
+MAIN_TF="$(python -c 'import transformers; print(transformers.__version__)')"
+CONV_TF="$("$CONVERT_PY" -c 'import transformers; print(transformers.__version__)' 2>/dev/null || echo none)"
+if [ "$MAIN_TF" != "$CONV_TF" ]; then
+  echo "Converter venv: transformers $CONV_TF -> $MAIN_TF (match the version that saved the model)"
+  "$CONVERT_PY" -m pip install --quiet "transformers==$MAIN_TF" "huggingface_hub>=1.0"
+fi
 export PYTHONPATH="$LLAMA_CPP_DIR/gguf-py:${PYTHONPATH:-}"
 
 # --- 2. architecture support check (fail loudly, never silently mis-convert) ---
