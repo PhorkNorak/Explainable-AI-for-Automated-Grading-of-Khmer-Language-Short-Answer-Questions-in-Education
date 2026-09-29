@@ -14,9 +14,10 @@
 # Re-running is safe: every step whose output already exists is skipped, so a
 # crash is recovered by running the same command again.
 #
-# Merge choice (automatic): M2 (nf4-dequant) is chosen only if it reproduces the
-# adapter's predictions more often than M1 AND its QWK is not lower; otherwise
-# M1 (bf16). Override with MERGE=bf16 or MERGE=nf4-dequant.
+# Merge choice (automatic, by fidelity): the merge whose predictions match the
+# trained adapter's most often is published (QWK breaks a tie). QLoRA trains
+# against the 4-bit base, so this is usually M2 (nf4-dequant). Override with
+# MERGE=bf16 or MERGE=nf4-dequant.
 # ============================================================================
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -112,7 +113,9 @@ q1, m1 = load("merged_bf16")
 q2, m2 = load("merged_nf4dequant")
 print(f"M1 bf16:        QWK {q1:.4f}  match vs adapter {m1:.3f}", file=sys.stderr)
 print(f"M2 nf4-dequant: QWK {q2:.4f}  match vs adapter {m2:.3f}", file=sys.stderr)
-print("nf4-dequant" if (m2 > m1 and q2 >= q1) else "bf16")
+# Publish the merge that reproduces the trained adapter most faithfully; QWK
+# only breaks a tie (a QWK gap of 1-2 answers is noise on a ~137-answer split).
+print("nf4-dequant" if (m2, q2) > (m1, q1) else "bf16")
 PY
 )"
   fi

@@ -80,29 +80,40 @@ if [ ! -x "$LLAMA_CPP_DIR/build/bin/llama-quantize" ] || [ "${REBUILD:-0}" = "1"
   cmake --build "$LLAMA_CPP_DIR/build" --config Release -j \
     --target llama-quantize llama-imatrix llama-cli
 fi
-python -m pip install --quiet -r "$LLAMA_CPP_DIR/requirements/requirements-convert_hf_to_gguf.txt"
+# The converter pins its own torch (CPU), transformers, numpy and huggingface-hub.
+# Install them into a SEPARATE venv so the training/validation environment is
+# never downgraded (installing them into the main venv breaks GPU torch).
+CONVERT_VENV="${CONVERT_VENV:-.build/convert-venv}"
+if [ ! -x "$CONVERT_VENV/bin/python" ]; then
+  python3 -m venv "$CONVERT_VENV"
+  "$CONVERT_VENV/bin/python" -m pip install --quiet --upgrade pip
+  "$CONVERT_VENV/bin/python" -m pip install --quiet \
+    -r "$LLAMA_CPP_DIR/requirements/requirements-convert_hf_to_gguf.txt" psutil
+fi
+CONVERT_PY="$CONVERT_VENV/bin/python"
 export PYTHONPATH="$LLAMA_CPP_DIR/gguf-py:${PYTHONPATH:-}"
 
 # --- 2. architecture support check (fail loudly, never silently mis-convert) ---
+# llama.cpp prints the registry to stderr as "  - <Architecture>" lines.
 ARCH="$(python -c "import json,sys;print(json.load(open(sys.argv[1]))['architectures'][0])" "$SRC/config.json")"
-if SUPPORTED="$(python "$LLAMA_CPP_DIR/convert_hf_to_gguf.py" --print-supported-models 2>/dev/null)"; then
-  if ! grep -qx "$ARCH" <<< "$SUPPORTED"; then
-    echo "llama.cpp $LLAMA_COMMIT does not list architecture $ARCH." >&2
-    echo "Update llama.cpp (or pass --ref to a newer tag) before quantizing." >&2
-    exit 1
-  fi
+SUPPORTED="$("$CONVERT_PY" "$LLAMA_CPP_DIR/convert_hf_to_gguf.py" --print-supported-models 2>&1 || true)"
+if grep -qE "(^|[[:space:]:])-[[:space:]]*${ARCH}[[:space:]]*$" <<< "$SUPPORTED"; then
   echo "Architecture $ARCH is supported."
+elif grep -q "TEXT models" <<< "$SUPPORTED"; then
+  echo "llama.cpp $LLAMA_COMMIT does not list architecture $ARCH." >&2
+  echo "Update llama.cpp (or pass --ref to a newer tag) before quantizing." >&2
+  exit 1
 else
-  echo "[warn] this llama.cpp cannot list supported models; conversion will fail if $ARCH is unsupported."
+  echo "[warn] could not read llama.cpp's model list; conversion will fail if $ARCH is unsupported."
 fi
 
 # --- 3. text-only BF16 GGUF (the quantization reference) ----------------------
 REF="$OUT/$RELEASE-BF16.gguf"
 if [ ! -f "$REF" ]; then
   t0=$(date +%s)
-  python "$LLAMA_CPP_DIR/convert_hf_to_gguf.py" "$SRC" --outtype bf16 --outfile "$REF"
+  "$CONVERT_PY" "$LLAMA_CPP_DIR/convert_hf_to_gguf.py" "$SRC" --outtype bf16 --outfile "$REF"
   secs=$(( $(date +%s) - t0 ))
-  python experiments/validate_pintu_gguf.py --check-text-only "$REF"
+  "$CONVERT_PY" experiments/validate_pintu_gguf.py --check-text-only "$REF"
   record gguf_bf16 "$secs" --inputs "$SRC" --outputs "$REF" \
     --extra "llama_cpp_commit=$LLAMA_COMMIT" "architecture=$ARCH" "text_only=true"
 fi
@@ -131,7 +142,7 @@ for Q in $QTYPES; do
   t0=$(date +%s)
   "$LLAMA_CPP_DIR/build/bin/llama-quantize" ${IMAT_ARGS[@]+"${IMAT_ARGS[@]}"} "$REF" "$DST" "$Q"
   secs=$(( $(date +%s) - t0 ))
-  python experiments/validate_pintu_gguf.py --check-text-only "$DST"
+  "$CONVERT_PY" experiments/validate_pintu_gguf.py --check-text-only "$DST"
   VARIANT="gguf_$(echo "$Q" | tr '[:upper:]' '[:lower:]')${SUFFIX:+_imat}"
   record "$VARIANT" "$secs" --inputs "$REF" --outputs "$DST" \
     --extra "llama_cpp_commit=$LLAMA_COMMIT" "qtype=$Q" "imatrix=$USE_IMATRIX" "text_only=true"
