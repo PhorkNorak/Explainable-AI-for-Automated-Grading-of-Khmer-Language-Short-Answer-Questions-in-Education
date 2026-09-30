@@ -99,6 +99,12 @@ CONV_TF="$("$CONVERT_PY" -c 'import transformers; print(transformers.__version__
 if [ "$MAIN_TF" != "$CONV_TF" ]; then
   echo "Converter venv: transformers $CONV_TF -> $MAIN_TF (match the version that saved the model)"
   "$CONVERT_PY" -m pip install --quiet "transformers==$MAIN_TF" "huggingface_hub>=1.0"
+  CONV_TF="$("$CONVERT_PY" -c 'import transformers; print(transformers.__version__)')"
+fi
+echo "transformers: main venv $MAIN_TF | converter venv $CONV_TF"
+if [ "$MAIN_TF" != "$CONV_TF" ]; then
+  echo "Converter venv still has transformers $CONV_TF (need $MAIN_TF); tokenizers saved by v5 will not load." >&2
+  exit 1
 fi
 export PYTHONPATH="$LLAMA_CPP_DIR/gguf-py:${PYTHONPATH:-}"
 
