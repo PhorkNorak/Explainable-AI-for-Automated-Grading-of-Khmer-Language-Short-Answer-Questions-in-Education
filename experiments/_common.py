@@ -10,6 +10,16 @@ Provides:
 
 from __future__ import annotations
 
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
+
 import csv
 import os
 import sys
@@ -21,11 +31,11 @@ _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-import config  # noqa: E402
+from khmer_asag import config  # noqa: E402
 
 
 # Two dataset variants. Every experiment runs on both by default. Grade-0 is kept
-# (full 5-class task). `raw_csv` is relative to PROJECT_ROOT/data/.
+# (full 5-class task). `raw_csv` is relative to local/data/.
 DATASETS = [
     {"run_name": "full",      "drop_zero": False, "raw_csv": "dataset.csv",
      "label": "1184 (full)"},
@@ -87,12 +97,12 @@ def patch_config(run_name: str, drop_zero: bool, exp_suffix: str = "",
     config.RUN_NAME        = run_name
     config.DROP_SCORE_ZERO = drop_zero
     if raw_csv:
-        config.RAW_CSV = os.path.join(config.PROJECT_ROOT, "data", raw_csv)
+        config.RAW_CSV = config.project_path("data", raw_csv)
     out_name = f"results_{run_name}" if not exp_suffix else f"results_{run_name}_{exp_suffix}"
-    config.RESULTS_DIR = os.path.join(config.PROJECT_ROOT, out_name)
+    config.RESULTS_DIR = config.project_path(out_name)
     config.RUNS_DIR    = os.path.join(config.RESULTS_DIR, "runs")
     config.LEADERBOARD = os.path.join(config.RESULTS_DIR, "leaderboard.csv")
-    config.XAI_DIR     = os.path.join(config.PROJECT_ROOT, f"xai_visuals_{run_name}_{exp_suffix}" if exp_suffix else f"xai_visuals_{run_name}")
+    config.XAI_DIR     = config.project_path(f"xai_visuals_{run_name}_{exp_suffix}" if exp_suffix else f"xai_visuals_{run_name}")
     os.makedirs(config.RUNS_DIR, exist_ok=True)
     return config.RESULTS_DIR
 

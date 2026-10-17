@@ -12,7 +12,7 @@ import torch
 import torch.nn as nn
 from transformers import AutoModel, AutoConfig
 
-import config as C
+from khmer_asag import config as C
 
 
 def _patch_rope(encoder):

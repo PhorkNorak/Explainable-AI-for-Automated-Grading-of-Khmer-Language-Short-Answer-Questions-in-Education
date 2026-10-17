@@ -20,6 +20,16 @@ Writes:  results_<ds>_v02_calibrated/runs/<cell>/{config,metrics,predictions_*}.
 
 from __future__ import annotations
 
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
+
 import json
 import os
 import sys
@@ -40,7 +50,7 @@ from _common import (  # noqa: E402
     DATASETS, select_datasets, patch_config, reset_leaderboard, append_row,
     row_from_metrics, banner, add_datasets_flag,
 )
-from evaluate import metrics as evaluate_metrics
+from khmer_asag.evaluate import metrics as evaluate_metrics
 from sklearn.metrics import cohen_kappa_score
 
 
@@ -188,10 +198,7 @@ def main():
         # Source: any v0x directory (or the v01 baseline if --source is empty)
         src_name = f"results_{ds['run_name']}" if not args.source \
                    else f"results_{ds['run_name']}_{args.source}"
-        src_results = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            src_name,
-        )
+        src_results = project_path(src_name)
         if not os.path.exists(src_results):
             print(f"[!] missing source {src_results} — skipping {ds['run_name']}")
             continue

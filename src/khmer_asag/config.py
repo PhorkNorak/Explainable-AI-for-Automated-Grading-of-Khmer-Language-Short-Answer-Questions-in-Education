@@ -3,9 +3,11 @@
 import os
 import torch
 
-PROJECT_ROOT  = os.path.dirname(os.path.abspath(__file__))
-# RAW_CSV       = os.path.join(PROJECT_ROOT, "data", "dataset.csv")
-RAW_CSV       = os.path.join(PROJECT_ROOT, "data", "dataset_no_10c_biology.csv")
+from .paths import REPOSITORY_ROOT, DATA_DIR, RESULTS_ROOT, project_path
+
+PROJECT_ROOT = str(REPOSITORY_ROOT)
+# RAW_CSV       = project_path("data", "dataset.csv")
+RAW_CSV       = project_path("data", "dataset_no_10c_biology.csv")
 
 # Drop rows whose ordinal score_label is 0 (only 14 samples in the corpus,
 # practically untrainable). Set False to keep the original 5-class task.
@@ -15,10 +17,10 @@ DROP_SCORE_ZERO = False
 # experiments don't overwrite each other. Change RUN_NAME when switching
 # datasets / score filters.
 RUN_NAME      = "no10c"            # v2: 909 rows (no 10C biology, keeps score=0)
-RESULTS_DIR   = os.path.join(PROJECT_ROOT, f"results_{RUN_NAME}")
+RESULTS_DIR   = project_path(f"results_{RUN_NAME}")
 RUNS_DIR      = os.path.join(RESULTS_DIR, "runs")
 LEADERBOARD   = os.path.join(RESULTS_DIR, "leaderboard.csv")
-XAI_DIR       = os.path.join(PROJECT_ROOT, f"xai_visuals_{RUN_NAME}")
+XAI_DIR       = project_path(f"xai_visuals_{RUN_NAME}")
 
 for d in [RESULTS_DIR, RUNS_DIR, XAI_DIR]:
     os.makedirs(d, exist_ok=True)

@@ -2,8 +2,8 @@ import sys
 import unittest
 from unittest.mock import patch
 from types import SimpleNamespace
-from preprocess import preprocess
-from xai.explainers import shap_importance
+from khmer_asag.preprocess import preprocess
+from khmer_asag.xai.explainers import shap_importance
 
 class PreprocessingTests(unittest.TestCase):
     def test_segmenter_failure_cannot_be_labelled_segment_mode(self):

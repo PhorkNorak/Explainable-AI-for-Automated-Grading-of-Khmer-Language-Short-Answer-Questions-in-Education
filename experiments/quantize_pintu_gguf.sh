@@ -6,10 +6,10 @@
 #   bash experiments/quantize_pintu_gguf.sh --model qwen --imatrix          # + importance matrix
 #   bash experiments/quantize_pintu_gguf.sh --model qwen --qtypes "Q8_0 Q4_K_M"
 #
-# Input : publish/full_models/<release>/          (merge_pintu_models.py output, multimodal BF16)
-# Output: publish/gguf/<release>/<release>-BF16.gguf          text-only reference
-#         publish/gguf/<release>/<release>-<QTYPE>[-imat].gguf  quantized builds
-#         publish/manifests/quantize_<release>_<variant>.json  provenance per file
+# Input : local/builds/publish/full_models/<release>/          (merge_pintu_models.py output, multimodal BF16)
+# Output: local/builds/publish/gguf/<release>/<release>-BF16.gguf          text-only reference
+#         local/builds/publish/gguf/<release>/<release>-<QTYPE>[-imat].gguf  quantized builds
+#         local/builds/publish/manifests/quantize_<release>_<variant>.json  provenance per file
 #
 # Text-only: convert_hf_to_gguf.py without --mmproj exports only the language
 # model; the vision/audio towers are dropped. Every output is then checked with
@@ -22,8 +22,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 MODEL="qwen"
-MERGE_ROOT="publish/full_models"
-OUT_ROOT="publish/gguf"
+MERGE_ROOT="local/builds/publish/full_models"
+OUT_ROOT="local/builds/publish/gguf"
 LLAMA_CPP_DIR="${LLAMA_CPP_DIR:-.build/llama.cpp}"
 LLAMA_CPP_REF="${LLAMA_CPP_REF:-}"          # pin a tag/commit for reproducibility, e.g. b6500
 QTYPES="Q8_0 Q6_K Q5_K_M Q4_K_M"

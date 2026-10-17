@@ -2,7 +2,7 @@ import sys
 import unittest
 from unittest.mock import patch
 import numpy as np
-from xai.explainers import shap_importance
+from khmer_asag.xai.explainers import shap_importance
 import ast
 import json
 import hashlib
@@ -17,14 +17,14 @@ def exp09_helpers():
     tree = ast.parse(path.read_text(encoding='utf-8'))
     names = {'_sample_test', '_save_sample_manifest', '_hash_files', '_save_attribution'}
     namespace = dict(np=np, json=json, hashlib=hashlib, os=os,
-                     _ROOT=str(path.parents[1]), C=SimpleNamespace(SEED=42))
+                     _ROOT=str(path.parents[1]), C=SimpleNamespace(SEED=42), project_path=__import__("khmer_asag.paths", fromlist=["project_path"]).project_path)
     exec(compile(ast.Module(body=[n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name in names], type_ignores=[]), str(path), 'exec'), namespace)
     return namespace
 
 
 class ManifestTests(unittest.TestCase):
     def test_rendering_describes_positive_shap_not_removal_effect(self):
-        from xai.render_html import heatmap_html_fragment
+        from khmer_asag.xai.render_html import heatmap_html_fragment
         html = heatmap_html_fragment(['aa', 'bb'], np.array([.1, -.1]))
         self.assertIn('positive attribution', html)
         self.assertIn('negative', html)

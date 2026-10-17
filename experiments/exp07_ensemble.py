@@ -18,6 +18,16 @@ Output:
 
 from __future__ import annotations
 
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
+
 import json
 import os
 import sys
@@ -37,7 +47,7 @@ from _common import (  # noqa: E402
     DATASETS, select_datasets, patch_config, reset_leaderboard, append_row,
     row_from_metrics, banner, add_datasets_flag,
 )
-from evaluate import metrics as evaluate_metrics  # noqa: E402
+from khmer_asag.evaluate import metrics as evaluate_metrics  # noqa: E402
 from exp02_threshold_calibration import calibrate, _label_from_cuts  # noqa: E402
 
 

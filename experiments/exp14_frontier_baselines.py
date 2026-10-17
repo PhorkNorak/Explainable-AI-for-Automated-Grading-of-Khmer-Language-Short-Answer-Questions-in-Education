@@ -29,6 +29,16 @@ Cost (latest flagships, June 2026; ~136 no10c test answers x 4 models x {bare, r
 
 from __future__ import annotations
 
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
+
 import argparse
 import csv
 import json
@@ -44,9 +54,9 @@ for _p in (_ROOT, _HERE):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-import config as C            # noqa: E402
-import data                   # noqa: E402
-from evaluate import metrics  # noqa: E402
+from khmer_asag import config as C            # noqa: E402
+from khmer_asag import data                   # noqa: E402
+from khmer_asag.evaluate import metrics  # noqa: E402
 
 # ── Frontier model registry. Pin the exact model id + the eval date for reproducibility.
 #    Update `model` to the snapshot you actually call; `EVAL_DATE` is stamped into the cache.
@@ -294,7 +304,7 @@ def main():
                          "through one OPENROUTER_API_KEY and one prepaid balance")
     args = ap.parse_args()
 
-    C.RAW_CSV = os.path.join(C.PROJECT_ROOT, "data", DATASET_CSV[args.dataset])
+    C.RAW_CSV = C.project_path("data", DATASET_CSV[args.dataset])
     C.DROP_SCORE_ZERO = False
     C.SPLIT_MODE = "random"
     df = data.load_dataframe(C.RAW_CSV)
@@ -302,7 +312,7 @@ def main():
     print(f"[exp14] {args.dataset}: {len(test_df)} test answers; eval date {EVAL_DATE}; "
           f"gateway={args.gateway}")
 
-    out_dir = os.path.join(C.PROJECT_ROOT, "results_frontier", args.dataset)
+    out_dir = C.project_path("results_frontier", args.dataset)
     os.makedirs(out_dir, exist_ok=True)
     cols = ["provider", "model_version", "mode", "n", "n_unparsed",
             "qwk", "accuracy", "f1_macro", "raw_exact", "raw_within1"]

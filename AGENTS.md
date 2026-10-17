@@ -1,143 +1,36 @@
-# AGENTS.md — project brief for a new Codex session
+# Project brief for documentation and research work
 
-This file orients a fresh Codex session on what this repo is and how to work in it.
-Read it fully before acting. **The instructions in "Hard rules" override default behaviour.**
+## Final-report reference
 
----
+This is Phork Norak's undergraduate report, "Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education", supervised by Dr. Khim Chamroeun at RUPP. The designated final PDF is `docs/reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education Report final.pdf`, dated June 2026. The cover names the Bachelor of Engineering in Data Science and Engineering; the supervision statement names the Honor Program of Data Science and Engineering.
 
-## What this project is
+The public layout is src/khmer_asag, experiments, prototype, scripts, tests and docs. Private files live under ignored local/. The approved final PDF is the 67-page easier-language version in `docs/reports/`; see `docs/reports/README.md` for recovery and editing history. All editable manuscript sources and their supporting assets remain local and must be excluded from Git, including `local/manuscripts/thesis/`, `local/manuscripts/final-report/` and all other folders under `local/manuscripts/`. Do not force-add LaTeX or bibliography files. The sources were recovered from backups and the original report, not the exact original Overleaf export. Preserve earlier PDFs and local working projects.
 
-An **undergraduate report** (RUPP — Royal University of Phnom Penh, Data Science & Engineering) titled
-**"Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education."**
+Read `docs/guides/report_evidence.md` for report-to-result differences. The LaTeX under `local/manuscripts/thesis/` is a separate historical audit revision. Do not overwrite earlier versions or rewrite audit history to make them agree.
 
-Author: **Phork Norak** · Supervisor: **Dr. Khim Chamroeun**.
+## Findings and terminology
 
-It is an **Automated Short-Answer Grading (ASAG)** study on a real Khmer secondary-school corpus,
-across four model families ("pillars"), evaluated on three axes that must be judged **together**:
-1. **accuracy** (agreement with the human grader),
-2. **deployment quality** (exact / within-one-point integer scores), and
-3. **explainability** (plausible word-attribution highlighting).
+Use the exact research questions from slide 6 of the final presentation: RQ1: Which model family gives the best agreement with the human teacher? RQ2: Which model is most useful for classroom deployment based on exact mark and within-one-point agreement? RQ3: Can SHAP provide understandable word-level explanations across all model families? Results measure agreement with a single grader; deployment uses raw-mark metrics and explanation assessment uses SHAP reference-overlap plausibility. The four pillars are TF-IDF/RBF-SVR, character BiLSTM with additive attention, multilingual Transformer encoders, and QLoRA LLMs.
 
-The central message: *no single pillar dominates all three axes.* The four pillars are **comparable
-on QWK**, a fine-tuned LLM (the Pintu family) wins the deployment metrics, and **SHAP**
-word-attribution explanations are plausible for every pillar (most plausible for the BiLSTM). Results
-are reported as agreement with a single human grader (the honesty anchor).
+Use **KhmerGrader** and the model names in the designated final report. Later experiments are outside the final-report documentation scope and must not be presented as aliases or continuations of the report's models. Attention is architecture, not the explanation method.
 
-This is a finished/auditing-stage project: the code is run, the report/paper/slides are drafted, and a
-live prototype is built. Most tasks now are **consistency, verification, and writing**, not new ML.
+Report Table 10 and `local/results/results_stats/champion_metrics.csv` give QWK **0.802 / 0.789 / 0.777 / 0.850**, in pillar order. The LLM is the highest reported QWK performer. Report Tables 10 and 13 give Qwen exact **0.67** and within-one-point **0.80** (report precision). These are report findings, not a newly reproduced champion selection: the historical audit could not reconcile them with a coherent saved champion set. Never replace evidence files to match prose.
 
----
+Report Table 12 gives fine-tuned QWK Qwen **0.850**, Gemma **0.844**, SEA-LION **0.713**. Qwen zero-shot QWK is **0.529**. Do not carry over the older PDF's family exact-match table or pending baseline entries: the latest Table 12 contains fine-tuned QWK only. Frontier results and parsed sample counts are recorded in `docs/guides/report_evidence.md`; the report dates that snapshot to 2026-06-24, with no fresh API verification implied.
 
-## Task formulation (how grading works)
+SHAP word attribution (text highlighting) is the sole headline XAI method. Plausibility is the fraction of the top 20% SHAP words found in the reference answer. Report Table 14 states **0.63 / 0.60 / 0.68 / 0.61**, matching the saved summary after rounding, on **66 / 66 / 18 / 18** answers. Encoder is highest in this summary, but unequal samples limit ranking. The latest PDF has no pending-result labels. Historical estimator/checkpoint provenance concerns remain separate from this report-to-summary agreement. Do not reintroduce attention, saliency, LIME, ERASER faithfulness or leakage/question-held-out analysis as deliverables.
 
-- Predict a normalised score **ŷ ∈ [0,1]** with **MSE regression** (ordinal task treated as regression).
-- `round(4·ŷ)` → a **5-class grade** (0–4) for class metrics.
-- Raw points for a question = `round(ŷ · max_score)`.
-- **Primary metric: Quadratic Weighted Kappa (QWK).** Also: Cohen κ (unweighted, for the Alaoui
-  comparison), accuracy, macro-F1, exact / adjacent(±1) agreement.
-- **No confidence intervals** anywhere (removed by request — "comparable" / "narrow band", never
-  "statistically tied"). Do not reintroduce CIs or bootstrap/paired tests.
+## Data and formulation
 
-## The four model pillars
+The corpus has 1,184 answers, 41 questions, 203 students, four subjects and two schools. `full` has 1,184 answers; `no10c` has 909. Both retain grade 0. Classical, RNN and LLM headline rows use the 137-answer no10c test set; encoder uses the 178-answer full test set. Comparisons involving the encoder are indicative, not strict head-to-head.
 
-| Pillar | Model | Notes |
-|---|---|---|
-| **Classical** | TF-IDF (char_wb 2–4 gram) + **RBF-SVR** | CPU, ~30 s, strong baseline |
-| **RNN** | char **BiLSTM + additive attention** | CPU; attention is architecture only, NOT used as explanation (SHAP is) |
-| **Transformer** | mBERT / XLM-R / **GTE** dual & cross encoders | GPU/HPC |
-| **LLM** | **Pintu family** (QLoRA/unsloth): Qwen 3.5 4B (champion, id `Qwen/Qwen3.5-4B`), Gemma 4 E4B, SEA-LION v4.5 E2B | GPU/HPC; best deployment metrics; each compared vs its zero-shot base |
+Predict normalised scores in [0,1], map to five-class labels with `round(4*y)`, and to raw marks with `round(y*max_score)`, bounded to valid ranges. SVR uses its regression objective, neural regression heads use MSE, and LLMs supervise integer-score completions. Preprocessing strips invisibles, applies NFC and strips punctuation; segmentation uses khmernltk. No custom KCC reorder.
 
-## Dataset
+The corpus and predictions remain private. A source score of 19 with maximum 15 is unresolved; see `local/archive/audit/data_metrics_decisions.md` before new training. Report release claims do not establish consent or public availability.
 
-- **1,184 answers · 41 questions · 203 students · 4 subjects**; max-scores ∈ {5,6,7,8,10,12,15,20}.
-- Two cleaning/filter variants used as datasets: **`no10c`** (default, 909), `full` (1184). Grade-0 is
-  **kept** (full 5-class task; the old `no10c_no0`/895 drop-grade-0 variant was removed). Classical,
-  BiLSTM, and LLM share the no10c test set; the encoder is on full, so cross-pillar QWK is
-  "indicative", not strict head-to-head.
-- Preprocessing pipeline (**no KCC**): `clean` = strip invisibles → NFC → strip punctuation;
-  `segment` = clean → **khmernltk** word segmentation. The custom KCC reorder was removed (had an
-  independent-vowel bug; matches the senior's recipe) — do not reintroduce it. Heatmaps / feedback use
-  the readable segmented tokens.
+## Repository navigation
 
----
-
-## Canonical numbers (the consistency spine — must match across report ↔ paper ↔ slides ↔ code)
-
-- **Headline QWK (uncalibrated):** Classical **0.795**, RNN **0.845**, encoder **0.820**, LLM **0.843**
-  (a narrow ~0.05 band → "comparable", no significant QWK winner).
-- **Per-pillar P / R / macro-F1** (uncalibrated, from `champion_metrics.csv`): Classical 0.478 / 0.421 / 0.418,
-  RNN 0.540 / 0.523 / 0.529, encoder 0.548 / 0.550 / 0.541, LLM 0.790 / 0.784 / 0.780.
-- **LLM deployment (Pintu-Qwen3.5-4B, 909 split):** exact **0.657 (66%)**, within ±1 **0.832 (83%)**,
-  MAE ≈ 0.93 pt. Still wins every deployment metric vs the other three pillars.
-- **Pintu family (fine-tuned, published):** Pintu-Qwen3.5-4B QWK **0.843** (champion),
-  Pintu-SEA-LION-v4.5-E2B **0.802** (best exact **0.693**, at 2.3B), Pintu-Gemma4-E4B **0.763**.
-  Base **zero-shot** QWK 0.500 / 0.541 / [pending] (Gemma base switched to the instruct `-it` variant,
-  so all three bases are now instruction-tuned; its old −0.082/+0.85 was the pretrained base). Licences
-  Apache-2.0 / MIT; lineage in `docs/model_cards.md`.
-- **Calibration** is a *fragile, model-dependent ablation* (not in the headline).
-- **Cohen κ:** 0.47 / 0.62 / 0.62 / **0.71** vs Alaoui 0.48 (BERT) / 0.60 (transformer).
-- **SHAP plausibility:** Classical **0.66**, BiLSTM **0.59** (encoder + LLM HPC-pending). See next section.
-
-⚠️ These headline numbers are **pre-re-run placeholders** (produced with the old KCC cleaning). After
-the no-KCC grid re-run (`bash run_pipeline.sh`), refresh every number from the regenerated CSVs.
-When asked for a number, source it from `results_stats/*.csv` and
-`results_xai/no10c/`. **Never invent or "round to a nicer" number.**
-
----
-
-## Explainability = SHAP word attribution / text highlighting (the framing to use)
-
-The XAI feature is **SHAP word attribution (text highlighting)**: highlight which words drove the
-grade, following the explainable-scoring approach of Kumar & Boulanger (2020). Use this vocabulary in
-all docs. SHAP is the **sole, unified XAI method** across all four model families — no attention,
-saliency, rationale, LOO/ERASER faithfulness, or LIME in the headline.
-
-- **Engine = SHAP:** distribute the predicted score among the answer words by their Shapley values
-  (occlusion / LOO is kept only as a fast special case in the code). Model-agnostic, works for *every*
-  pillar including the non-differentiable classical SVR.
-- **Plausibility** is the only XAI metric = fraction of the top-20% SHAP words that appear in the
-  reference answer. All pillars anchored on the same `no10c` split:
-  - Classical: plausibility **0.66**.
-  - BiLSTM: plausibility **0.59** (most plausible of the small models).
-  - Encoder, LLM: **HPC-pending** (the LLM runs SHAP under a **capped** eval budget — each eval is a
-    full generation; `exp09 --families llm --shap-max-evals 50`).
-- **Do not reintroduce** ERASER faithfulness (comprehensiveness/sufficiency/AOPC), LOO as the headline
-  method, attention, saliency, LIME, or a leakage / question-held-out analysis in any deliverable.
-  SHAP + plausibility is the final, verified choice; the leakage analysis was **dropped entirely**
-  (RQ4 removed → 3 RQs; see the project memory).
-
----
-
-## Repo layout (`final_kxs/`)
-
-```
-config.py, data.py, preprocess.py, evaluate.py   core pipeline (metrics, splits, Khmer cleaning)
-models/        dual_encoder.py, bilstm, svr, llm heads
-xai/
-  explainers.py      SHAP word attribution (+ occlusion as a fast special case)
-  attributions.py    word_importance() — thin wrapper over occlusion_importance
-  plausibility.py    reference-overlap proxy (the only XAI metric)
-  render*.py         Khmer heatmap rendering (browser shaping; matplotlib can't shape Khmer)
-experiments/
-  exp01..exp08       the model grid (classical / rnn / transformer / ensemble / llm)
-  exp09_xai.py       SHAP explainability study -> results_xai/<dataset>/ (plausibility + global words)
-  exp10_significance.py   champion point metrics (no leakage, no CIs)
-  exp11_cleaning_ablation.py / exp12_hparam_tuning.py
-results/champions/   best checkpoint per experiment (e.g. rnn_clean_ra_bilstm_909/best.pt)
-results_stats/       champion_metrics.csv, cleaning_ablation.csv, hparam_tuning.csv
-results_xai/         plausibility leaderboard + SHAP heatmaps
-prototype/           Gradio teacher-facing web app (app.py) + README + requirements + venv/
-thesis/              XeLaTeX Overleaf project (main.tex, frontmatter/, chapters/ ch1–ch7, appendices/)
-paper/               conference-style paper (main.tex, refs.bib, make_figures.py)
-docs/                slides.md + slide_final.md + script.md (decks + speaker notes), references.md
-run_pipeline.sh      one-shot end-to-end run (tmux); see README
-README.md            full run instructions incl. HPC tmux steps
-```
-
-The deliverables (**undergraduate report / paper / slides+script / prototype**) must stay **consistent with each
-other and the code** — terminology, naming, and every number.
-
----
+Use the root README and `experiments/README.md` for the pipeline; `prototype/README.md` for the app; `docs/reports/README.md` for final PDF documents; `docs/guides/slide_final.md`, `docs/guides/slides.md`, `docs/guides/script.md` and `docs/guides/defense_qa.md` for presentations. No active conference-paper source has been confirmed. Preserve dated audit records and archived writing.
 
 ## Hard rules (do not violate)
 
@@ -149,52 +42,31 @@ other and the code** — terminology, naming, and every number.
    feedback when no LLM server is reachable.
 4. **Local machine is CPU-only with limited internet.** Classical + BiLSTM run locally; all
    GPU/network work (encoder, LLM, attribution cross-check) is **HPC-scripted**, not run locally.
-5. **No "AI slop"**: no em-dashes (`—` / `---`), no CIs, no over-hedged "statistically tied" language.
+5. **No "AI slop"**: no em-dash prose or decorative dash separators, no CIs, no over-hedged "statistically tied" language.
 6. **No KCC + Khmer display correctness:** preprocessing has no KCC reorder; show readable segmented
    tokens in heatmaps/feedback. Do not reintroduce KCC, ERASER faithfulness, or a leakage analysis.
 7. **LaTeX builds with XeLaTeX** (polyglossia + fontspec Noto Sans Khmer); never tell the user to
-   comment out fontspec. `thesis/main.tex` carries `% !TEX program = xelatex`.
+   comment out fontspec. `local/manuscripts/final-report/main.tex` carries `% !TEX program = xelatex`.
 
 ## Environment quirks worth knowing
 
-- **GTE-multilingual-base ships a NaN-corrupted rotary cache** — must rebuild `cos_cached` in fp32
-  (see `_patch_rope` in `models/dual_encoder.py`).
-- Prototype lives in its own **venv** (`prototype/venv/`) to avoid numpy 2.x conflicts.
+- **GTE-multilingual-base ships a NaN-corrupted rotary cache**; must rebuild `cos_cached` in fp32
+  (see `_patch_rope` in `src/khmer_asag/models/dual.py`).
+- Prototype lives in its own **venv** (`local/environments/prototype/`) to avoid numpy 2.x conflicts.
 - Gradio 6: pass `theme=` to `.launch()`, not `gr.Blocks()`.
-- SHAP is slower than occlusion (~16 s vs ~4 s per answer on a dense model). The prototype uses SHAP
+- SHAP adds model-evaluation cost; latency depends on the model and evaluation budget. The prototype uses SHAP
   to match the undergraduate report; the LLM pillar runs SHAP under a capped eval budget (or on-request in the
   prototype) because each SHAP eval is a full generation. The prototype's written feedback uses an
   open-source LLM (`FEEDBACK_LLM_*`) with a
   rule-based fallback.
 
-## Common commands
 
-```bash
-# Full pipeline end-to-end in one go (HPC tmux): trains the grid, runs SHAP + ablations, makes figures
-bash run_pipeline.sh
+## Commands and open items
 
-# SHAP explainability study (CPU): classical + BiLSTM plausibility
-python experiments/exp09_xai.py --families classical bilstm --dataset no10c
+Run the prototype from the root with `python prototype/app.py` after installing its requirements in an isolated environment. For new research runs follow `docs/guides/hpc.md`; preserve original results. The point-metric script requires `--output-dir`; consult `experiments/README.md` rather than old invocation examples.
 
-# Champion point metrics (CPU)
-python experiments/exp10_significance.py
-
-# Live prototype (CPU; Classical + RNN active, Transformer/LLM need GPU)
-pip install -r prototype/requirements.txt
-python prototype/app.py        # http://127.0.0.1:7860
-```
-
-## Still-open placeholders for the user
-
-Programme name confirmation, month/date, committee member names, the Khmer abstract proofread, and
-the deployed prototype demo URL (after pushing to a Hugging Face Space).
+The final PDF supplies programme, date and committee names: Dr. Khim Chamroeun (Chairperson), Ms. Chea Daly, Mr. Ky Soklay, Mr. Chap Chanpiseth and Mr. Mao Makara. Signatures, consent records, Khmer proofreading, compatible result provenance and a verified public demo URL remain unverified.
 
 ## graphify
 
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
-
-Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+When `graphify-out/graph.json` exists, query it first for codebase questions with `graphify query "<question>"`; use `path` and `explain` for focused relationships. Use `graphify-out/wiki/index.md` for broad navigation if present. Read the full graph report only when scoped queries are insufficient. After code modifications, run `graphify update .` to keep the graph current. No graph is currently present in this checkout.

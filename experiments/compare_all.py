@@ -11,6 +11,16 @@ Usage:
 
 from __future__ import annotations
 
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
+
 import argparse
 import os
 import sys
@@ -47,7 +57,7 @@ NUMERIC_COLS = [
 def load_all(ds: str) -> pd.DataFrame:
     rows = []
     for exp, pat in EXPERIMENT_DIRS.items():
-        path = os.path.join(_ROOT, pat.format(ds=ds), "leaderboard.csv")
+        path = project_path(pat.format(ds=ds), "leaderboard.csv")
         if not os.path.exists(path):
             continue
         df = pd.read_csv(path)

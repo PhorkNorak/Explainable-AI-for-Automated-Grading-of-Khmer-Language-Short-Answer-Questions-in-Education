@@ -5,11 +5,21 @@ appends each result to `results/leaderboard.csv`, and finally invokes
 XAI on the best transformer cell.
 
 Examples:
-    python run_all.py
-    python run_all.py --only segment_ra_tfidf_svr
-    python run_all.py --only raw_ra_dual_gte --epochs 2
-    python run_all.py --skip-xai
+    python scripts/run_all.py
+    python scripts/run_all.py --only segment_ra_tfidf_svr
+    python scripts/run_all.py --only raw_ra_dual_gte --epochs 2
+    python scripts/run_all.py --skip-xai
 """
+
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
 
 import argparse
 import csv
@@ -18,9 +28,9 @@ import sys
 import time
 import traceback
 
-import config as C
-from data import load_dataframe, split_dataframe
-from train import (
+from khmer_asag import config as C
+from khmer_asag.data import load_dataframe, split_dataframe
+from khmer_asag.train import (
     train_classical,
     train_bilstm,
     train_transformer,
@@ -155,7 +165,7 @@ def main():
     # XAI on best transformer
     if not args.skip_xai and not args.only:
         try:
-            from xai import run_xai_on_best
+            from khmer_asag.xai import run_xai_on_best
             run_xai_on_best()
         except Exception as e:
             print(f"[!] XAI step failed: {e}")

@@ -17,6 +17,16 @@ with variant ``adapter_qlora4bit``, ``merged_bf16`` (M1) or
 
 from __future__ import annotations
 
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
+
 import argparse
 import gc
 import json
@@ -30,7 +40,6 @@ import numpy as np
 import pandas as pd
 import torch
 from tqdm.auto import tqdm
-from transformers import AutoModelForMultimodalLM, AutoProcessor
 
 
 HERE = Path(__file__).resolve().parent
@@ -39,7 +48,7 @@ for path in (str(ROOT), str(HERE)):
     if path not in sys.path:
         sys.path.insert(0, path)
 
-import data  # noqa: E402
+from khmer_asag import data  # noqa: E402
 import exp08_llm_finetune as exp08  # noqa: E402
 from _release_manifest import StageManifest  # noqa: E402
 
@@ -55,41 +64,41 @@ SPECS = {
     "qwen": ValidationSpec(
         release_name="Pintu-Qwen3.5-4B",
         original_run=Path(
-            "results_no10c_v08_llm_qwen35_4b/"
+            "local/results/results_no10c_v08_llm_qwen35_4b/"
             "runs/clean_qar_qwen35_4b"
         ),
         test_rows_run=Path(
-            "results_no10c_v08_llm_qwen35_4b/"
+            "local/results/results_no10c_v08_llm_qwen35_4b/"
             "runs/clean_ra_qwen35_4b"
         ),
     ),
     "gemma": ValidationSpec(
         release_name="Pintu-Gemma4-E4B",
         original_run=Path(
-            "results_no10c_v08_llm_gemma4_e4b/"
+            "local/results/results_no10c_v08_llm_gemma4_e4b/"
             "runs/clean_qar_gemma4_e4b"
         ),
         test_rows_run=Path(
-            "results_no10c_v08_llm_gemma4_e4b/"
+            "local/results/results_no10c_v08_llm_gemma4_e4b/"
             "runs/clean_ra_gemma4_e4b"
         ),
     ),
     "sealion": ValidationSpec(
         release_name="Pintu-SEA-LION-v4.5-E2B",
         original_run=Path(
-            "results_no10c_v08_llm_sealion_v45_e2b/"
+            "local/results/results_no10c_v08_llm_sealion_v45_e2b/"
             "runs/clean_qar_sealion_v45_e2b"
         ),
         test_rows_run=Path(
-            "results_no10c_v08_llm_sealion_v45_e2b/"
+            "local/results/results_no10c_v08_llm_sealion_v45_e2b/"
             "runs/clean_ra_sealion_v45_e2b"
         ),
     ),
 }
 
 MERGED_ROOTS = {
-    "bf16": Path("publish/full_models"),
-    "nf4-dequant": Path("publish/full_models_nf4dequant"),
+    "bf16": Path(project_path('publish/full_models')),
+    "nf4-dequant": Path(project_path('publish/full_models_nf4dequant')),
 }
 MERGED_VARIANTS = {"bf16": "merged_bf16", "nf4-dequant": "merged_nf4dequant"}
 
@@ -229,6 +238,8 @@ def validate_one(
     merge_target: str,
     manifest: StageManifest,
 ) -> None:
+    from transformers import AutoModelForMultimodalLM, AutoProcessor
+
     spec = SPECS[model_key]
     adapter_path = spec.original_run / "lora_adapter"
     model_path = (
@@ -379,7 +390,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-root",
         type=Path,
-        default=Path("publish/benchmark"),
+        default=Path(project_path('publish/benchmark')),
     )
     parser.add_argument(
         "--processor-source",

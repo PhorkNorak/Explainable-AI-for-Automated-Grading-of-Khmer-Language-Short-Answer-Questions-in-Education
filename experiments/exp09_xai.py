@@ -20,6 +20,16 @@ Outputs (under results_xai/<dataset>/):
 
 from __future__ import annotations
 
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
+
 import argparse
 import csv
 import json
@@ -38,14 +48,14 @@ for _p in (_ROOT, _HERE):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-import config as C            # noqa: E402
-import data                   # noqa: E402
-import preprocess             # noqa: E402
-from evaluate import metrics  # noqa: E402
-from xai.explainers import tokenize_answer, occlusion_importance, shap_importance  # noqa: E402
-from xai.plausibility import plausibility        # noqa: E402
-from xai.render import render_word_heatmap         # noqa: E402
-from xai.render_html import render_word_heatmap_html, render_gallery_html  # noqa: E402
+from khmer_asag import config as C            # noqa: E402
+from khmer_asag import data                   # noqa: E402
+from khmer_asag import preprocess             # noqa: E402
+from khmer_asag.evaluate import metrics  # noqa: E402
+from khmer_asag.xai.explainers import tokenize_answer, occlusion_importance, shap_importance  # noqa: E402
+from khmer_asag.xai.plausibility import plausibility        # noqa: E402
+from khmer_asag.xai.render import render_word_heatmap         # noqa: E402
+from khmer_asag.xai.render_html import render_word_heatmap_html, render_gallery_html  # noqa: E402
 
 
 DATASET_CSV = {
@@ -78,7 +88,7 @@ LEADERBOARD_HEADER = [
 
 
 def _set_dataset(ds: str):
-    C.RAW_CSV = os.path.join(C.PROJECT_ROOT, "data", DATASET_CSV[ds])
+    C.RAW_CSV = C.project_path("data", DATASET_CSV[ds])
     C.DROP_SCORE_ZERO = DATASET_DROP0[ds]
 
 
@@ -128,8 +138,8 @@ def _hash_files(directory):
 def _save_sample_manifest(test_p, idxs, out_root, family, cfg, max_evals=None, fraction=.2, adapter_path=None):
     """Persist sample identity and implementation hashes without student text."""
     hashes = {}
-    for rel in ("preprocess.py", "data.py", "xai/explainers.py", "xai/plausibility.py", "experiments/exp09_xai.py"):
-        with open(os.path.join(_ROOT, rel), "rb") as source:
+    for rel in ("src/khmer_asag/preprocess.py", "src/khmer_asag/data.py", "src/khmer_asag/xai/explainers.py", "src/khmer_asag/xai/plausibility.py", "experiments/exp09_xai.py"):
+        with open(project_path(rel), "rb") as source:
             hashes[rel] = hashlib.sha256(source.read()).hexdigest()
     rows = []
     for idx in idxs:
@@ -191,7 +201,7 @@ def _write_global_topwords(word_abs_imp, out_root, family, top=30):
 
 def _build_classical(train_df, test_df, cfg):
     """Fit the TF-IDF+SVR champion; return (predict_fn, native_explainer, test_p)."""
-    from models.classical import TFIDFSVR
+    from khmer_asag.models.classical import TFIDFSVR
 
     mode, fmt = cfg["preprocess"], cfg["input"]
     train_p = data.apply_preprocess(train_df, mode)
@@ -221,7 +231,7 @@ def _build_bilstm(train_df, val_df, test_df, cfg, out_root, max_epochs=12):
     from torch.utils.data import DataLoader
     from torch.optim import AdamW
     import torch.nn as nn
-    from models.bilstm import BiLSTMScorer
+    from khmer_asag.models.bilstm import BiLSTMScorer
 
     # Reproducible: seed init + DataLoader shuffle so faithfulness numbers are stable.
     random.seed(C.SEED); np.random.seed(C.SEED); torch.manual_seed(C.SEED)
@@ -360,7 +370,7 @@ def _build_encoder(train_df, val_df, test_df, cfg, out_root, max_epochs=8):
     from torch.optim import AdamW
     import torch.nn as nn
     from transformers import AutoTokenizer
-    from models.dual import DualEncoderScorer
+    from khmer_asag.models.dual import DualEncoderScorer
 
     np.random.seed(C.SEED); torch.manual_seed(C.SEED)
     mode, fmt = cfg["preprocess"], cfg["input"]
@@ -451,9 +461,9 @@ def _load_llm_finetuned(model_key, dataset, adapter_path=None, max_seq_length=10
     L = importlib.import_module("exp08_llm_finetune")
     base = L.LLM_BACKBONES[model_key]
     if adapter_path is None:
-        cands = [os.path.join(_ROOT, f"results_{dataset}_v08_llm_{model_key}",
+        cands = [project_path(f"results_{dataset}_v08_llm_{model_key}",
                               "runs", f"clean_qar_{model_key}", "lora_adapter")]
-        cands += glob.glob(os.path.join(_ROOT, "results", "champions",
+        cands += glob.glob(project_path("results", "champions",
                                         f"llm_clean_qar_{model_key}_*", "lora_adapter"))
         adapter_path = next((p for p in cands if os.path.isdir(p)), None)
     if not adapter_path or not os.path.isdir(adapter_path):
@@ -727,7 +737,7 @@ def main():
     args = ap.parse_args()
 
     _set_dataset(args.dataset)
-    out_root = args.output_dir or os.path.join(C.PROJECT_ROOT, "results_xai", "audit_runs", args.dataset + "_" + time.strftime("%Y%m%d_%H%M%S"))
+    out_root = args.output_dir or C.project_path("results_xai", "audit_runs", args.dataset + "_" + time.strftime("%Y%m%d_%H%M%S"))
     os.makedirs(out_root, exist_ok=False)
 
     rows = []

@@ -9,6 +9,16 @@ Runs locally on CPU from the saved champion predictions; needs no re-training.
 
 from __future__ import annotations
 
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
+
 import csv
 import argparse
 import os
@@ -22,8 +32,8 @@ for _p in (_ROOT, _HERE):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-import config as C            # noqa: E402
-from evaluate import metrics  # noqa: E402
+from khmer_asag import config as C            # noqa: E402
+from khmer_asag.evaluate import metrics  # noqa: E402
 
 CHAMPS = {
     # NB: paths must be reconciled with the actual champion dirs the no10c re-run
@@ -48,7 +58,7 @@ def _load_predictions(path):
 
 def champion_metrics(out_dir):
     missing = [fam for fam, d in CHAMPS.items()
-               if not os.path.isfile(os.path.join(C.PROJECT_ROOT, d, "predictions_test.csv"))]
+               if not os.path.isfile(C.project_path(d, "predictions_test.csv"))]
     if missing:
         raise FileNotFoundError("Champion evidence missing: " + ", ".join(missing))
     destination = os.path.join(out_dir, "champion_metrics.csv")
@@ -56,7 +66,7 @@ def champion_metrics(out_dir):
         raise FileExistsError("Preserving existing evidence; choose a new --output-dir")
     rows = []
     for fam, d in CHAMPS.items():
-        p = os.path.join(C.PROJECT_ROOT, d, "predictions_test.csv")
+        p = C.project_path(d, "predictions_test.csv")
         if not os.path.exists(p):
             print(f"[exp10] missing {p}; skipping {fam}"); continue
         ps, tl, ms, tr = _load_predictions(p)

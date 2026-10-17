@@ -15,6 +15,16 @@ Output: results_stats/cleaning_ablation.csv   (CPU-only)
 
 from __future__ import annotations
 
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
+
 import csv
 import os
 import sys
@@ -27,11 +37,11 @@ for _p in (_ROOT, _HERE):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-import config as C            # noqa: E402
-import data                   # noqa: E402
-import preprocess as P        # noqa: E402
-from evaluate import metrics  # noqa: E402
-from models.classical import TFIDFSVR  # noqa: E402
+from khmer_asag import config as C            # noqa: E402
+from khmer_asag import data                   # noqa: E402
+from khmer_asag import preprocess as P        # noqa: E402
+from khmer_asag.evaluate import metrics  # noqa: E402
+from khmer_asag.models.classical import TFIDFSVR  # noqa: E402
 
 DATASETS = [
     ("full", "dataset.csv", False),
@@ -66,11 +76,11 @@ def _fit_score(train_df, test_df, clean_fn):
 
 
 def main():
-    out_dir = os.path.join(C.PROJECT_ROOT, "results_stats")
+    out_dir = C.project_path("results_stats")
     os.makedirs(out_dir, exist_ok=True)
     rows = []
     for run_name, csv_name, drop0 in DATASETS:
-        C.RAW_CSV = os.path.join(C.PROJECT_ROOT, "data", csv_name)
+        C.RAW_CSV = C.project_path("data", csv_name)
         C.DROP_SCORE_ZERO = drop0
         C.SPLIT_MODE = "random"
         # NB: pass the path explicitly — load_dataframe's default arg is frozen at

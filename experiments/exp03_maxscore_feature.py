@@ -13,6 +13,16 @@ Grid: 3 preprocess × 2 input formats × 2 datasets = 12 cells.
 
 from __future__ import annotations
 
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
+
 import json
 import os
 import sys
@@ -36,11 +46,11 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import SVR
 from sklearn.metrics.pairwise import cosine_similarity
 
-import config  # noqa: E402
-import data   # noqa: E402
+from khmer_asag import config  # noqa: E402
+from khmer_asag import data   # noqa: E402
 import importlib
-from evaluate import metrics as evaluate_metrics  # noqa: E402
-from train import save_predictions_csv, save_json, run_dir  # noqa: E402
+from khmer_asag.evaluate import metrics as evaluate_metrics  # noqa: E402
+from khmer_asag.train import save_predictions_csv, save_json, run_dir  # noqa: E402
 
 
 PREPROCESS = ["raw", "clean", "segment"]

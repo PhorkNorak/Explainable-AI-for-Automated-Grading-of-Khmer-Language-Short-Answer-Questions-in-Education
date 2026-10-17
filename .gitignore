@@ -1,17 +1,20 @@
-# Python environments and caches
+# All private data, research outputs, environments, manuscripts and archives
+/local/
+
+# Python environments, caches and packaging outputs
 .venv/
 venv/
 env/
-**/venv/
 __pycache__/
-**/__pycache__/
 *.py[cod]
-*.pyo
+*.egg-info/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
 .coverage
 htmlcov/
+/build/
+/dist/
 
 # Secrets and local configuration
 .env
@@ -20,31 +23,31 @@ htmlcov/
 *.pem
 *.key
 
-# Editors, operating systems, and assistant metadata
+# Editors and local assistant settings
 .vscode/
 .idea/
 .claude/
+.codex/
+.aws/
 CLAUDE.md
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Private research material and manuscript drafts
-/data/
-/docs/
-/paper/
-/distribution/
-
-# Undergraduate report and local document exports
-/thesis/
-/*.png
-*.pdf
-*.docx
-*.pptx
-*.zip
-~$*
-
-# LaTeX build products
+# Every editable LaTeX/bibliography source and build product stays private
+*.tex
+*.bib
+*.sty
+*.cls
+*.bst
+*.ltx
+*.dtx
+*.ins
+*.bbx
+*.cbx
+*.lbx
+.latexmkrc
+latexmkrc
 *.aux
 *.bbl
 *.bcf
@@ -58,23 +61,10 @@ desktop.ini
 *.run.xml
 *.synctex.gz
 *.toc
+*.xdv
+*.synctex
 
-# One-off local run scripts superseded by run_pipeline.sh
-/resume.sh
-/runall.sh
-/runfinal2.sh
-
-# Experiment outputs and logs
-/logs/
-/results*/
-/xai_visuals_*/
-/outputs/
-/publish/
-/.release/
-/errors.txt
-*.jsonl
-
-# Model weights, adapters, and downloaded model caches
+# Weights, adapters, downloads and per-answer outputs
 *.bin
 *.ckpt
 *.joblib
@@ -82,15 +72,82 @@ desktop.ini
 *.pt
 *.pth
 *.safetensors
+*.gguf
+*.ggml
+*.h5
+*.hdf5
+*.tflite
+*.pkl
+*.pickle
+*.jsonl
+**/predictions*.csv
 **/checkpoints/
 **/lora_adapter/
 unsloth_compiled_cache/
 .hfcache/
 .cache/
 wandb/
-
-# Notebook checkpoints
 .ipynb_checkpoints/
 
-# Codex agent config (local only)
-.codex/
+# Defensive rules for old locations or accidentally recreated outputs
+/data/
+/results*/
+/xai_visuals_*/
+/logs/
+/output/
+/outputs/
+/tmp/
+/thesis/
+/reports/
+/assets/
+/paper/
+/distribution/
+/publish/
+/.release/
+/kaggle-check/
+/graphify-out/
+/audit_execution/
+/audit_inputs.json
+/errors.txt
+/resume.sh
+/runall.sh
+/runfinal2.sh
+/*.png
+
+# Binary exports are private except the two reviewed final PDFs
+*.pdf
+*.docx
+*.pptx
+*.zip
+~$*
+
+# Only active public documentation and reviewed images
+/docs/*
+!/docs/README.md
+!/docs/guides/
+/docs/guides/*
+!/docs/guides/report_evidence.md
+!/docs/guides/ethics.md
+!/docs/guides/model_cards.md
+!/docs/guides/references.md
+!/docs/guides/slide_final.md
+!/docs/guides/slides.md
+!/docs/guides/script.md
+!/docs/guides/defense_qa.md
+!/docs/guides/repository_guide.md
+!/docs/guides/hpc.md
+!/docs/images/
+/docs/images/*
+!/docs/images/report/
+!/docs/images/slides/
+/docs/images/report/*
+!/docs/images/report/table-10-pillar-benchmark.png
+!/docs/images/report/table-12-khmergrader-family.png
+!/docs/images/report/table-13-frontier-benchmark.png
+/docs/images/slides/*
+!/docs/images/slides/real-exam-data-collection.png
+!/docs/reports/
+/docs/reports/*
+!/docs/reports/README.md
+!/docs/reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education Report final.pdf
+!/docs/reports/Final_Presentation.pdf

@@ -3,9 +3,9 @@
 # Full Khmer ASAG pipeline, end to end, in one go (designed for an HPC tmux run).
 #
 #   tmux new -s kxs                 # start a session that survives SSH disconnect
-#   bash run_pipeline.sh            # run everything (logs to logs/pipeline_*.log)
+#   bash scripts/run_pipeline.sh            # run everything (logs to local/logs/pipeline_*.log)
 #   # detach: Ctrl-b then d   ·   reattach: tmux attach -t kxs
-#   # watch from another shell: tail -f logs/pipeline_*.log
+#   # watch from another shell: tail -f local/logs/pipeline_*.log
 #
 # Every TRAINING step takes --resume, so a crash/preemption is recovered by just
 # re-running this script: finished cells are skipped, only missing ones re-run.
@@ -19,10 +19,11 @@
 # ============================================================================
 
 set -euo pipefail
-cd "$(dirname "$0")"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
 
 # --- environment ---
-export HF_HOME="$PWD/.hfcache"          # cache mBERT / XLM-R / GTE / Qwen inside the project
+export HF_HOME="$PWD/local/cache/huggingface"          # cache mBERT / XLM-R / GTE / Qwen inside the project
 export TOKENIZERS_PARALLELISM=false
 export PYTHONUTF8=1                      # Khmer-safe stdout
 
@@ -32,8 +33,8 @@ if [ -f .venv/bin/activate ]; then
   source .venv/bin/activate
 fi
 
-mkdir -p logs
-LOG="logs/pipeline_$(date +%Y%m%d_%H%M%S).log"
+mkdir -p local/logs
+LOG="local/logs/pipeline_$(date +%Y%m%d_%H%M%S).log"
 echo "Logging to $LOG"
 
 python -c "import torch; print('CUDA available:', torch.cuda.is_available())"
@@ -63,13 +64,13 @@ python -c "import khmernltk; print('khmernltk OK')"
   # SHAP: full on the cheap pillars; capped on the LLM (each SHAP eval is a full generation).
   python -u experiments/exp09_xai.py --families classical bilstm encoder --dataset no10c
   python -u experiments/exp09_xai.py --families llm --dataset no10c --shap-max-evals 50   # GPU/HPC
-  python -u experiments/exp10_significance.py --output-dir "results_stats/audit_$(date +%Y%m%d_%H%M%S)" # refuses incomplete champion sets
+  python -u experiments/exp10_significance.py --output-dir "local/results/results_stats/audit_$(date +%Y%m%d_%H%M%S)" # refuses incomplete champion sets
   python -u experiments/exp11_cleaning_ablation.py  # format-noise robustness
   python -u experiments/exp12_hparam_tuning.py      # classical hyperparameter sweep
 
   echo "=================== 2b. FRONTIER BASELINES (paid API, ~\$5-11, cached) ==================="
   # Frontier LLMs via one OpenRouter key (zero-shot, bare + reasoning, no10c). Responses cache
-  # to results_frontier/, so a re-run is free; skipped automatically if no key is exported.
+  # to local/results/results_frontier/, so a re-run is free; skipped automatically if no key is exported.
   if [ "${KXS_RUN_FRONTIER:-0}" = "1" ] && [ -n "${OPENROUTER_API_KEY:-}" ]; then
     python -u experiments/exp14_frontier_baselines.py --gateway openrouter --dataset no10c
   else
@@ -78,10 +79,10 @@ python -c "import khmernltk; print('khmernltk OK')"
 
   echo "=================== 3. AGGREGATE + FIGURES ==================="
   python -u experiments/compare_all.py --topk 20
-  if [ -f paper/make_figures.py ]; then
-    python -u paper/make_figures.py                 # optional local manuscript figures
+  if [ -f local/manuscripts/paper/make_figures.py ]; then
+    python -u local/manuscripts/paper/make_figures.py                 # optional local manuscript figures
   else
-    echo "[skip] paper/make_figures.py is not included in the public code repository."
+    echo "[skip] local/manuscripts/paper/make_figures.py is not included in the public code repository."
   fi
   python -u experiments/check_progress.py
 } 2>&1 | tee "$LOG"
@@ -89,6 +90,6 @@ python -c "import khmernltk; print('khmernltk OK')"
 echo
 echo "Pipeline finished. Manual follow-up (needs a browser, for correct Khmer shaping):"
 echo "  1) Open the SHAP heatmap HTML galleries and screenshot each to a PNG:"
-echo "       results_xai/no10c/heatmaps/{classical,bilstm,encoder,llm}/*_gallery.html"
+echo "       local/results/results_xai/no10c/heatmaps/{classical,bilstm,encoder,llm}/*_gallery.html"
 echo "     Save as thesis/figures/heatmap_{classical,bilstm,encoder,llm}.png"
-echo "  2) Then propagate refreshed numbers from results_stats/*.csv into local report tables."
+echo "  2) Then propagate refreshed numbers from local/results/results_stats/*.csv into local report tables."

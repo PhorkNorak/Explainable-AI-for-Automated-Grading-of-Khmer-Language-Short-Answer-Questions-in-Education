@@ -20,6 +20,16 @@ Deploy:       Hugging Face Space (sdk: gradio, app_file: prototype/app.py); see 
 
 from __future__ import annotations
 
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
+
 import json
 import os
 import re
@@ -33,13 +43,13 @@ if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
 import gradio as gr                                            # noqa: E402
-import config as C                                            # noqa: E402
-import data                                                   # noqa: E402
-from preprocess import preprocess, strip_invisibles, strip_punctuation  # noqa: E402
-from xai.explainers import shap_importance                    # noqa: E402
-from xai.render_html import heatmap_html_fragment             # noqa: E402
+from khmer_asag import config as C                                            # noqa: E402
+from khmer_asag import data                                                   # noqa: E402
+from khmer_asag.preprocess import preprocess, strip_invisibles, strip_punctuation  # noqa: E402
+from khmer_asag.xai.explainers import shap_importance                    # noqa: E402
+from khmer_asag.xai.render_html import heatmap_html_fragment             # noqa: E402
 
-DATA_CSV = os.path.join(_ROOT, "data", "dataset_no_10c_biology.csv")
+DATA_CSV = project_path("data", "dataset_no_10c_biology.csv")
 
 
 def readable_tokens(text):
@@ -83,7 +93,7 @@ class ClassicalGrader:
     input_format = "ra"
 
     def __init__(self):
-        from models.classical import TFIDFSVR
+        from khmer_asag.models.classical import TFIDFSVR
         C.RAW_CSV = DATA_CSV; C.DROP_SCORE_ZERO = False; C.SPLIT_MODE = "random"
         df = data.load_dataframe(DATA_CSV)
         tr, _, _ = data.split_dataframe(df)
@@ -104,8 +114,8 @@ class BiLSTMGrader:
 
     def __init__(self):
         import torch
-        from models.bilstm import BiLSTMScorer
-        ckpt = os.path.join(_ROOT, "results", "champions",
+        from khmer_asag.models.bilstm import BiLSTMScorer
+        ckpt = project_path("results", "champions",
                             "rnn_clean_ra_bilstm_909", "best.pt")
         if not os.path.exists(ckpt):
             raise FileNotFoundError(f"champion checkpoint not found at {ckpt}")
@@ -162,7 +172,7 @@ class EncoderGrader:
                 f"{ckpt} (or set ENCODER_CKPT) to activate this pillar")
         import torch
         from transformers import AutoTokenizer
-        from models.dual import DualEncoderScorer
+        from khmer_asag.models.dual import DualEncoderScorer
         cfg_path = os.path.join(os.path.dirname(ckpt), "config.json")
         cfg = json.load(open(cfg_path, encoding="utf-8")) if os.path.exists(cfg_path) else {}
         backbone = cfg.get("backbone", C.TRANSFORMER_BACKBONES["gte"])

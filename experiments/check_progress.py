@@ -16,6 +16,16 @@ Usage:
 
 from __future__ import annotations
 
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
+
 import argparse
 import os
 import sys
@@ -61,7 +71,7 @@ EXPECTED = [
 
 def check_cell(ds_run_name: str, suffix: str, expected: int):
     name = f"results_{ds_run_name}" if not suffix else f"results_{ds_run_name}_{suffix}"
-    lb = os.path.join(_ROOT, name, "leaderboard.csv")
+    lb = project_path(name, "leaderboard.csv")
     if not os.path.exists(lb):
         return "MISSING", 0
     try:
@@ -155,11 +165,11 @@ def main():
 
     if not args.quiet:
         print("\n=== Resume command (run in tmux) ===\n")
-    print('mkdir -p logs && ( \\')
+    print('mkdir -p local/logs && ( \\')
     for ln in lines:
         print(f"  {ln} && \\")
     print('  python -u experiments/compare_all.py --topk 15 \\')
-    print(') 2>&1 | tee "logs/resume_$(date +%Y%m%d_%H%M%S).log"')
+    print(') 2>&1 | tee "local/logs/resume_$(date +%Y%m%d_%H%M%S).log"')
     return 1
 
 

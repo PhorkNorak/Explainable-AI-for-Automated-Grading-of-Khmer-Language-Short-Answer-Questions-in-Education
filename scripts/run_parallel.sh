@@ -5,9 +5,9 @@
 #
 #   tmux new -s kxs
 #   export OPENROUTER_API_KEY="sk-or-..."     # enables the API stream
-#   bash run_parallel.sh
+#   bash scripts/run_parallel.sh
 #   # watch each stream from other panes:
-#   #   tail -f logs/cpu_*.log    tail -f logs/gpu_*.log    tail -f logs/api_*.log
+#   #   tail -f local/logs/cpu_*.log    tail -f local/logs/gpu_*.log    tail -f local/logs/api_*.log
 #
 # Why three streams: they use different resources and do not contend.
 #   CPU  = classical (exp01/03/04) + BiLSTM (exp05) + ablations (exp11/exp12)
@@ -19,14 +19,15 @@
 #
 # IMPORTANT: run on a CLEAN tree. If you just `git reset --hard`, the committed
 # result dirs come back and --resume will skip fresh training. Wipe first:
-#   rm -rf results results_full* results_no10c* results_stats results_xai
-# (keep results_frontier — the paid DeepSeek cache).
+#   Use scripts/hpc_handoff.py to prepare a fresh, isolated run. Keep old evidence intact.
+# (keep local/results/results_frontier — the paid DeepSeek cache).
 # ============================================================================
 
 set -uo pipefail
-cd "$(dirname "$0")"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
 
-export HF_HOME="$PWD/.hfcache"
+export HF_HOME="$PWD/local/cache/huggingface"
 export TOKENIZERS_PARALLELISM=false
 export PYTHONUTF8=1
 if [ -f .venv/bin/activate ]; then
@@ -34,10 +35,10 @@ if [ -f .venv/bin/activate ]; then
   source .venv/bin/activate
 fi
 
-mkdir -p logs
+mkdir -p local/logs
 TS=$(date +%Y%m%d_%H%M%S)
-CPU_LOG="logs/cpu_$TS.log"; GPU_LOG="logs/gpu_$TS.log"; API_LOG="logs/api_$TS.log"
-AGG_LOG="logs/agg_$TS.log"
+CPU_LOG="local/logs/cpu_$TS.log"; GPU_LOG="local/logs/gpu_$TS.log"; API_LOG="local/logs/api_$TS.log"
+AGG_LOG="local/logs/agg_$TS.log"
 
 python -c "import torch; print('CUDA available:', torch.cuda.is_available())"
 
@@ -76,7 +77,7 @@ gpu_stream() {
 
   # PHASE 2: all 3 fine-tunes in parallel (~38-44GB on a 46GB A40 - TIGHT). Memory is
   # allocated in the first steps and stays flat, so if it does not OOM in the first ~10 min
-  # it will not OOM at all. If logs/gpu_*.log shows CUDA OOM, fall back to 2-wide.
+  # it will not OOM at all. If local/logs/gpu_*.log shows CUDA OOM, fall back to 2-wide.
   echo "[gpu] phase 2: parallel fine-tune $(date)"
   ( ft qwen35_4b qar;       ft qwen35_4b ra )       &  F1=$!
   ( ft gemma4_e4b qar;      ft gemma4_e4b ra )      &  F2=$!
@@ -121,13 +122,13 @@ echo "=================== AGGREGATION (needs all trained models) ===============
   python -u experiments/exp09_xai.py --families llm --dataset no10c --shap-max-evals 50
   python -u experiments/exp10_significance.py
   python -u experiments/compare_all.py --topk 20
-  python -u paper/make_figures.py
+  python -u local/manuscripts/paper/make_figures.py
   python -u experiments/check_progress.py
 } 2>&1 | tee "$AGG_LOG"
 
 echo
 echo "Parallel pipeline finished. Manual follow-up (needs a browser for Khmer shaping):"
 echo "  1) Screenshot the SHAP galleries:"
-echo "       results_xai/no10c/heatmaps/{classical,bilstm,encoder,llm}/*_gallery.html"
+echo "       local/results/results_xai/no10c/heatmaps/{classical,bilstm,encoder,llm}/*_gallery.html"
 echo "     Save as thesis/figures/heatmap_{classical,bilstm,encoder,llm}.png"
-echo "  2) Propagate refreshed numbers from results_stats/*.csv into the report/paper tables."
+echo "  2) Propagate refreshed numbers from local/results/results_stats/*.csv into the report/paper tables."

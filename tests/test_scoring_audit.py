@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from evaluate import metrics
+from khmer_asag.evaluate import metrics
 
 
 class ScoringValidationTests(unittest.TestCase):

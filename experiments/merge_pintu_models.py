@@ -15,6 +15,16 @@ Two merge targets are supported (benchmarked against each other in exp15):
 
 from __future__ import annotations
 
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
+
 import argparse
 import gc
 import json
@@ -23,17 +33,14 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import torch
-from peft import PeftConfig, PeftModel
-from safetensors import safe_open
-from transformers import AutoModelForMultimodalLM, AutoProcessor, BitsAndBytesConfig
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _release_manifest import StageManifest  # noqa: E402
 
 MERGE_TARGETS = ("bf16", "nf4-dequant")
 DEFAULT_OUTPUT_ROOTS = {
-    "bf16": Path("publish/full_models"),
-    "nf4-dequant": Path("publish/full_models_nf4dequant"),
+    "bf16": Path(project_path('publish/full_models')),
+    "nf4-dequant": Path(project_path('publish/full_models_nf4dequant')),
 }
 
 
@@ -48,7 +55,7 @@ MODEL_SPECS = {
     "qwen": ModelSpec(
         base_id="Qwen/Qwen3.5-4B",
         adapter_path=Path(
-            "results_no10c_v08_llm_qwen35_4b/"
+            "local/results/results_no10c_v08_llm_qwen35_4b/"
             "runs/clean_qar_qwen35_4b/lora_adapter"
         ),
         release_name="Pintu-Qwen3.5-4B",
@@ -58,7 +65,7 @@ MODEL_SPECS = {
         # non-quantized upstream instruction model.
         base_id="google/gemma-4-E4B-it",
         adapter_path=Path(
-            "results_no10c_v08_llm_gemma4_e4b/"
+            "local/results/results_no10c_v08_llm_gemma4_e4b/"
             "runs/clean_qar_gemma4_e4b/lora_adapter"
         ),
         release_name="Pintu-Gemma4-E4B",
@@ -66,7 +73,7 @@ MODEL_SPECS = {
     "sealion": ModelSpec(
         base_id="aisingapore/Gemma-SEA-LION-v4.5-E2B-IT",
         adapter_path=Path(
-            "results_no10c_v08_llm_sealion_v45_e2b/"
+            "local/results/results_no10c_v08_llm_sealion_v45_e2b/"
             "runs/clean_qar_sealion_v45_e2b/lora_adapter"
         ),
         release_name="Pintu-SEA-LION-v4.5-E2B",
@@ -86,6 +93,8 @@ def exact_adapter_targets(adapter_path: Path, base_model: torch.nn.Module) -> li
     weights_path = adapter_path / "adapter_model.safetensors"
     if not weights_path.is_file():
         raise FileNotFoundError(f"Missing adapter weights: {weights_path}")
+
+    from safetensors import safe_open
 
     with safe_open(weights_path, framework="pt", device="cpu") as checkpoint:
         keys = list(checkpoint.keys())
@@ -147,6 +156,8 @@ def quantized_module_names(spec: ModelSpec, kwargs: dict) -> tuple[set[str], str
     (NF4, double quantization, BF16 compute), Unsloth's default 4-bit recipe.
     The 4-bit model is only inspected, then freed.
     """
+    from transformers import AutoModelForMultimodalLM, BitsAndBytesConfig
+
     source = training_base_id(spec)
     model = None
     if source != spec.base_id:
@@ -193,6 +204,8 @@ def load_nf4_dequantized(spec: ModelSpec):
 
     kwargs = dict(device_map="auto", low_cpu_mem_usage=True, trust_remote_code=True)
     names, source = quantized_module_names(spec, kwargs)
+    from transformers import AutoModelForMultimodalLM
+
     model = AutoModelForMultimodalLM.from_pretrained(spec.base_id, dtype=torch.bfloat16, **kwargs)
     modules = dict(model.named_modules())
     missing = sorted(n for n in names if n not in modules)
@@ -221,6 +234,9 @@ def load_nf4_dequantized(spec: ModelSpec):
 
 def merge_one(spec: ModelSpec, output_root: Path, merge_target: str,
               manifest: StageManifest) -> Path:
+    from peft import PeftConfig, PeftModel
+    from transformers import AutoModelForMultimodalLM, AutoProcessor
+
     adapter_config = spec.adapter_path / "adapter_config.json"
     if not adapter_config.is_file():
         raise FileNotFoundError(f"Missing adapter configuration: {adapter_config}")

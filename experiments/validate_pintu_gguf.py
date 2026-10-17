@@ -19,6 +19,16 @@ vision/audio tensors (used by ``quantize_pintu_gguf.sh``).
 
 from __future__ import annotations
 
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
+
 import argparse
 import gc
 import json
@@ -212,10 +222,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--check-text-only", type=Path, metavar="FILE")
     parser.add_argument("--models", nargs="+", choices=("qwen", "gemma", "sealion"),
                         default=["qwen"])
-    parser.add_argument("--gguf-root", type=Path, default=Path("publish/gguf"))
-    parser.add_argument("--processor-root", type=Path, default=Path("publish/full_models"),
+    parser.add_argument("--gguf-root", type=Path, default=Path(project_path('publish/gguf')))
+    parser.add_argument("--processor-root", type=Path, default=Path(project_path('publish/full_models')),
                         help="Merged model folders; their processor renders the chat template.")
-    parser.add_argument("--output-root", type=Path, default=Path("publish/benchmark"))
+    parser.add_argument("--output-root", type=Path, default=Path(project_path('publish/benchmark')))
     parser.add_argument("--device", choices=("cpu", "gpu"), default="gpu")
     parser.add_argument("--threads", type=int, default=min(8, os.cpu_count() or 1),
                         help="Fixed CPU thread count (logged for reproducible latency).")

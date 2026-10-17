@@ -22,6 +22,16 @@ and nothing is written to results_stats/ or docs/.
 
 from __future__ import annotations
 
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
+
 import argparse
 import json
 import shutil
@@ -39,7 +49,7 @@ for path in (str(ROOT), str(HERE)):
     if path not in sys.path:
         sys.path.insert(0, path)
 
-from evaluate import metrics as evaluate_metrics  # noqa: E402
+from khmer_asag.evaluate import metrics as evaluate_metrics  # noqa: E402
 
 # ── Variant catalogue: fixed order and short IDs used in every table and figure ──
 VARIANTS = [
@@ -618,9 +628,9 @@ def main() -> None:
     parser.add_argument("--reference", default="auto",
                         help="Fidelity reference variant. 'auto' reads publish/benchmark/<release>/"
                              "CHOSEN_MERGE (written by run_release.sh), else merged_bf16.")
-    parser.add_argument("--bench-root", type=Path, default=Path("publish/benchmark"))
-    parser.add_argument("--gguf-root", type=Path, default=Path("publish/gguf"))
-    parser.add_argument("--stats-dir", type=Path, default=Path("results_stats"))
+    parser.add_argument("--bench-root", type=Path, default=Path(project_path('publish/benchmark')))
+    parser.add_argument("--gguf-root", type=Path, default=Path(project_path('publish/gguf')))
+    parser.add_argument("--stats-dir", type=Path, default=Path(project_path('results_stats')))
     parser.add_argument("--docs-report", type=Path, default=Path("docs/pintu_release_report.md"))
     parser.add_argument("--dry-run", action="store_true",
                         help="Run on a synthetic fixture in a temp folder (writes nothing real).")
@@ -630,10 +640,10 @@ def main() -> None:
     if args.reference != "auto" and args.reference not in ORDER:
         raise SystemExit(f"--reference must be 'auto' or one of {list(ORDER)}")
 
-    merged_roots = {"merged_bf16": Path("publish/full_models"),
-                    "merged_nf4dequant": Path("publish/full_models_nf4dequant")}
+    merged_roots = {"merged_bf16": Path(project_path('publish/full_models')),
+                    "merged_nf4dequant": Path(project_path('publish/full_models_nf4dequant'))}
     tmp = None
-    results_root = ROOT
+    results_root = Path(project_path("results_stats")).parent
     if args.dry_run:
         tmp = Path(tempfile.mkdtemp(prefix="exp15_dryrun_"))
         base = args.dry_run_out or tmp

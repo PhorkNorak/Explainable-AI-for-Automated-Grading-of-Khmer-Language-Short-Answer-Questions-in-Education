@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import Mock, patch
 import sys
 import numpy as np
-from xai.explainers import shap_importance
+from khmer_asag.xai.explainers import shap_importance
 
 SOURCE = Path(__file__).resolve().parents[1]/'prototype/app.py'
 

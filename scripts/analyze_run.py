@@ -7,9 +7,19 @@ Reads `results_<run_name>/runs/<run_id>/predictions_test.csv` and produces:
   - Writes the breakdown to `results_<run_name>/runs/<run_id>/per_max_score.csv`
 
 Usage:
-    python analyze_run.py <results_dir> <run_id>
-    python analyze_run.py results_no10c     clean_ra_tfidf_svr      --worst 15
+    python scripts/analyze_run.py <results_dir> <run_id>
+    python scripts/analyze_run.py results_no10c clean_ra_tfidf_svr --worst 15
 """
+
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
 
 import argparse
 import os
@@ -60,6 +70,7 @@ def main():
     ap.add_argument("--save", action="store_true",
                     help="Also write the breakdown to per_max_score.csv in the run dir")
     args = ap.parse_args()
+    args.results_dir = project_path(args.results_dir)
 
     pred_path = os.path.join(args.results_dir, "runs", args.run_id, "predictions_test.csv")
     if not os.path.exists(pred_path):

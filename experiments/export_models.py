@@ -16,6 +16,16 @@ scratch on the Khmer corpus -> MIT. The encoder embeds GTE weights (Apache 2.0),
 noted in its card.
 """
 
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
+
 import argparse
 import importlib
 import json
@@ -31,17 +41,17 @@ for _p in (_ROOT, _HERE):
 
 import numpy as np
 
-import config as C
-import data
-from evaluate import metrics
+from khmer_asag import config as C
+from khmer_asag import data
+from khmer_asag.evaluate import metrics
 
-PUB = os.path.join(_ROOT, "publish")
+PUB = project_path("publish")
 
 
 def _champ_split():
     """The non-LLM champions live on no10c (909): classical=segment_ra,
     bilstm=clean_ra, encoder=clean_ra. Deterministic (seed 42)."""
-    C.RAW_CSV = os.path.join(C.PROJECT_ROOT, "data", "dataset_no_10c_biology.csv")
+    C.RAW_CSV = C.project_path("data", "dataset_no_10c_biology.csv")
     C.DROP_SCORE_ZERO = False
     importlib.reload(data)
     df = data.load_dataframe()
@@ -82,7 +92,7 @@ def _qwk_on_test(pred_fn, test_p, fmt):
 
 def export_classical():
     import joblib
-    from models.classical import TFIDFSVR
+    from khmer_asag.models.classical import TFIDFSVR
     name = "Pintu-Classical-SVR"
     out = os.path.join(PUB, name)
     os.makedirs(out, exist_ok=True)
@@ -113,11 +123,11 @@ def export_classical():
 
 def export_bilstm():
     import torch
-    from models.bilstm import BiLSTMScorer
+    from khmer_asag.models.bilstm import BiLSTMScorer
     name = "Pintu-BiLSTM"
     out = os.path.join(PUB, name)
     os.makedirs(out, exist_ok=True)
-    champ = os.path.join(_ROOT, "results", "champions", "rnn_clean_ra_bilstm_909")
+    champ = project_path("results", "champions", "rnn_clean_ra_bilstm_909")
     mode, fmt = "clean", "ra"
     tr, _, te = _champ_split()
     trp = data.apply_preprocess(tr, mode)
@@ -157,7 +167,7 @@ def export_bilstm():
                 "attention over the answer and reference, regressing a normalized score.",
                 "Dependencies: PyTorch (BSD). Trained from scratch (no base model). "
                 "Load best.pt into BiLSTMScorer(vocab_size=len(char2id)).",
-                "import json, torch\nfrom models.bilstm import BiLSTMScorer\n"
+                "import json, torch\nfrom khmer_asag.models.bilstm import BiLSTMScorer\n"
                 "char2id = json.load(open('char2id.json'))\n"
                 "m = BiLSTMScorer(vocab_size=len(char2id))\n"
                 "m.load_state_dict(torch.load('best.pt', map_location='cpu')); m.train(False)\n"
@@ -173,7 +183,7 @@ def export_encoder(max_epochs=8):
     from torch.optim import AdamW
     import torch.nn as nn
     from transformers import AutoTokenizer
-    from models.dual import DualEncoderScorer
+    from khmer_asag.models.dual import DualEncoderScorer
     name = "Pintu-Encoder-GTE"
     out = os.path.join(PUB, name)
     os.makedirs(out, exist_ok=True)
@@ -247,7 +257,7 @@ def export_encoder(max_epochs=8):
                 "Base model: Alibaba-NLP/gte-multilingual-base (Apache 2.0); weights here "
                 "are fine-tuned from it, so Apache 2.0 attribution applies. Load encoder.pt "
                 "into DualEncoderScorer(backbone, max_feat_dim=0).",
-                "import torch\nfrom models.dual import DualEncoderScorer\n"
+                "import torch\nfrom khmer_asag.models.dual import DualEncoderScorer\n"
                 "m = DualEncoderScorer('Alibaba-NLP/gte-multilingual-base', max_feat_dim=0)\n"
                 "m.load_state_dict(torch.load('encoder.pt', map_location='cpu')); m.train(False)\n"
                 "# tokenize answer & reference (max_len=256) with the bundled tokenizer, then m(ids_a, mask_a, ids_b, mask_b)")

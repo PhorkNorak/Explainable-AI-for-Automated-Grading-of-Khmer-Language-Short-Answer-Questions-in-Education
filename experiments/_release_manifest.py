@@ -22,6 +22,16 @@ Shell use (for the llama.cpp steps)::
 
 from __future__ import annotations
 
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
+
 import argparse
 import datetime as _dt
 import hashlib
@@ -36,7 +46,7 @@ from pathlib import Path
 from typing import Iterable
 
 ROOT = Path(__file__).resolve().parent.parent
-MANIFEST_DIR = Path("publish/manifests")
+MANIFEST_DIR = Path(project_path('publish/manifests'))
 
 TRACKED_PACKAGES = (
     "torch", "transformers", "peft", "bitsandbytes", "accelerate", "unsloth",

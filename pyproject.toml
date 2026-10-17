@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "khmer-asag"
+version = "1.0.0"
+description = "Explainable automated short-answer grading for Khmer"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [{name = "Phork Norak"}]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["khmer_asag*"]

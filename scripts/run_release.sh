@@ -5,11 +5,11 @@
 #   -> pick merge -> text-only GGUF quantize -> validate GGUF (GPU, CPU) -> benchmark
 #
 #   tmux new -s pintu
-#   bash run_release.sh                         # all three: qwen, gemma, sealion
-#   MODELS="qwen sealion" bash run_release.sh   # a subset, in this order
-#   MODEL=gemma bash run_release.sh             # exactly one model
+#   bash scripts/run_release.sh                         # all three: qwen, gemma, sealion
+#   MODELS="qwen sealion" bash scripts/run_release.sh   # a subset, in this order
+#   MODEL=gemma bash scripts/run_release.sh             # exactly one model
 #   # detach: Ctrl-b then d   ·   reattach: tmux attach -t pintu
-#   # watch:  tail -f logs/release_*.log
+#   # watch:  tail -f local/logs/release_*.log
 #
 # Re-running is safe: every step whose output already exists is skipped, so a
 # crash is recovered by running the same command again.
@@ -20,7 +20,8 @@
 # MERGE=bf16 or MERGE=nf4-dequant.
 # ============================================================================
 set -euo pipefail
-cd "$(dirname "$0")"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
 
 # Several models: run each in its own pass (one failing model does not stop
 # the others), then print a summary.
@@ -28,19 +29,19 @@ if [ -z "${MODEL:-}" ]; then
   MODELS="${MODELS:-qwen gemma sealion}"
   declare -A STATUS=()
   for m in $MODELS; do
-    if MODEL="$m" bash "$0"; then STATUS[$m]="ok"; else STATUS[$m]="FAILED"; fi
+    if MODEL="$m" bash "$REPO_ROOT/scripts/run_release.sh"; then STATUS[$m]="ok"; else STATUS[$m]="FAILED"; fi
   done
   echo; echo "=================== SUMMARY ==================="
   for m in $MODELS; do echo "  $m: ${STATUS[$m]}"; done
   # One combined benchmark over every model that finished (each per-model pass
-  # rewrites results_stats/pintu_release_*.csv with only its own model).
+  # rewrites local/results/results_stats/pintu_release_*.csv with only its own model).
   OK=""
   for m in $MODELS; do [ "${STATUS[$m]}" = "ok" ] && OK="$OK $m"; done
   if [ -n "$OK" ]; then
     [ -f .venv/bin/activate ] && source .venv/bin/activate
     # shellcheck disable=SC2086
     PYTHONUTF8=1 python -u experiments/exp15_pintu_release_benchmark.py --models $OK --reference auto \
-      2>&1 | tee "logs/release_combined_$(date +%Y%m%d_%H%M%S).log"
+      2>&1 | tee "local/logs/release_combined_$(date +%Y%m%d_%H%M%S).log"
   fi
   for m in $MODELS; do [ "${STATUS[$m]}" = "ok" ] || exit 1; done
   exit 0
@@ -53,7 +54,7 @@ case "$MODEL" in
 esac
 THREADS="${THREADS:-8}"
 
-export HF_HOME="$PWD/.hfcache"
+export HF_HOME="$PWD/local/cache/huggingface"
 export TOKENIZERS_PARALLELISM=false
 export PYTHONUTF8=1
 if [ -f .venv/bin/activate ]; then
@@ -61,12 +62,12 @@ if [ -f .venv/bin/activate ]; then
   source .venv/bin/activate
 fi
 
-mkdir -p logs
-LOG="logs/release_${MODEL}_$(date +%Y%m%d_%H%M%S).log"
+mkdir -p local/logs
+LOG="local/logs/release_${MODEL}_$(date +%Y%m%d_%H%M%S).log"
 echo "Logging to $LOG"
 
-BENCH="publish/benchmark/$RELEASE"
-RUN_DIR="results_no10c_v08_llm_${KEY}/runs/clean_qar_${KEY}"
+BENCH="local/builds/publish/benchmark/$RELEASE"
+RUN_DIR="local/results/results_no10c_v08_llm_${KEY}/runs/clean_qar_${KEY}"
 
 step() { echo; echo "=================== $* ==================="; date; }
 have() { [ -e "$1" ] && echo "[skip] $1 exists"; }
@@ -81,7 +82,7 @@ have() { [ -e "$1" ] && echo "[skip] $1 exists"; }
   [ -f "$RUN_DIR/lora_adapter/adapter_config.json" ] || { echo "Training produced no adapter" >&2; exit 1; }
 
   step "2. Zero-shot base (row H)"
-  have "results_no10c_v08z_llm_${KEY}_zeroshot/runs/zeroshot_qar_${KEY}/predictions_test.csv" || \
+  have "local/results/results_no10c_v08z_llm_${KEY}_zeroshot/runs/zeroshot_qar_${KEY}/predictions_test.csv" || \
     python -u experiments/exp08_llm_finetune.py --models "$KEY" --zeroshot --datasets no10c --input qar --resume
 
   step "3. Validate adapter (row A)"
@@ -89,10 +90,10 @@ have() { [ -e "$1" ] && echo "[skip] $1 exists"; }
     python -u experiments/validate_pintu_models.py --models "$MODEL" --model-source adapter
 
   step "4. Merge M1 (bf16) and M2 (nf4-dequant)"
-  have "publish/full_models/$RELEASE/config.json" || \
+  have "local/builds/publish/full_models/$RELEASE/config.json" || \
     python -u experiments/merge_pintu_models.py --models "$MODEL" --merge-target bf16
   M2_OK=1
-  have "publish/full_models_nf4dequant/$RELEASE/config.json" || \
+  have "local/builds/publish/full_models_nf4dequant/$RELEASE/config.json" || \
     python -u experiments/merge_pintu_models.py --models "$MODEL" --merge-target nf4-dequant || {
       echo "[warn] M2 (nf4-dequant) merge failed for $RELEASE; continuing with M1 only"; M2_OK=0; }
 
@@ -127,9 +128,9 @@ PY
 )"
   fi
   if [ "$MERGE" = "nf4-dequant" ]; then
-    MERGE_ROOT="publish/full_models_nf4dequant"; REFERENCE="merged_nf4dequant"
+    MERGE_ROOT="local/builds/publish/full_models_nf4dequant"; REFERENCE="merged_nf4dequant"
   else
-    MERGE_ROOT="publish/full_models"; REFERENCE="merged_bf16"
+    MERGE_ROOT="local/builds/publish/full_models"; REFERENCE="merged_bf16"
   fi
   echo "Chosen merge: $MERGE  ($MERGE_ROOT)"
   echo "$MERGE" > "$BENCH/CHOSEN_MERGE"
@@ -165,7 +166,7 @@ PY
   echo
   echo "DONE. Results:"
   echo "  $BENCH/REPORT.md"
-  echo "  results_stats/pintu_release_benchmark.csv"
-  echo "  results_stats/figures/pintu_release/$RELEASE/"
-  echo "  publish/manifests/"
+  echo "  local/results/results_stats/pintu_release_benchmark.csv"
+  echo "  local/results/results_stats/figures/pintu_release/$RELEASE/"
+  echo "  local/builds/publish/manifests/"
 } 2>&1 | tee "$LOG"

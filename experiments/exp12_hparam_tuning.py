@@ -11,6 +11,16 @@ Output: results_stats/hparam_tuning.csv   (CPU-only; classical champion config s
 
 from __future__ import annotations
 
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
+
 import csv
 import os
 import sys
@@ -23,10 +33,10 @@ for _p in (_ROOT, _HERE):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-import config as C            # noqa: E402
-import data                   # noqa: E402
-from evaluate import metrics  # noqa: E402
-from models.classical import TFIDFSVR  # noqa: E402
+from khmer_asag import config as C            # noqa: E402
+from khmer_asag import data                   # noqa: E402
+from khmer_asag.evaluate import metrics  # noqa: E402
+from khmer_asag.models.classical import TFIDFSVR  # noqa: E402
 
 # Champion classical config + search grid.
 PREP, INP = "segment", "ra"
@@ -54,11 +64,11 @@ def _fit(train_p_lists, train_p, test_lists, test_p, c, max_feat):
 
 
 def main():
-    out_dir = os.path.join(C.PROJECT_ROOT, "results_stats")
+    out_dir = C.project_path("results_stats")
     os.makedirs(out_dir, exist_ok=True)
     rows = []
     for run_name, csv_name, drop0 in DATASETS:
-        C.RAW_CSV = os.path.join(C.PROJECT_ROOT, "data", csv_name)
+        C.RAW_CSV = C.project_path("data", csv_name)
         C.DROP_SCORE_ZERO = drop0
         C.SPLIT_MODE = "random"
         df = data.load_dataframe(C.RAW_CSV)

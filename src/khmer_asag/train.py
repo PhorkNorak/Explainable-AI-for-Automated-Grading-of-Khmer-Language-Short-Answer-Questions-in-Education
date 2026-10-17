@@ -13,8 +13,8 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
 
-import config as C
-from evaluate import metrics
+from khmer_asag import config as C
+from khmer_asag.evaluate import metrics
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -87,8 +87,8 @@ def save_predictions_csv(out_dir: str, split_name: str, df_proc, pred_scores):
 
 
 def train_classical(model_id, preprocess_mode, input_fmt, train_df, val_df, test_df, run_id):
-    from data import apply_preprocess, build_text_lists
-    from models.classical import make_classical
+    from khmer_asag.data import apply_preprocess, build_text_lists
+    from khmer_asag.models.classical import make_classical
 
     set_seed()
     train_p = apply_preprocess(train_df, preprocess_mode)
@@ -329,8 +329,8 @@ def _train_neural_loop(
 
 def train_bilstm(preprocess_mode, input_fmt, train_df, val_df, test_df, run_id,
                  max_epochs=None, max_feat=False):
-    from data import apply_preprocess, build_pair, CharPairDataset, build_char_vocab
-    from models.bilstm import BiLSTMScorer
+    from khmer_asag.data import apply_preprocess, build_pair, CharPairDataset, build_char_vocab
+    from khmer_asag.models.bilstm import BiLSTMScorer
 
     set_seed()
     train_p = apply_preprocess(train_df, preprocess_mode)
@@ -394,9 +394,9 @@ def train_transformer(
     arch, backbone_key, preprocess_mode, input_fmt,
     train_df, val_df, test_df, run_id, max_epochs=None, max_feat=False,
 ):
-    from data import apply_preprocess, PairDataset, CrossDataset
-    from models.dual import DualEncoderScorer
-    from models.cross import CrossEncoderScorer
+    from khmer_asag.data import apply_preprocess, PairDataset, CrossDataset
+    from khmer_asag.models.dual import DualEncoderScorer
+    from khmer_asag.models.cross import CrossEncoderScorer
 
     set_seed()
     backbone_name = C.TRANSFORMER_BACKBONES[backbone_key]

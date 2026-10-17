@@ -15,6 +15,16 @@ students can collide), and the number dropped is logged in the manifest.
 
 from __future__ import annotations
 
+# Support direct CLI execution from a source checkout.
+import os as _layout_os
+import sys as _layout_sys
+_layout_root = _layout_os.path.dirname(_layout_os.path.dirname(_layout_os.path.abspath(__file__)))
+for _layout_path in (_layout_root, _layout_os.path.join(_layout_root, "src")):
+    if _layout_path not in _layout_sys.path:
+        _layout_sys.path.insert(0, _layout_path)
+from khmer_asag.paths import project_path
+
+
 import argparse
 import sys
 from pathlib import Path
@@ -40,7 +50,7 @@ def training_rows(model_key: str) -> pd.DataFrame:
     """The no10c training split exactly as exp08 builds it."""
     import importlib
 
-    import data
+    from khmer_asag import data
     from _common import DATASETS, patch_config
 
     dataset = next(d for d in DATASETS if d["run_name"] == "no10c")
@@ -64,8 +74,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--models", nargs="+", choices=tuple(EXP_SUFFIX), default=["qwen"])
-    parser.add_argument("--processor-root", type=Path, default=Path("publish/full_models"))
-    parser.add_argument("--output-root", type=Path, default=Path("publish/gguf"))
+    parser.add_argument("--processor-root", type=Path, default=Path(project_path('publish/full_models')))
+    parser.add_argument("--output-root", type=Path, default=Path(project_path('publish/gguf')))
     args = parser.parse_args()
 
     from transformers import AutoProcessor
