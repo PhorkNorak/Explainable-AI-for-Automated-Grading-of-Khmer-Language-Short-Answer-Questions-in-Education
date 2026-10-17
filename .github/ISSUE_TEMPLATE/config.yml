@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Dataset card and correction history
+    url: https://github.com/PhorkNorak/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/blob/main/docs/guides/dataset.md
+    about: Check versions, schema, score corrections and known limitations before reporting a dataset issue.
+  - name: Final report and presentation
+    url: https://github.com/PhorkNorak/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/releases/tag/v1.1.0
+    about: Download the final report and presentation accompanying the research.

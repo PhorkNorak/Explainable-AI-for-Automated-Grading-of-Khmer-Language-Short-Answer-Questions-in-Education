@@ -1,0 +1,33 @@
+name: Bug or reproducibility issue
+description: Report unexpected behaviour or a result you could not reproduce.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: "Please read the README and evidence notes first. Do not include tokens, private records, checkpoints or identifying information."
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and expected behaviour
+      description: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include the exact command and a short, non-identifying example or relevant error output.
+    validations:
+      required: true
+  - type: textarea
+    id: versions
+    attributes:
+      label: Environment and revisions
+      description: Include the Git commit or release, Python and operating-system versions, relevant dependencies, and dataset/model revisions where applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: checks
+    attributes:
+      label: Checks already performed
+      description: Mention relevant tests and which report or evidence note you compared against.

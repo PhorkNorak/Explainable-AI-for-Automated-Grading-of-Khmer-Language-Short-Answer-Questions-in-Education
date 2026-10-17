@@ -23,7 +23,7 @@ line at the bottom of the app lists the state of every pillar).
 
 | Pillar | Runs on | Activates when |
 |---|---|---|
-| **Classical (TF-IDF + SVR)** | CPU | requires the private corpus and working dependencies; refits at startup. **Demo pillar.** |
+| **Classical (TF-IDF + SVR)** | CPU | requires locally available dataset files and working dependencies; refits at startup. **Demo pillar.** |
 | **RNN (BiLSTM + Attention)** | CPU | the champion checkpoint `local/checkpoints/results/champions/rnn_clean_ra_bilstm_909/best.pt` is present |
 | **Transformer (GTE dual-encoder)** | CPU (slow) / GPU | a fine-tuned checkpoint is present at `local/checkpoints/results/champions/encoder_clean_qar_dual_gte_maxfeat_1184/best.pt` (or `ENCODER_CKPT`) **and** `transformers` is installed |
 | **LLM (Qwen-KhmerGrader-4B)** | endpoint (any) / GPU | `GRADER_LLM_BASE_URL` is set (endpoint), or `GRADER_LLM_INPROCESS=1` on a GPU |
@@ -53,7 +53,7 @@ pip install -r prototype/requirements.txt
 python prototype/app.py            # opens http://127.0.0.1:7860
 ```
 
-The base install supports CPU code. Actual model availability depends on the private corpus, checkpoint compatibility, and any explicitly configured endpoint. The **Transformer** and **in-process LLM** paths need the optional extras
+The base install supports CPU code. Actual model availability depends on locally available dataset files, checkpoint compatibility, and any explicitly configured endpoint. The **Transformer** and **in-process LLM** paths need the optional extras
 noted in `prototype/requirements.txt`.
 
 Explanation: the app shows **SHAP word attribution** (text highlighting), the model-agnostic

@@ -1,111 +1,124 @@
 # Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education
 
-Undergraduate final report by **Phork Norak**, supervised by **Dr. Khim Chamroeun**, Royal University of Phnom Penh. Bachelor of Engineering in Data Science and Engineering, June 2026.
+![Report: June 2026; release v1.1.0; Python 3.10+; code MIT; dataset CC BY-NC 4.0](docs/images/project-badges.png)
 
-[GitHub](https://github.com/PhorkNorak/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education) | [Hugging Face dataset](https://huggingface.co/datasets/phorknorak/khmer-asag-benchmark) | [Kaggle dataset](https://www.kaggle.com/datasets/phorknorak/khmer-asag-benchmark) | [ResearchGate report](https://www.researchgate.net/publication/416039997_Explainable_AI_for_Automated_Grading_of_Khmer_Language_Short-Answer_Questions_in_Education) | [Final release](https://github.com/PhorkNorak/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/releases/tag/v1.1.0)
+**Phork Norak** · Supervisor: **Dr. Khim Chamroeun**
 
-This project studies automated short-answer grading (ASAG) using **real, teacher-graded Khmer examination answers**. The corpus was manually digitised from handwritten semester exam papers collected at two Cambodian high schools. It compares four model families and uses **SHAP word attribution (text highlighting)** to show which answer words contribute to a predicted score. The prototype combines a score, optional word highlighting and written feedback.
+Royal University of Phnom Penh · Bachelor of Engineering in Data Science and Engineering
 
-The study contributes a real Khmer short-answer corpus, a shared pipeline for comparing four grading families, and a teacher-assist prototype with SHAP explanations. Its motivation is the time and inconsistency involved in manual grading, together with the limited resources available for Khmer language processing.
+**[Final report](<docs/reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education.pdf>)** · **[Presentation](docs/reports/Final_Presentation.pdf)** · **[Hugging Face](https://huggingface.co/datasets/phorknorak/khmer-asag-benchmark)** · **[Kaggle](https://www.kaggle.com/datasets/phorknorak/khmer-asag-benchmark)** · **[ResearchGate](https://www.researchgate.net/publication/416039997_Explainable_AI_for_Automated_Grading_of_Khmer_Language_Short-Answer_Questions_in_Education)** · **[Release](https://github.com/PhorkNorak/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/releases/tag/v1.1.0)**
 
-Read the [final report](<docs/reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education.pdf>) or the [final presentation](docs/reports/Final_Presentation.pdf). The final report is the 67-page version with clearer wording and all reviewed corrections. [Report versions](docs/reports/README.md) explain how it was recovered and revised. Editable manuscript sources, older drafts and local audit builds stay local and are excluded from Git.
+> **Undergraduate research · June 2026.** Real Khmer examination answers, four grading model families, and SHAP word attribution in one research pipeline and prototype.
 
-The benchmark tables below retain the report's findings. [Report-to-evidence notes](docs/guides/report_evidence.md) distinguish reported results, saved summaries and unresolved reproduction issues. Public dataset copies are hosted separately on Hugging Face and Kaggle under CC BY-NC 4.0. Local source data, predictions and model checkpoints remain excluded from Git.
+[Abstract](#abstract) · [Key results](#key-results) · [Research questions](#research-questions) · [Dataset](#dataset) · [Explainability](#explainability) · [Quick start](#quick-start) · [Prototype](#prototype) · [Documentation](#documentation) · [Reproducibility](#reproducibility) · [Citation](#citation)
 
-## Research questions and approach
+## Abstract
 
-1. **RQ1: Which model family gives the best agreement with the human teacher?**
-2. **RQ2: Which model is most useful for classroom deployment based on exact mark and within-one-point agreement?**
-3. **RQ3: Can SHAP provide understandable word-level explanations across all model families?**
+Grading short answers takes time, and Khmer has few resources for automated educational assessment. This project studies automated short-answer grading using **1,184 real, teacher-graded answers** manually digitised from handwritten examinations at two Cambodian high schools. It compares classical machine learning, a recurrent neural network, multilingual Transformer encoders and the fine-tuned **KhmerGrader** language-model family. Qwen-KhmerGrader-4B achieves the highest reported Quadratic Weighted Kappa (QWK), **0.850**. The encoder uses a different test set, so cross-family results are indicative. SHAP word attribution highlights words contributing to each prediction, and a Gradio prototype combines scores, optional highlighting and written feedback. The results measure agreement with one teacher and support research on grading assistance; classroom benefit has not been established.
 
-| Family | Approach |
+This repository provides the experiment code, final report and presentation, dataset documentation and prototype. Public dataset copies are hosted separately on Hugging Face and Kaggle.
+
+## Key results
+
+- **Highest reported QWK:** Qwen-KhmerGrader-4B, **0.850**, compared with Classical **0.802**, BiLSTM **0.789** and GTE **0.777**.
+- **Raw-mark agreement:** the Qwen champion matches the teacher's exact mark on **67%** of test answers and is within one point on **80%**.
+
+The benchmark images below are reproduced directly from the final report, preserving its captions, values and formatting.
+
+### Four model families
+
+![Report Table 10: Classical QWK 0.802, BiLSTM 0.789, GTE 0.777 and fine-tuned Qwen-KhmerGrader 0.850; Qwen zero-shot reference 0.529](docs/images/report/table-10-pillar-benchmark.png)
+
+Classical, BiLSTM and LLM headline rows use the **137-answer no10c test set**; the encoder uses the **178-answer full test set**. This is not a strict comparison on a common test set.
+
+<details>
+<summary><strong>KhmerGrader family comparison: original report Table 12</strong></summary>
+
+![Report Table 12: fine-tuned QWK for Qwen-KhmerGrader-4B, Gemma-KhmerGrader-4B and SEA-LION-KhmerGrader-E2B](docs/images/report/table-12-khmergrader-family.png)
+
+The family adapts Qwen, Gemma and SEA-LION bases using QLoRA. The caption says “909 test set”; 909 is the corpus-variant size, while the headline Qwen held-out test has 137 answers. See the [model cards and lineage](docs/guides/model_cards.md).
+
+</details>
+
+<details>
+<summary><strong>Frontier comparison: original report Table 13</strong></summary>
+
+![Report Table 13: Qwen-KhmerGrader versus GPT-5.5, Claude Opus 4.8, Gemini 3.5 Flash and DeepSeek V4](docs/images/report/table-13-frontier-benchmark.png)
+
+The report compares the fine-tuned champion with GPT-5.5, Claude Opus 4.8, Gemini 3.5 Flash and DeepSeek V4 in bare and reasoning-enabled zero-shot settings. The highest reported frontier QWK is **0.734**, for Claude Opus 4.8 with reasoning. Metrics use each model's parsed subset, so sample counts differ. These are saved, report-stated benchmark results, not a new external evaluation.
+
+</details>
+
+These are historical, report-stated benchmarks. See [reproducibility](#reproducibility) before comparing them with a new run or a later dataset version.
+
+## Research questions
+
+1. **RQ1:** Which model family gives the best agreement with the human teacher?
+2. **RQ2:** Which model is most useful for classroom deployment based on exact mark and within-one-point agreement?
+3. **RQ3:** Can SHAP provide understandable word-level explanations across all model families?
+
+### Approach
+
+| Family | Models and method |
 |---|---|
 | Classical | Character TF-IDF features with RBF-SVR |
 | RNN | Character BiLSTM with additive attention; SHAP supplies explanations |
 | Transformer | Multilingual mBERT, XLM-R and GTE encoders |
-| LLM | KhmerGrader: QLoRA fine-tuning of Qwen, Gemma and SEA-LION bases |
+| LLM | **KhmerGrader**, using QLoRA fine-tuning of Qwen, Gemma and SEA-LION bases |
 
-**KhmerGrader** is the LLM family studied in the final report. See the [model descriptions and lineage](docs/guides/model_cards.md). Documentation covers this final-report version; subsequent experiments are outside its scope.
+For regression models, the target is `Student Score / Max Score`. Predictions map to five grades with `round(4 * predicted_score)` and to raw points with `round(predicted_score * max_score)`, bounded to valid ranges. SVR uses its regression objective and neural regression heads use MSE. Generative LLM fine-tuning instead supervises integer-score completions.
 
-The pipeline normalises marks by the question maximum and maps predictions to five grades with `round(4 * predicted_score)` and to raw points with `round(predicted_score * max_score)`, bounded to valid ranges. SVR uses its regression objective, neural regression heads use MSE, and generative LLM fine-tuning supervises integer-score completions. Preprocessing strips invisible characters, normalises to NFC and removes punctuation; `segment` additionally uses khmernltk. There is no custom KCC reorder.
+Preprocessing strips invisible characters, applies NFC and removes punctuation; `segment` also applies khmernltk word segmentation. There is no custom KCC reorder. The [experiment registry](experiments/README.md) explains the implemented stages and commands. Documentation describes the final-report models; subsequent experiments are outside its scope.
 
-## Real examination data
+## Dataset
 
-### Collection and digitisation
+**Real student work, manually digitised.** Answers come from handwritten semester 1 examinations in the 2026 school year, collected at two Cambodian high schools, one in a province and one in the capital city. Scores were assigned by one teacher. No generated or crowd-sourced answers are included.
 
-The corpus comes from **handwritten semester 1 examination papers from the 2026 school year**. The researcher collected papers from two Cambodian high schools, one in a province and one in the capital city. These settings bring variation in student writing, answer quality and classroom context. The answers are authentic student work, with marks awarded by a teacher, rather than generated or crowd-sourced responses.
+| | Full corpus | Curated corpus |
+|---|---:|---:|
+| Answers | **1,184** | **909** |
+| Questions | 41 | 36 |
+| Students | 203 | 203 |
+| Schools | 2 | 2 |
+| CSV | `dataset.csv` | `dataset_no_10c_biology.csv` |
+| Hugging Face configuration | `full` | `curated-no10c` |
 
-The collection process preserved the student answers and teacher marks, manually transcribed the Khmer handwriting into text, organised the question, reference, answer, awarded score and maximum score into structured records, and cleaned the text for the shared modelling pipeline. The original process diagram from the final presentation is reproduced below.
+Subjects are **Biology, History, Geography and Earth Science**. The curated `no10c` corpus excludes class-10C Biology, where inconsistent grading was identified. Both retain grade 0, and the curated corpus is a subset of the full corpus.
 
-![Original final-presentation slide showing collection of handwritten papers, real student answers and marks, manual Khmer transcription, structured records and data preparation](docs/images/slides/real-exam-data-collection.png)
+**Reference answers.** An official teacher-provided answer key was unavailable. The highest-scoring student response for each question serves as the reference. This is a student-derived proxy, which can be incomplete, rather than a verified marking rubric.
 
-### Corpus and dataset variants
+The [dataset card](docs/guides/dataset.md) documents the schema, downloads, version history and citation.
 
-The final corpus contains **1,184 answers, 41 questions, 203 students, four subjects and two schools**. Subjects are Biology, History, Geography and Earth Science. Question maxima vary across 5, 6, 7, 8, 10, 12, 15 and 20 points.
+**Latest dataset update, 17 October 2026:** dataset **v1.0.1** corrects one answer's mark from **19/15 to 9/15** in both CSVs. Counts and other public cells are unchanged. On Kaggle, this is **version 2**. Dataset versions and software release versions are separate.
 
-| Variant | Answers | Description |
-|---|---:|---|
-| `full` | 1,184 | Full usable corpus |
-| `no10c` | 909 | Excludes class-10C Biology, where inconsistent marks were identified |
+<details>
+<summary><strong>Collection workflow, schema and quality notes</strong></summary>
 
-Both variants retain grade 0. The reported split is 70/15/15 with seed 42. Classical, RNN and LLM headline rows use the 137-answer no10c test set; the encoder uses the 178-answer full test set.
+The collection process preserved student answers and teacher marks, manually transcribed Khmer handwriting, organised records and prepared the shared modelling input. The original workflow slide is reproduced below.
 
-### Reference answers and score normalisation
+![Final-presentation slide showing collection of handwritten papers, manual transcription, student answers and marks, structured records and data preparation](docs/images/slides/real-exam-data-collection.png)
 
-An official teacher-provided answer key was unavailable. For each question, the **highest-scoring student response serves as the reference answer**. This is a proxy: the best available response may still fall short of full marks. The reference should therefore be understood as student-derived content rather than a verified complete marking rubric.
+CSV columns are `SchoolID`, `ClassID`, `Subject`, `StudentID`, `QuestionID`, `Question`, `Reference`, `Answer`, `Student Score`, `Max Score` and `Year`. The public exports use replacement school codes and pseudonymous class/student codes. One blank-answer source record is excluded from each public file.
 
-Teacher marks are normalised by the question's maximum: `normalised_score = student_score / max_score`. Five-class labels use `round(4 * normalised_score)`, bounded to grades 0-4. This allows questions with different scoring scales to share one grading task.
+Question maxima are 5, 6, 7, 8, 10, 12, 15 and 20 points. Real grading noise includes identical answers receiving different marks, question repetition and zero-score responses with no meaningful content. Subjects and scores are unevenly represented, with few Earth Science answers.
 
-### Real classroom variation and grading noise
+The report uses a label-stratified, answer-level **70/15/15 split with seed 42**. On Hugging Face, the hosted split named `train` contains the entire selected configuration; the project code makes the research partitions.
 
-The data includes identical answers receiving different marks, answers that repeat the question, and zero-score responses with no meaningful content. Biology, History and Geography account for most records, Earth Science has few, and grades are skewed toward high scores. These properties explain the use of two dataset variants and the reporting of macro-F1 alongside accuracy. Results measure agreement with a **single human grader** and can inherit that grader's inconsistencies.
+For collection details, see report Section 3.2 and presentation PDF pages 8-12. [Ethics and data access](docs/guides/ethics.md) explain the single-grader, privacy and governance limits. Public availability does not independently establish consent or ethics approval.
 
-Collection and reference construction are described in report Section 3.2 and the final presentation's dataset slides (PDF pages 8-12).
+</details>
 
-### Dataset downloads and local setup
+## Explainability
 
-Download the two CSVs from [Hugging Face](https://huggingface.co/datasets/phorknorak/khmer-asag-benchmark) or [Kaggle](https://www.kaggle.com/datasets/phorknorak/khmer-asag-benchmark), then place them at `local/data/dataset.csv` and `local/data/dataset_no_10c_biology.csv`. Preserve any existing research copy before replacing it. The loader expects `SchoolID`, `ClassID`, `Subject`, `StudentID`, `QuestionID`, `Question`, `Reference`, `Answer`, `Student Score`, `Max Score` and `Year`.
+SHAP highlights answer words that contribute to the predicted score. Plausibility measures the fraction of the top 20% SHAP words that appear in the reference answer. It is a lexical-overlap proxy, not a teacher evaluation of explanation quality.
 
-**Dataset version 1.0.1** incorporates the author's correction from **19/15 to 9/15** for one answer present in both files. Counts remain 1,184 and 909 complete answers. Check each host's version history to identify the downloaded copy. Report metrics have not been rerun on this corrected data, and the stratified split may change. See the [dataset card and correction record](docs/guides/dataset.md) for schema, loading examples, version details and citation, and [ethics and data access](docs/guides/ethics.md) for the remaining limitations.
+Report Table 14 gives plausibility **0.63 / 0.60 / 0.68 / 0.61** for Classical / BiLSTM / Encoder / LLM on **66 / 66 / 18 / 18** answers. The saved summary matches after rounding; unequal samples limit ranking. Table 11 reports approximate **score-plus-SHAP** latency of **2 / 13 / 10 / 76 seconds** per answer, respectively. These are capped-explanation costs, not score-only timings. See the [SHAP](docs/guides/report_evidence.md#shap-plausibility) and [efficiency](docs/guides/report_evidence.md#efficiency) evidence notes.
 
-## Benchmarks from the final report
+## Quick start
 
-The following tables are reproduced directly from the latest report, including their original captions, values and formatting.
+The steps below set up the CPU prototype in an isolated environment using **Python 3.10 or later**. For the full experiment dependencies and GPU work, see [reproducibility](#reproducibility).
 
-### Table 10: Per-pillar champion results
-
-![Table 10 from the final report: per-pillar champion results and Qwen zero-shot reference](docs/images/report/table-10-pillar-benchmark.png)
-
-### Table 12: KhmerGrader family
-
-![Table 12 from the final report: KhmerGrader family fine-tuned test QWK](docs/images/report/table-12-khmergrader-family.png)
-
-### Table 13: KhmerGrader and frontier models
-
-![Table 13 from the final report: KhmerGrader versus frontier models in bare and reasoning settings](docs/images/report/table-13-frontier-benchmark.png)
-
-The encoder uses a different test set from the other pillars; frontier metrics use each model's parsed subset. See [report-to-evidence notes](docs/guides/report_evidence.md) for saved-result provenance and the historical audit.
-
-## Explainability and prototype
-
-SHAP attributes the predicted score to answer words. Plausibility is the fraction of the top 20% SHAP words appearing in the reference answer, an automatic lexical-overlap proxy rather than a teacher evaluation.
-
-Report Table 14 gives SHAP plausibility **0.63 / 0.60 / 0.68 / 0.61** for Classical / BiLSTM / Encoder / LLM. These match the saved XAI summary after rounding. Classical and BiLSTM use 66 answers each; encoder and LLM use 18 each, so the ranking is not a common-sample comparison. See [SHAP evidence](docs/guides/report_evidence.md#shap-plausibility).
-
-Report Table 11 gives approximate score-plus-SHAP latency of **2 / 13 / 10 / 76 seconds per answer**, respectively. These are capped-explanation costs, not score-only timings; see [efficiency evidence](docs/guides/report_evidence.md#efficiency).
-
-Run the Gradio prototype from the repository root:
-
-```bash
-pip install -r prototype/requirements.txt
-python prototype/app.py
-```
-
-Model availability depends on locally downloaded data, compatible checkpoints and configured endpoints. Written feedback uses an open-source instruct LLM through `FEEDBACK_LLM_*`, with rule-based fallback when no server is reachable. See [prototype setup](prototype/README.md) for isolated-environment instructions and model configuration.
-
-## Installation
-
-Python 3.10 or later is recommended.
+### 1. Clone and install
 
 ```bash
 git clone https://github.com/PhorkNorak/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education.git
@@ -114,58 +127,117 @@ cd Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-pip install -r requirements.txt
+python -m pip install -r prototype/requirements.txt
 python -m pip install -e .
 ```
 
-On Windows PowerShell, activate the environment with:
+<details>
+<summary><strong>Windows PowerShell activation</strong></summary>
+
+After creating `.venv`, replace the activation command above with:
 
 ```powershell
 .venv\Scripts\Activate.ps1
 ```
 
-For GPU experiments, install the PyTorch build that matches the CUDA version reported by
-`nvidia-smi` before installing the remaining requirements. See the comments in
-[`requirements.txt`](requirements.txt) for an example.
+Then continue with the three `python -m pip` commands above.
 
+</details>
 
+### 2. Download the dataset
 
-## Reproduction and evidence status
-
-The [experiment registry](experiments/README.md) documents the implemented stages. Classical and individual BiLSTM work are CPU-feasible; encoder and LLM training belong on HPC. No new training or external API evaluation was performed to align this documentation.
-
-The author's current local CSVs correct the historical 19/15 record to 9/15. The dataset update records that change without altering saved results, the final report or historical audits. New runs must record the dataset version, hashes and split membership. Follow the [evidence notes](docs/guides/report_evidence.md) and [isolated HPC handoff](docs/guides/hpc.md), preserving existing evidence. Detailed audit records remain local.
-
-## Repository layout
+Download both CSVs from [Hugging Face](https://huggingface.co/datasets/phorknorak/khmer-asag-benchmark) or [Kaggle](https://www.kaggle.com/datasets/phorknorak/khmer-asag-benchmark/versions/2) and place them here:
 
 ```text
-src/khmer_asag/   Core data loading, preprocessing, training, models and SHAP
-experiments/     Experiment definitions and shared experiment helpers
-prototype/       Gradio app and its requirements
-scripts/         Pipeline runners, analysis and isolated HPC handoff
-tests/           Scoring, SHAP, prototype, path and handoff checks
-docs/guides/     Methods, model cards, evidence, ethics and presentation notes
-docs/images/     README benchmark tables and collection diagram
-docs/reports/    Final report and presentation PDFs
-local/           Ignored data, results, checkpoints, logs and manuscripts
+local/data/dataset.csv
+local/data/dataset_no_10c_biology.csv
 ```
 
-Install the package with `python -m pip install -e .` from the repository root after installing dependencies. Imports use `khmer_asag`, and direct experiment and prototype commands also work from a source checkout. Central paths are defined in `src/khmer_asag/paths.py`.
+Preserve existing research copies and hashes before replacing them. Local CSVs stay ignored by Git. The [dataset guide](docs/guides/dataset.md#download-and-use) includes loading examples.
 
-Downloaded dataset copies and original research data belong in `local/data/`. Existing run names are preserved under `local/results/`, while champion checkpoints are under `local/checkpoints/results/champions/`. Logs, builds, editable manuscripts and historical archives stay under `local/`. Moving these files does not release them or make historical saved paths current.
+### 3. Launch the prototype
 
-Public Git files include code, requirements, tests, active documentation, the four README images and the final PDFs. The whole `local/` folder, secrets, environments, model weights and LaTeX/bibliography files are ignored. See the [repository guide](docs/guides/repository_guide.md) for the exact inclusion policy.
+```bash
+python prototype/app.py
+```
 
-- [Prototype setup](prototype/README.md)
-- [Experiment registry](experiments/README.md)
-- [Final report and presentation](docs/reports/README.md)
-- [Dataset card, version history and platform links](docs/guides/dataset.md)
-- [Evidence and reproduction limits](docs/guides/report_evidence.md)
-- [HPC workflow](docs/guides/hpc.md)
-- [Slides](docs/guides/slide_final.md), [speaker notes](docs/guides/script.md) and [defense questions](docs/guides/defense_qa.md)
+Open **http://127.0.0.1:7860**. See [prototype setup and model configuration](prototype/README.md) for optional backends and environment settings.
 
-## Intended use and licence
+## Prototype
 
-This is research software for teacher assistance. Results measure agreement with one grader, not independent correctness, fairness or demonstrated classroom benefit. There is no completed classroom field study. See [ethics and data access](docs/guides/ethics.md).
+The **KhmerXScore** Gradio prototype accepts a question, reference answer and student answer, then shows a predicted score, optional SHAP word highlighting and written feedback. The Classical demo refits from local data at startup; other families need compatible checkpoints or configured endpoints. A source checkout alone does not provide a fully populated demo.
 
-Source code is released under the [MIT License](LICENSE). The public dataset is separately licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). Original private records, third-party weights and research papers retain their own access and licensing terms.
+Written feedback uses an **open-source instruct LLM** through `FEEDBACK_LLM_*`, with a rule-based fallback when no server is reachable. Teacher review remains part of the intended workflow. No public live-demo URL or completed classroom field study is verified.
+
+## Documentation
+
+| Resource | Contents |
+|---|---|
+| [Final report and presentation](docs/reports/README.md) | Approved 67-page report, supplied slide PDF and version history |
+| [Dataset card](docs/guides/dataset.md) | Provenance, schema, correction record, downloads and licence |
+| [Model cards](docs/guides/model_cards.md) | KhmerGrader names, base-model lineage and configuration |
+| [Report-to-evidence notes](docs/guides/report_evidence.md) | Saved summaries, test-set differences and historical audit findings |
+| [Ethics and data access](docs/guides/ethics.md) | Privacy, single-grader limitations and intended use |
+| [HPC workflow](docs/guides/hpc.md) | Isolated runs, data checks and evidence preservation |
+| [Slides](docs/guides/slide_final.md), [speaker notes](docs/guides/script.md) and [defense questions](docs/guides/defense_qa.md) | Supporting presentation materials |
+| [Repository guide](docs/guides/repository_guide.md) | Public files, local artifacts and Git inclusion policy |
+
+### Repository structure
+
+```text
+src/khmer_asag/   Data loading, preprocessing, training, models and SHAP
+experiments/     Experiment definitions and shared helpers
+prototype/       Gradio application and setup guide
+scripts/         Pipeline runners, analysis and HPC handoff
+tests/           Scoring, SHAP, prototype, path and handoff checks
+docs/            Guides, report tables, final report and presentation
+local/           Ignored data copies, results, checkpoints and manuscripts
+```
+
+Imports use `khmer_asag`; central artifact paths are defined in `src/khmer_asag/paths.py`. Saved results live under `local/results/`, champion checkpoints under `local/checkpoints/results/champions/`, and logs, builds, manuscript sources and historical archives under `local/`. Original data, predictions, model weights and all LaTeX/bibliography sources remain excluded from Git. Final report and presentation PDFs are public.
+
+## Reproducibility
+
+The final PDF and champion summary agree on the displayed headline values, but the historical audit did not recover one coherent matching set of predictions and checkpoints. Report metrics have **not been rerun on dataset v1.0.1**. Its score correction can change the derived label and label-stratified split membership, even with seed 42. No new training or benchmark API evaluation was performed for this documentation and dataset update.
+
+For research experiments, use a separate environment from the prototype. For GPU work, first install the PyTorch build appropriate to the driver and CUDA environment reported by `nvidia-smi`. Then install the full dependencies:
+
+```bash
+python -m pip install -r requirements.txt
+python -m pip install -e .
+```
+
+Classical and individual BiLSTM work are CPU-feasible; encoder and LLM training belong on HPC. See the [experiment registry](experiments/README.md) for script arguments and the [HPC workflow](docs/guides/hpc.md) for isolated runs. Use fresh output directories and record dataset hashes, split membership and model revisions, preserving historical evidence.
+
+Scores measure agreement with one grader, not independently established correctness, fairness or classroom benefit. The [report-to-evidence notes](docs/guides/report_evidence.md) retain the unresolved checkpoint, prediction, preprocessing and SHAP provenance findings.
+
+## Citation
+
+Please cite the report and the dataset version you use. Machine-readable software metadata is available in [CITATION.cff](CITATION.cff).
+
+```bibtex
+@techreport{phork2026khmergrading,
+  author      = {Phork, Norak},
+  title       = {Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education},
+  institution = {Royal University of Phnom Penh},
+  year        = {2026},
+  month       = jun,
+  url         = {https://www.researchgate.net/publication/416039997_Explainable_AI_for_Automated_Grading_of_Khmer_Language_Short-Answer_Questions_in_Education}
+}
+
+@dataset{phork2026khmerasag,
+  author  = {Phork, Norak},
+  title   = {Khmer Automatic Short-Answer Grading Benchmark},
+  year    = {2026},
+  version = {1.0.1},
+  url     = {https://huggingface.co/datasets/phorknorak/khmer-asag-benchmark}
+}
+```
+
+## Contributing
+
+Corrections, reproducibility findings and improvements to Khmer text handling are welcome. Read the [contribution guide](CONTRIBUTING.md) before opening an issue or pull request. For dataset corrections, include the host, version, CSV and row reference without sharing private source records or identifying information.
+
+## Licence
+
+**Code:** [MIT](LICENSE). **Dataset:** [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/), requiring attribution and excluding commercial use. Third-party models and papers retain their own licences and access terms.

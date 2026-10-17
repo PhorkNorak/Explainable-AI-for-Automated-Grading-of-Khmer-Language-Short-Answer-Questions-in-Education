@@ -1,0 +1,38 @@
+name: Dataset correction
+description: Suggest a correction to a documented dataset version or its card.
+title: "[Data]: "
+body:
+  - type: markdown
+    attributes:
+      value: "Dataset v1.0.1 already corrects one score from 19/15 to 9/15. Please identify the version you checked. Do not attach private examination papers, identity mappings or personal details."
+  - type: dropdown
+    id: host
+    attributes:
+      label: Dataset host
+      options:
+        - Hugging Face
+        - Kaggle
+        - Local research copy
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or revision
+      description: Provide the dataset version and, if available, the Hugging Face revision, Kaggle version or file SHA-256.
+    validations:
+      required: true
+  - type: input
+    id: location
+    attributes:
+      label: File and location
+      description: Specify the CSV filename and row/column reference, or the dataset-card section. Do not include real names.
+    validations:
+      required: true
+  - type: textarea
+    id: correction
+    attributes:
+      label: Finding and proposed correction
+      description: Describe the issue and the non-confidential evidence supporting a correction. State any uncertainty.
+    validations:
+      required: true

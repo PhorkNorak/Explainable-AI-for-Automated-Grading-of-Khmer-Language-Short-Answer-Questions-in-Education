@@ -139,6 +139,7 @@ wandb/
 !/docs/guides/dataset.md
 !/docs/images/
 /docs/images/*
+!/docs/images/project-badges.png
 !/docs/images/report/
 !/docs/images/slides/
 /docs/images/report/*

@@ -1,6 +1,6 @@
 # KhmerGrader: fine-tuned LLMs for Khmer short-answer grading
 
-**KhmerGrader** is the QLoRA-fine-tuned family studied in the [final report](<../reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education.pdf>). This page covers that report version only. The contribution is adaptation for Khmer short-answer grading, not the upstream base models. Student data is private; this page does not claim that model weights have been publicly released.
+**KhmerGrader** is the QLoRA-fine-tuned family studied in the [final report](<../reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education.pdf>). This page covers that report version only. The contribution is adaptation for Khmer short-answer grading, not the upstream base models. Public dataset copies and licensing are described in the [dataset card](dataset.md); this page does not claim that model weights have been publicly released.
 
 ## Models and lineage
 
@@ -36,7 +36,7 @@ Report Table 12 states:
 
 Qwen is the reported QWK champion. Table 10 gives its zero-shot reference QWK as 0.529 and its fine-tuned exact agreement as 0.67. The latest family table does not report exact-match rankings or pending zero-shot cells for Gemma and SEA-LION. These are report-stated figures, not a new reproduction of the three adapters. See [report-to-evidence notes](report_evidence.md) for the summary match and unresolved prediction provenance.
 
-New training requires the unresolved source-score decision and the [isolated HPC workflow](hpc.md). Preserve existing predictions and summaries.
+Dataset v1.0.1 records the author's correction from 19/15 to 9/15. Report metrics have not been rerun on corrected data. For new training, record dataset hashes and split membership and follow the [isolated HPC workflow](hpc.md). Preserve existing predictions and summaries.
 
 ## Intended use and limitations
 
