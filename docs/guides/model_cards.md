@@ -1,6 +1,6 @@
 # KhmerGrader: fine-tuned LLMs for Khmer short-answer grading
 
-**KhmerGrader** is the QLoRA-fine-tuned family studied in the [final report](<../reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education Report final.pdf>). This page covers that report version only. The contribution is adaptation for Khmer short-answer grading, not the upstream base models. Student data is private; this page does not claim that model weights have been publicly released.
+**KhmerGrader** is the QLoRA-fine-tuned family studied in the [final report](<../reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education.pdf>). This page covers that report version only. The contribution is adaptation for Khmer short-answer grading, not the upstream base models. Student data is private; this page does not claim that model weights have been publicly released.
 
 ## Models and lineage
 

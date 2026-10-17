@@ -17,7 +17,7 @@ The root keeps the README, requirements, `pyproject.toml`, citation, licence, pr
 
 The entire `local/` folder is ignored by Git:
 
-- `data/`: student CSVs and approved private data.
+- `data/`: downloaded public CSV copies and original private research data; see the [dataset card](dataset.md).
 - `results/`: all existing `results_*` and `xai_visuals_*` folders, with their names and contents preserved.
 - `checkpoints/results/`: the existing champion checkpoints and associated leaderboards.
 - `logs/`: run logs and isolated-run receipts.
@@ -30,7 +30,7 @@ Source and artifact locations are separated in `src/khmer_asag/paths.py`. It res
 
 Only the final report PDF, presentation PDF and document README are public under [reports](../reports/README.md). All LaTeX/bibliography files are ignored everywhere, as well as data, weights, caches, secrets and generated outputs. A public checkout can read the PDFs but cannot rebuild the private manuscript.
 
-The local Kaggle inspection metadata was previously removed from tracking and remains on disk in the local archive. That removal is staged. Other reorganization changes are left for the author's review and staging. No commit or push was created.
+The earlier repository reorganisation is included in GitHub release v1.1.0. The historical Kaggle inspection metadata remains in the local archive. Dataset-host updates are separate from source-code commits: the public dataset card links GitHub, Hugging Face, Kaggle and ResearchGate. Dataset version 1.0.1 records the author's score correction, while final-report benchmark results remain historical.
 
 ## Review commands
 

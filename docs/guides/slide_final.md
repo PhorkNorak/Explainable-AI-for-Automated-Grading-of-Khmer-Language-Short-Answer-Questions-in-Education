@@ -12,7 +12,7 @@ size: 16:9
 Royal University of Phnom Penh
 Bachelor of Engineering in Data Science and Engineering | June 2026
 
-[Final report](<../reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education Report final.pdf>) | [Evidence notes](report_evidence.md)
+[Final report](<../reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education.pdf>) | [Evidence notes](report_evidence.md)
 
 ---
 
@@ -36,7 +36,7 @@ Biology, History, Geography and Earth Science.
 - `no10c`: 909 answers, excluding class-10C Biology; grade 0 retained.
 - Reported split: 70/15/15, seed 42.
 
-Private student data; public release is not established.
+Public pseudonymous dataset: [Hugging Face](https://huggingface.co/datasets/phorknorak/khmer-asag-benchmark) and [Kaggle](https://www.kaggle.com/datasets/phorknorak/khmer-asag-benchmark), CC BY-NC 4.0. Original working records remain local.
 
 ---
 
@@ -148,7 +148,7 @@ The final report identifies Qwen-KhmerGrader as the highest QWK performer and pr
 - Encoder uses a different test set.
 - SHAP overlap is an automatic proxy; sample sizes differ.
 - No classroom field study.
-- Saved prediction provenance and the source score of 19/15 remain unresolved.
+- Saved prediction provenance remains unresolved. Dataset version 1.0.1 records the author's 19/15 to 9/15 correction; report metrics have not been rerun.
 
 Next research priorities: a second grader, broader data and teacher evaluation.
 

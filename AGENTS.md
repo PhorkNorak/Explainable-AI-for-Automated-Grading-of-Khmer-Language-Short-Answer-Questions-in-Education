@@ -2,7 +2,7 @@
 
 ## Final-report reference
 
-This is Phork Norak's undergraduate report, "Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education", supervised by Dr. Khim Chamroeun at RUPP. The designated final PDF is `docs/reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education Report final.pdf`, dated June 2026. The cover names the Bachelor of Engineering in Data Science and Engineering; the supervision statement names the Honor Program of Data Science and Engineering.
+This is Phork Norak's undergraduate report, "Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education", supervised by Dr. Khim Chamroeun at RUPP. The designated final PDF is `docs/reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education.pdf`, dated June 2026. The cover names the Bachelor of Engineering in Data Science and Engineering; the supervision statement names the Honor Program of Data Science and Engineering.
 
 The public layout is src/khmer_asag, experiments, prototype, scripts, tests and docs. Private files live under ignored local/. The approved final PDF is the 67-page easier-language version in `docs/reports/`; see `docs/reports/README.md` for recovery and editing history. All editable manuscript sources and their supporting assets remain local and must be excluded from Git, including `local/manuscripts/thesis/`, `local/manuscripts/final-report/` and all other folders under `local/manuscripts/`. Do not force-add LaTeX or bibliography files. The sources were recovered from backups and the original report, not the exact original Overleaf export. Preserve earlier PDFs and local working projects.
 
@@ -26,7 +26,7 @@ The corpus has 1,184 answers, 41 questions, 203 students, four subjects and two 
 
 Predict normalised scores in [0,1], map to five-class labels with `round(4*y)`, and to raw marks with `round(y*max_score)`, bounded to valid ranges. SVR uses its regression objective, neural regression heads use MSE, and LLMs supervise integer-score completions. Preprocessing strips invisibles, applies NFC and strips punctuation; segmentation uses khmernltk. No custom KCC reorder.
 
-The corpus and predictions remain private. A source score of 19 with maximum 15 is unresolved; see `local/archive/audit/data_metrics_decisions.md` before new training. Report release claims do not establish consent or public availability.
+Public, pseudonymous corpus copies are hosted at https://huggingface.co/datasets/phorknorak/khmer-asag-benchmark and https://www.kaggle.com/datasets/phorknorak/khmer-asag-benchmark under CC BY-NC 4.0. Local original records, predictions and weights remain excluded from Git. The author's current local CSVs correct one score from 19/15 to 9/15; dataset version 1.0.1 documents this correction. Report metrics have not been rerun on corrected data and a label-stratified split can change. See `docs/guides/dataset.md` and preserve the historical audit in `local/archive/audit/`. Public availability does not independently establish consent or ethics approval.
 
 ## Repository navigation
 

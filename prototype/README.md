@@ -11,7 +11,7 @@ student answer**, picks a **model pillar**, and gets:
 - a **Khmer word-attribution heatmap** (text highlighting of the words that drove the grade), and
 - short **written feedback** (which reference points are missing).
 
-The [June 2026 final report](<../docs/reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education Report final.pdf>) calls the LLM family **KhmerGrader**. This guide describes the final-report system and its configurable backends. Report SHAP values match the saved summary after rounding; provenance limits are documented in the [evidence reference](../docs/guides/report_evidence.md).
+The [June 2026 final report](<../docs/reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education.pdf>) calls the LLM family **KhmerGrader**. This guide describes the final-report system and its configurable backends. Report SHAP values match the saved summary after rounding; provenance limits are documented in the [evidence reference](../docs/guides/report_evidence.md).
 
 It is a **teacher-assist** tool (human-in-the-loop), not an autonomous grader; it implements **SHAP word attribution**, the explanation approach described in the report. Historical report heatmaps are not evidence that the current estimator outputs have been reproduced.
 
@@ -31,7 +31,7 @@ line at the bottom of the app lists the state of every pillar).
 > The encoder checkpoint and the LLM adapter are trained on HPC/GPU and are **not shipped** with the
 > repo. The code is ready to consume them: drop the encoder `best.pt` into the champion dir, or point
 > the LLM pillar at a served KhmerGrader. Until then those two pillars show a clear "inactive" note
-> the Classical pillar also requires usable private data and compatible dependencies.
+> the Classical pillar also requires locally downloaded dataset files and compatible dependencies; see the [dataset card](../docs/guides/dataset.md).
 
 ## Run locally
 
@@ -124,7 +124,7 @@ python prototype/app.py
 
 ## Deployment packaging
 
-The app imports project modules and depends on private data or compatible model resources. A source-only checkout does not provide a fully populated demo. Do not upload the whole working directory or force-add private data/checkpoints as a deployment shortcut.
+The app imports project modules and depends on locally downloaded data or compatible model resources. A source-only checkout does not provide a fully populated demo. Do not upload the whole working directory or force-add private data/checkpoints as a deployment shortcut.
 
 For a separately approved deployment, package the app and required source modules, use `prototype/app.py` as the Gradio entry point and install its requirements. Provision only resources whose access and distribution permissions have been confirmed. Configure `GRADER_LLM_*` and `FEEDBACK_LLM_*` for the permitted open-source models. The encoder and in-process LLM need the optional dependencies documented in `prototype/requirements.txt`; GPU work belongs on HPC or the deployment host.
 

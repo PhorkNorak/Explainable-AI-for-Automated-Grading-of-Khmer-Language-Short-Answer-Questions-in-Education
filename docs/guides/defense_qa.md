@@ -1,6 +1,6 @@
 # Defense questions for the final report
 
-Use the [June 2026 final report](<../reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education Report final.pdf>) as the reference. [Evidence notes](report_evidence.md) distinguish report findings from unresolved reproduction issues.
+Use the [June 2026 final report](<../reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education.pdf>) as the reference. [Evidence notes](report_evidence.md) distinguish report findings from unresolved reproduction issues.
 
 **What is the contribution?** A Khmer short-answer grading study covering four model families, the QLoRA-fine-tuned KhmerGrader family, SHAP word attribution and a prototype.
 
@@ -22,8 +22,8 @@ Use the [June 2026 final report](<../reports/Explainable AI for Automated Gradin
 
 **Does overlap prove educational value?** No. It is a lexical proxy, not teacher judgement or a classroom study. Agreement with the grader also does not establish independent correctness.
 
-**What are the data limits?** One grader, 1,184 answers, 41 questions, 203 students, four subjects and two schools. The no10c variant has 909 answers and retains grade 0. The recorded 19/15 score requires source confirmation before affected results are regenerated. Private data access and consent remain separate from source-code licensing.
+**What are the data limits?** One grader, 1,184 answers, 41 questions, 203 students, four subjects and two schools. The no10c variant has 909 answers and retains grade 0. The author's current data corrects the historical 19/15 score to 9/15, recorded in dataset version 1.0.1; report metrics have not been rerun. Public dataset copies are linked from the [dataset card](dataset.md) under CC BY-NC 4.0. Consent evidence remains separate from public availability and source-code licensing.
 
 **Can teachers use the prototype?** It demonstrates scoring, optional SHAP highlights and feedback, with a teacher retaining the decision. Feedback uses an open-source model endpoint with rule-based fallback. No public demo URL or classroom field study is verified.
 
-**What remains unresolved?** The final report has no pending-result labels. Compatible checkpoint/XAI provenance, source-score confirmation, consent/signatures and Khmer proofreading remain separate evidence issues. Appendix G includes the prototype screenshot from the final presentation; a classroom field study remains uncompleted. Programme, June 2026 date and committee names are already printed in the final PDF. Manuscript sources stay local, and the supplied presentation PDF has not been regenerated from the Markdown decks.
+**What remains unresolved?** The final report has no pending-result labels. Compatible checkpoint/XAI provenance, consent/signatures and Khmer proofreading remain separate evidence issues. The data correction does not resolve historical benchmark provenance. Appendix G includes the prototype screenshot from the final presentation; a classroom field study remains uncompleted. Programme, June 2026 date and committee names are already printed in the final PDF. Manuscript sources stay local, and the supplied presentation PDF has not been regenerated from the Markdown decks.

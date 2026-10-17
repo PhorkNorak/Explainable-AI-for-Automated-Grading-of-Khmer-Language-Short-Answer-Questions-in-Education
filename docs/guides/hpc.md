@@ -4,9 +4,9 @@ The final report records completed experiments. This guide describes a separate 
 
 ## Before running
 
-A retained source record has a score of 19 with a maximum of 15. Confirm the original awarded mark and maximum before using the affected data. Do not silently clip, delete or guess a correction. Preserve the original data and prepare any approved correction in a separate private checkout with its change record and hashes. The source helper rejects invalid marks before launching training.
+The author's edited local CSVs correct one historical score from 19 to 9, with the maximum remaining 15. Dataset version 1.0.1 records this correction; see the [dataset card](dataset.md). Preserve historical data and results. Record the corrected data hashes and new split membership for a new run: changing the derived label can change the label-stratified split even with seed 42. The source helper continues to reject invalid marks before launching training.
 
-Use approved private data and compatible dependencies from `requirements.txt`, plus the required GPU environment and model access. Record source and data hashes, split identities, upstream model revisions, package versions and hardware. The public repository does not supply student data, old prediction files or model weights.
+Download the public CSVs from the linked dataset hosts, or use approved local research copies, with compatible dependencies from `requirements.txt` and the required GPU environment and model access. Record source and data hashes, split identities, upstream model revisions, package versions and hardware. Git excludes the CSVs, old prediction files and model weights; dataset copies are distributed separately under CC BY-NC 4.0.
 
 ## Isolated workflow
 

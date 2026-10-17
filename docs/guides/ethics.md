@@ -1,47 +1,31 @@
-# Ethics & Data-Governance Statement
+# Ethics and data access
 
-This project uses **real student answers** collected in Cambodian schools, so it carries
-human-subjects and data-protection obligations. This statement records what has been done and
-**what the author must confirm before any public data release** (items marked ⚠️).
+This project uses real Khmer examination answers from two Cambodian high schools, written by 203 students and graded by one teacher. Public dataset copies are hosted on [Hugging Face](https://huggingface.co/datasets/phorknorak/khmer-asag-benchmark) and [Kaggle](https://www.kaggle.com/datasets/phorknorak/khmer-asag-benchmark). See the [dataset card](dataset.md) for the schema, correction history, licence and links to the report and code.
 
-The [designated final report](<../reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education Report final.pdf>) is dated June 2026. Its public-release wording does not establish data availability or consent. The [report-to-evidence reference](report_evidence.md) records this difference; the restrictions below remain in force.
+## Public copies and private working records
 
-## Data collection & consent
-- The corpus contains short-answer responses written by school students (grades/classes across
-  2 schools, 203 students) and graded by one teacher.
-- ⚠️ **Confirm and state**: that informed consent (from the school and from students/guardians,
-  as minors are involved) was obtained for research use and publication of anonymized data, and
-  that data collection followed the schools' policies.
-- ⚠️ **IRB / ethics approval**: state the approving body and protocol number, or, if the work
-  qualified for exemption, the basis for exemption.
+Public exports contain replacement school codes (`SCH001` and `SCH002`), pseudonymous class and student codes, question identifiers, Khmer question/reference/answer text, marks and collection year. They exclude one blank-answer record and do not include an identifier mapping. The reference is the highest-scoring student response for each question because an official answer key was unavailable.
 
-## Anonymization & privacy
-- The local research CSVs contain `SchoolID`, `ClassID`, `StudentID`, and `QuestionID`. These are
-  **pseudonymous codes**, not names. No student names, contact details, or free-text personal
-  identifiers should be present.
-- ⚠️ **Verify before release**: that no answer text contains personally identifying information
-  (names, IDs) and that the school/student codes cannot be re-identified outside the research
-  team. If any PII exists in answer text, scrub it.
-- Only aggregate metrics and a small number of de-identified example answers (heatmaps) are
-  shown in the undergraduate report and slides.
+Original local records, predictions, checkpoints, manuscript sources and historical audit files remain excluded from Git. Downloaded CSVs also stay under ignored `local/data/`; public distribution through the dataset hosts does not make the whole working directory public.
 
-## Fairness, bias & intended use
-- The dataset is **single-grader**: all labels reflect one teacher's judgement. Reported scores
-  are agreement with *that* grader, not ground-truth correctness. This is disclosed as a primary
-  limitation (no inter-annotator agreement was obtainable).
-- The system is intended as a **teacher-assist / formative-feedback** tool, **not** an
-  autonomous high-stakes grader. Any deployment should keep a human in the loop and surface the
-  model's explanation (the **SHAP word attribution**; see the XAI results).
-- Subject/topic coverage is narrow (Biology, History, Geography, Earth Science; grades from 2
-  schools), so the model should not be assumed to generalize to other subjects, dialects, or
-  grade levels without re-validation.
+Pseudonymous codes and public hosting do not establish complete anonymity. Free-text answers may contain context that an automated check cannot detect. Do not attempt to identify or contact students, teachers or schools, or republish examples that disclose personal details.
 
-## Reproducibility & data availability
-- Code, configuration, seeds, and experiment scripts are included in this repository. The student
-  CSVs, saved predictions, and generated results are excluded from Git.
-- ⚠️ Confirm that the data licence and consent terms permit public release before publishing any
-  corpus files. Otherwise, provide a synthetic sample or an access-controlled request process.
+## Consent and governance evidence
+
+Public hosting was verified, but supporting consent records, school authorisation, student/guardian permission and an ethics approval or exemption have not been independently verified in this repository review. Their status must not be inferred from the report's release wording or the dataset's licence. Preserve these evidence limits when describing the corpus.
+
+## Dataset version and research claims
+
+The author's current local CSVs correct one mark from 19/15 to 9/15, recorded in dataset version 1.0.1. Public counts remain 1,184 full and 909 curated answers. The final report and saved benchmark results have not been rerun on the corrected version. Historical audits remain unchanged; see the [report-to-evidence notes](report_evidence.md).
+
+All labels come from a single grader and measure agreement with that grader, not independent correctness or inter-grader agreement. Data covers only two schools and four subjects, is unevenly distributed, and uses student-derived reference answers. No completed classroom field study establishes educational benefit or fairness.
+
+## Intended use and licensing
+
+The dataset retains its [CC BY-NC 4.0 licence](https://creativecommons.org/licenses/by-nc/4.0/), requiring attribution and excluding commercial use. The source code has a separate MIT licence. Neither licence proves consent or replaces privacy and institutional responsibilities.
+
+Use the system for research and teacher assistance with human review. It is not established as an autonomous high-stakes grader. SHAP word attribution shows model contributions to a score; lexical reference overlap is not proof that a response or explanation is educationally correct. Prototype feedback uses an open-source LLM with rule-based fallback.
 
 ## Compute evidence
 
-Total compute and model-specific runtime claims remain UNVERIFIED; no full training was performed during the audit.
+Runtime figures are report-stated or derived from saved summaries as described in the evidence notes. No new training or benchmark API evaluation was performed for this dataset and documentation update.

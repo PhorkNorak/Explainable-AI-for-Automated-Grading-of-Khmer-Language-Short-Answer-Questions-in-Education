@@ -2,13 +2,15 @@
 
 Undergraduate final report by **Phork Norak**, supervised by **Dr. Khim Chamroeun**, Royal University of Phnom Penh. Bachelor of Engineering in Data Science and Engineering, June 2026.
 
+[GitHub](https://github.com/PhorkNorak/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education) | [Hugging Face dataset](https://huggingface.co/datasets/phorknorak/khmer-asag-benchmark) | [Kaggle dataset](https://www.kaggle.com/datasets/phorknorak/khmer-asag-benchmark) | [ResearchGate report](https://www.researchgate.net/publication/416039997_Explainable_AI_for_Automated_Grading_of_Khmer_Language_Short-Answer_Questions_in_Education) | [Final release](https://github.com/PhorkNorak/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/releases/tag/v1.1.0)
+
 This project studies automated short-answer grading (ASAG) using **real, teacher-graded Khmer examination answers**. The corpus was manually digitised from handwritten semester exam papers collected at two Cambodian high schools. It compares four model families and uses **SHAP word attribution (text highlighting)** to show which answer words contribute to a predicted score. The prototype combines a score, optional word highlighting and written feedback.
 
 The study contributes a real Khmer short-answer corpus, a shared pipeline for comparing four grading families, and a teacher-assist prototype with SHAP explanations. Its motivation is the time and inconsistency involved in manual grading, together with the limited resources available for Khmer language processing.
 
-Read the [final report](<docs/reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education Report final.pdf>) or the [final presentation](docs/reports/Final_Presentation.pdf). The final report is the 67-page version with clearer wording and all reviewed corrections. [Report versions](docs/reports/README.md) explain how it was recovered and revised. Editable manuscript sources, older drafts and local audit builds stay local and are excluded from Git.
+Read the [final report](<docs/reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education.pdf>) or the [final presentation](docs/reports/Final_Presentation.pdf). The final report is the 67-page version with clearer wording and all reviewed corrections. [Report versions](docs/reports/README.md) explain how it was recovered and revised. Editable manuscript sources, older drafts and local audit builds stay local and are excluded from Git.
 
-The benchmark tables below retain the report's findings. [Report-to-evidence notes](docs/guides/report_evidence.md) distinguish reported results, saved summaries and unresolved reproduction issues. This repository provides the source code and final documents; it does not include the private student dataset, predictions or model checkpoints.
+The benchmark tables below retain the report's findings. [Report-to-evidence notes](docs/guides/report_evidence.md) distinguish reported results, saved summaries and unresolved reproduction issues. Public dataset copies are hosted separately on Hugging Face and Kaggle under CC BY-NC 4.0. Local source data, predictions and model checkpoints remain excluded from Git.
 
 ## Research questions and approach
 
@@ -60,9 +62,11 @@ The data includes identical answers receiving different marks, answers that repe
 
 Collection and reference construction are described in report Section 3.2 and the final presentation's dataset slides (PDF pages 8-12).
 
-### Local data access
+### Dataset downloads and local setup
 
-The student corpus and predictions are private. With approved access, the loader expects `local/data/dataset.csv` and `local/data/dataset_no_10c_biology.csv`, with `SchoolID`, `ClassID`, `Subject`, `StudentID`, `QuestionID`, `Question`, `Reference`, `Answer`, `Student Score`, `Max Score` and `Year`. The report's public-release wording does not establish permission or actual public availability. See [ethics and data access](docs/guides/ethics.md).
+Download the two CSVs from [Hugging Face](https://huggingface.co/datasets/phorknorak/khmer-asag-benchmark) or [Kaggle](https://www.kaggle.com/datasets/phorknorak/khmer-asag-benchmark), then place them at `local/data/dataset.csv` and `local/data/dataset_no_10c_biology.csv`. Preserve any existing research copy before replacing it. The loader expects `SchoolID`, `ClassID`, `Subject`, `StudentID`, `QuestionID`, `Question`, `Reference`, `Answer`, `Student Score`, `Max Score` and `Year`.
+
+**Dataset version 1.0.1** incorporates the author's correction from **19/15 to 9/15** for one answer present in both files. Counts remain 1,184 and 909 complete answers. Check each host's version history to identify the downloaded copy. Report metrics have not been rerun on this corrected data, and the stratified split may change. See the [dataset card and correction record](docs/guides/dataset.md) for schema, loading examples, version details and citation, and [ethics and data access](docs/guides/ethics.md) for the remaining limitations.
 
 ## Benchmarks from the final report
 
@@ -97,7 +101,7 @@ pip install -r prototype/requirements.txt
 python prototype/app.py
 ```
 
-Model availability depends on private data, compatible checkpoints and configured endpoints. Written feedback uses an open-source instruct LLM through `FEEDBACK_LLM_*`, with rule-based fallback when no server is reachable. See [prototype setup](prototype/README.md) for isolated-environment instructions and model configuration.
+Model availability depends on locally downloaded data, compatible checkpoints and configured endpoints. Written feedback uses an open-source instruct LLM through `FEEDBACK_LLM_*`, with rule-based fallback when no server is reachable. See [prototype setup](prototype/README.md) for isolated-environment instructions and model configuration.
 
 ## Installation
 
@@ -130,7 +134,7 @@ For GPU experiments, install the PyTorch build that matches the CUDA version rep
 
 The [experiment registry](experiments/README.md) documents the implemented stages. Classical and individual BiLSTM work are CPU-feasible; encoder and LLM training belong on HPC. No new training or external API evaluation was performed to align this documentation.
 
-A surviving source record has a score of 19 with maximum 15. Its score or maximum must be confirmed against the examination record before training or regenerating affected results. Do not silently clip or remove it. Follow the [evidence notes](docs/guides/report_evidence.md) and [isolated HPC handoff](docs/guides/hpc.md), preserving existing evidence. Detailed audit records remain local.
+The author's current local CSVs correct the historical 19/15 record to 9/15. The dataset update records that change without altering saved results, the final report or historical audits. New runs must record the dataset version, hashes and split membership. Follow the [evidence notes](docs/guides/report_evidence.md) and [isolated HPC handoff](docs/guides/hpc.md), preserving existing evidence. Detailed audit records remain local.
 
 ## Repository layout
 
@@ -148,13 +152,14 @@ local/           Ignored data, results, checkpoints, logs and manuscripts
 
 Install the package with `python -m pip install -e .` from the repository root after installing dependencies. Imports use `khmer_asag`, and direct experiment and prototype commands also work from a source checkout. Central paths are defined in `src/khmer_asag/paths.py`.
 
-The private dataset belongs in `local/data/`. Existing run names are preserved under `local/results/`, while champion checkpoints are under `local/checkpoints/results/champions/`. Logs, builds, editable manuscripts and historical archives stay under `local/`. Moving these files does not release them or make historical saved paths current.
+Downloaded dataset copies and original research data belong in `local/data/`. Existing run names are preserved under `local/results/`, while champion checkpoints are under `local/checkpoints/results/champions/`. Logs, builds, editable manuscripts and historical archives stay under `local/`. Moving these files does not release them or make historical saved paths current.
 
 Public Git files include code, requirements, tests, active documentation, the four README images and the final PDFs. The whole `local/` folder, secrets, environments, model weights and LaTeX/bibliography files are ignored. See the [repository guide](docs/guides/repository_guide.md) for the exact inclusion policy.
 
 - [Prototype setup](prototype/README.md)
 - [Experiment registry](experiments/README.md)
 - [Final report and presentation](docs/reports/README.md)
+- [Dataset card, version history and platform links](docs/guides/dataset.md)
 - [Evidence and reproduction limits](docs/guides/report_evidence.md)
 - [HPC workflow](docs/guides/hpc.md)
 - [Slides](docs/guides/slide_final.md), [speaker notes](docs/guides/script.md) and [defense questions](docs/guides/defense_qa.md)
@@ -163,4 +168,4 @@ Public Git files include code, requirements, tests, active documentation, the fo
 
 This is research software for teacher assistance. Results measure agreement with one grader, not independent correctness, fairness or demonstrated classroom benefit. There is no completed classroom field study. See [ethics and data access](docs/guides/ethics.md).
 
-Source code is released under the [MIT License](LICENSE). This does not grant rights to the private student dataset, third-party weights or research papers; those retain their own access and licensing terms.
+Source code is released under the [MIT License](LICENSE). The public dataset is separately licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). Original private records, third-party weights and research papers retain their own access and licensing terms.

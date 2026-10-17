@@ -1,8 +1,8 @@
 # Experiments registry
 
-The registry implements the four-family study described in the [final report](<../docs/reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education Report final.pdf>). The LLM family is KhmerGrader. This registry documents the final-report study; subsequent release experiments are excluded. [Report-to-evidence notes](../docs/guides/report_evidence.md) explain why existing summaries and historical predictions are not a newly reproduced champion set.
+The registry implements the four-family study described in the [final report](<../docs/reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education.pdf>). The LLM family is KhmerGrader. This registry documents the final-report study; subsequent release experiments are excluded. [Report-to-evidence notes](../docs/guides/report_evidence.md) explain why existing summaries and historical predictions are not a newly reproduced champion set.
 
-Before any new training, resolve the source score of 19/15 and follow the [isolated HPC handoff](../docs/guides/hpc.md). The commands below describe the scripts; they are not a request to overwrite existing evidence.
+The author's current data corrects the historical 19/15 score to 9/15; see the [dataset correction record](../docs/guides/dataset.md). Before new training, record the data version and hashes and follow the [isolated HPC handoff](../docs/guides/hpc.md). Report metrics were not rerun on corrected data. The commands below describe the scripts; they are not a request to overwrite existing evidence.
 
 The v01-v07 grid uses the shared schema from `scripts/run_all.py`; later studies have their own outputs:
 

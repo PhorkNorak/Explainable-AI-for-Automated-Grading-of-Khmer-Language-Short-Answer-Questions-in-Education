@@ -2,7 +2,7 @@
 
 Audit dates: 2026-09-20 and 2026-09-21. Bibliography source files stay local with the manuscript; no active conference-paper source is confirmed. The historical audit below reviewed an earlier local bibliography. Historical citation keys are retained for identifying those checks. Their names are not evidence of authorship.
 
-The [approved final report](<../reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education Report final.pdf>) is the current document reference. The checks below remain historical coverage records for the audit revision, not a fresh verification of the final PDF's entire bibliography. See [report versions and evidence](report_evidence.md). KhmerGrader is the model family covered by the final report.
+The [approved final report](<../reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education.pdf>) is the current document reference. The checks below remain historical coverage records for the audit revision, not a fresh verification of the final PDF's entire bibliography. See [report versions and evidence](report_evidence.md). KhmerGrader is the model family covered by the final report.
 
 ## References checked against primary records
 

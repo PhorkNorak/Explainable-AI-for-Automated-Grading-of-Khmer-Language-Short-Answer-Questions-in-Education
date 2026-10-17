@@ -7,8 +7,26 @@ authors:
     given-names: "Norak"
 repository-code: "https://github.com/PhorkNorak/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education"
 license: MIT
-version: 1.0.0
-date-released: 2026-08-01
+version: 1.1.0
+date-released: 2026-10-17
+url: "https://github.com/PhorkNorak/Explainable-AI-for-Automated-Grading-of-Khmer-Language-Short-Answer-Questions-in-Education/releases/tag/v1.1.0"
+references:
+  - type: dataset
+    title: "Khmer Automatic Short-Answer Grading Benchmark"
+    authors:
+      - family-names: "Phork"
+        given-names: "Norak"
+    version: 1.0.1
+    url: "https://huggingface.co/datasets/phorknorak/khmer-asag-benchmark"
+    license: CC-BY-NC-4.0
+    notes: "Also hosted at https://www.kaggle.com/datasets/phorknorak/khmer-asag-benchmark"
+  - type: report
+    title: "Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education"
+    authors:
+      - family-names: "Phork"
+        given-names: "Norak"
+    year: 2026
+    url: "https://www.researchgate.net/publication/416039997_Explainable_AI_for_Automated_Grading_of_Khmer_Language_Short-Answer_Questions_in_Education"
 keywords:
   - automatic short-answer grading
   - Khmer

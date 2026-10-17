@@ -1,6 +1,6 @@
 # Speaker notes for the final-report presentation
 
-These notes follow the 11 slides in [the active deck](slide_final.md). The [final report](<../reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education Report final.pdf>) is the reference; [evidence notes](report_evidence.md) record unresolved differences.
+These notes follow the 11 slides in [the active deck](slide_final.md). The [final report](<../reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education.pdf>) is the reference; [evidence notes](report_evidence.md) record unresolved differences.
 
 ## Slide 1: Study and final report
 

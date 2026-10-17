@@ -1,6 +1,6 @@
 # Latest final report and saved evidence
 
-The [approved final report](<../reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education Report final.pdf>) is the 67-page version with the author's review corrections and clearer wording. It retains the June 2026 report date and benchmark values. It supersedes the earlier report PDFs as the active documentation reference. No pending-result labels occur in this final version.
+The [approved final report](<../reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education.pdf>) is the 67-page version with the author's review corrections and clearer wording. It retains the June 2026 report date and benchmark values. It supersedes the earlier report PDFs as the active documentation reference. No pending-result labels occur in this final version.
 
 The comparison with saved results was made locally. The CSV paths and detailed audit records named below are local provenance references and are excluded from Git; they are not downloads included in this repository. No new training, external API verification or result-file editing was performed.
 
@@ -65,8 +65,8 @@ Unparsed responses are excluded, so denominators differ. The best reported front
 
 ## Remaining evidence and release boundaries
 
-- The 19/15 score decision (`local/archive/audit/data_metrics_decisions.md`, local) remains unresolved. Do not alter the corpus or regenerate affected results without confirming the source record.
-- Private student data and predictions are excluded from the public source distribution. The report's release wording does not establish consent or actual public availability; see [ethics](ethics.md).
+- The historical audit recorded a score of 19 with maximum 15. The author's current local CSVs change that score to 9 in both dataset variants. Public dataset version 1.0.1 records exactly one changed cell per CSV relative to the archived public exports; counts and row order are unchanged. See the [dataset correction record](dataset.md). This supersedes the current-data blocker, not the dated audit record. No report metrics, predictions or checkpoints were regenerated; a fresh stratified split may differ after the correction.
+- Public pseudonymous dataset copies are available through [Hugging Face](https://huggingface.co/datasets/phorknorak/khmer-asag-benchmark) and [Kaggle](https://www.kaggle.com/datasets/phorknorak/khmer-asag-benchmark), separately from Git. The dataset has a CC BY-NC 4.0 licence. Original local records and predictions remain excluded. Public availability does not establish consent or ethics approval; see [ethics](ethics.md).
 - The final report includes the prototype screenshot from the final presentation in Appendix G. It does not establish a public demo URL or completed classroom field study.
 - Programme, date and committee names are printed, but signatures, consent records and Khmer proofreading are not independently verified here.
 - The supplied presentation PDF is copied unchanged into `docs/reports/Final_Presentation.pdf`. Active Markdown decks and notes describe the final report; they are not a regenerated binary slide export.

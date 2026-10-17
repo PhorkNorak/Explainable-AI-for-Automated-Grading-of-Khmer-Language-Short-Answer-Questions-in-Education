@@ -136,6 +136,7 @@ wandb/
 !/docs/guides/defense_qa.md
 !/docs/guides/repository_guide.md
 !/docs/guides/hpc.md
+!/docs/guides/dataset.md
 !/docs/images/
 /docs/images/*
 !/docs/images/report/
@@ -149,5 +150,5 @@ wandb/
 !/docs/reports/
 /docs/reports/*
 !/docs/reports/README.md
-!/docs/reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education Report final.pdf
+!/docs/reports/Explainable AI for Automated Grading of Khmer Language Short-Answer Questions in Education.pdf
 !/docs/reports/Final_Presentation.pdf
